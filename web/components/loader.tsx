@@ -1,103 +1,77 @@
+import { LogoIcon } from "./logo";
+
 export function Loader() {
-    return (
-        <div className="flex items-center justify-center min-h-screen">
-            <div className="relative">
-                {/* Outer rotating ring */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-32 h-32 rounded-full border-4 border-transparent border-t-cyan-400 border-r-purple-500 animate-spin"
-                        style={{ animationDuration: '1s' }}></div>
-                </div>
-
-                {/* Inner pulsing ring */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-24 h-24 rounded-full border-2 border-purple-400 opacity-50 animate-ping"></div>
-                </div>
-
-                {/* Center content */}
-                <div className="relative flex flex-col items-center justify-center w-32 h-32">
-                    {/* Code brackets with animation */}
-                    <div className="flex items-center justify-center gap-1 mb-2">
-                        <span className="text-2xl font-bold text-cyan-400 animate-pulse"
-                            style={{ animationDuration: '1.5s' }}>{'<'}</span>
-                        <span className="text-2xl font-bold text-purple-400 animate-pulse"
-                            style={{ animationDuration: '1.5s', animationDelay: '0.2s' }}>{'/'}</span>
-                        <span className="text-2xl font-bold text-cyan-400 animate-pulse"
-                            style={{ animationDuration: '1.5s', animationDelay: '0.4s' }}>{'>'}</span>
-                    </div>
-
-                    {/* Racing flag checkered pattern */}
-                    <div className="flex gap-0.5 mb-2">
-                        <div className="w-1.5 h-1.5 bg-white animate-pulse" style={{ animationDelay: '0s' }}></div>
-                        <div className="w-1.5 h-1.5 bg-slate-800 animate-pulse" style={{ animationDelay: '0.1s' }}></div>
-                        <div className="w-1.5 h-1.5 bg-white animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                        <div className="w-1.5 h-1.5 bg-slate-800 animate-pulse" style={{ animationDelay: '0.3s' }}></div>
-                    </div>
-                    <div className="flex gap-0.5">
-                        <div className="w-1.5 h-1.5 bg-slate-800 animate-pulse" style={{ animationDelay: '0.4s' }}></div>
-                        <div className="w-1.5 h-1.5 bg-white animate-pulse" style={{ animationDelay: '0.5s' }}></div>
-                        <div className="w-1.5 h-1.5 bg-slate-800 animate-pulse" style={{ animationDelay: '0.6s' }}></div>
-                        <div className="w-1.5 h-1.5 bg-white animate-pulse" style={{ animationDelay: '0.7s' }}></div>
-                    </div>
-                </div>
-
-                {/* Speed lines */}
-                <div className="absolute top-1/2 -left-20 w-16 h-0.5 bg-gradient-to-r from-transparent to-cyan-400 animate-pulse"
-                    style={{ animationDuration: '0.8s' }}></div>
-                <div className="absolute top-1/2 -left-16 w-12 h-0.5 bg-gradient-to-r from-transparent to-purple-400 animate-pulse mt-2"
-                    style={{ animationDuration: '0.8s', animationDelay: '0.2s' }}></div>
-                <div className="absolute top-1/2 -left-20 w-16 h-0.5 bg-gradient-to-r from-transparent to-cyan-400 animate-pulse -mt-2"
-                    style={{ animationDuration: '0.8s', animationDelay: '0.4s' }}></div>
-            </div>
-
-            {/* Company name */}
-            <div className="absolute bottom-1/3">
-                <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 animate-pulse"
-                    style={{ animationDuration: '2s' }}>
-                    Coderacer
-                </h1>
-                <div className="flex justify-center gap-1 mt-2">
-                    <div className="w-2 h-2 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '0s' }}></div>
-                    <div className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-export function LoaderSmall({ size = 'md' }) {
-  const sizes: Record<string, string> = {
-    sm: 'w-8 h-8',
-    md: 'w-12 h-12',
-    lg: 'w-16 h-16'
-  };
-
-  const iconSizes: Record<string, string> = {
-    sm: 'text-xs',
-    md: 'text-sm',
-    lg: 'text-base'
-  };
-
-  const ringWidths: Record<string, string> = {
-    sm: 'border-2',
-    md: 'border-2',
-    lg: 'border-3'
-  };
-
   return (
-    <div className="inline-flex items-center justify-center">
-      <div className="relative">
-        {/* Outer rotating ring */}
-        <div className={`${sizes[size]} rounded-full ${ringWidths[size]} border-transparent border-t-cyan-400 border-r-purple-500 animate-spin`}
-             style={{ animationDuration: '0.8s' }}></div>
-        
-        {/* Center icon */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className={`${iconSizes[size]} font-bold text-cyan-400`}>
-            {'</>'}
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background-dark overflow-hidden relative">
+
+      <div className="relative flex flex-col items-center z-20">
+        {/* Main Logo Container */}
+        <div className="relative w-32 h-32 mb-12 flex items-center justify-center">
+          {/* Pulsing Hexagon/Orb Background */}
+          <div className="absolute inset-0 bg-primary/10 blur-3xl animate-pulse-glow rounded-full" />
+          
+          {/* Outer Spin Ring (Segmented) */}
+          <div className="absolute inset-0 border-4 border-primary/20 rounded-full" />
+          <div className="absolute inset-0 border-t-4 border-primary rounded-full animate-spin [animation-duration:1s]" />
+          
+          {/* Middle Spin Ring (Dashed) */}
+          <div className="absolute inset-4 border border-dashed border-cyan-400/30 rounded-full animate-spin [animation-direction:reverse] [animation-duration:3s]" />
+          
+          {/* Logo with Inner Glow */}
+          <div className="relative drop-shadow-[0_0_15px_rgba(43,108,238,0.6)]">
+            <LogoIcon className="size-14 animate-in fade-in zoom-in duration-500" />
+          </div>
+
+          {/* Speed HUD Elements */}
+        </div>
+
+        {/* Text Animation */}
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative group">
+            <span className="text-4xl font-black text-white tracking-tighter uppercase italic">
+              Code<span className="text-primary">Racer</span>
+            </span>
+            {/* Reflective shine effect */}
+          </div>
+          
+          {/* Enhanced Progress Container */}
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-64 h-1.5 bg-surface-dark border border-surface-border rounded-full overflow-hidden relative shadow-inner">
+              {/* Dynamic Loading Bar */}
+              <div className="absolute inset-0 bg-gradient-to-r from-primary via-cyan-400 to-primary w-1/3 rounded-full animate-loading-bar" />
+              {/* Glint on bar */}
+              <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent_0%,rgba(255,255,255,0.2)_50%,transparent_100%)] w-20 animate-[move-right_2s_infinite]" />
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <span className="inline-block size-1 bg-primary rounded-full animate-ping" />
+              <p className="">
+                <span className="text-xs text-text-secondary font-mono tracking-[0.2em] uppercase opacity-70 text-white animate-pulse">Loading</span>
+              </p>
+              <span className="inline-block size-1 bg-primary rounded-full animate-ping" />
+            </div>
           </div>
         </div>
       </div>
+      
+      {/* Decorative Corner HUD elements */}
+      <div className="absolute top-8 left-8 border-l border-t border-primary/30 size-12 opacity-50" />
+      <div className="absolute bottom-8 right-8 border-r border-b border-primary/30 size-12 opacity-50" />
+    </div>
+  );
+}
+
+export function LoaderSmall({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
+  const sizes = {
+    sm: 'w-6 h-6',
+    md: 'w-10 h-10',
+    lg: 'w-16 h-16'
+  };
+
+  return (
+    <div className={`relative ${sizes[size]}`}>
+      <div className="absolute inset-0 border-2 border-surface-border rounded-full opacity-20" />
+      <div className="absolute inset-0 border-t-2 border-primary rounded-full animate-spin drop-shadow-[0_0_5px_rgba(43,108,238,0.5)]" />
     </div>
   );
 }

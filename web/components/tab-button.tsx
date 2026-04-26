@@ -12,11 +12,11 @@ export default function TabButton({ icon, label, active = false, onClick }: TabB
       onClick={onClick}
       className={`flex items-center gap-2 px-3 h-full border-b-2 text-xs font-medium rounded-t-sm transition-colors ${
         active
-          ? 'border-primary text-white bg-[#282e39]'
-          : 'border-transparent text-gray-400 hover:text-gray-200 hover:bg-[#282e39]/50'
+          ? 'border-primary text-white bg-surface-border'
+          : 'border-transparent text-gray-400 hover:text-gray-200 hover:bg-surface-border/50'
       }`}
     >
-      <span className={`material-symbols-outlined text-[16px] ${active ? 'text-primary' : ''}`}>
+      <span className={`material-symbols-outlined text-base ${active ? 'text-primary' : ''}`}>
         {icon}
       </span>
       {label}

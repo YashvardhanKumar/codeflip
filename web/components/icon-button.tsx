@@ -24,13 +24,13 @@ export default function IconButton({
   };
   
   const iconSizes = {
-    sm: 'text-[16px]',
-    md: 'text-[18px]'
+    sm: 'text-base',
+    md: 'text-lg'
   };
   
   const variantClasses = {
     default: 'hover:bg-gray-700 text-gray-400 hover:text-white',
-    toolbar: 'hover:bg-[#282e39] text-gray-400 hover:text-white'
+    toolbar: 'hover:bg-surface-border text-gray-400 hover:text-white'
   };
   
   return (

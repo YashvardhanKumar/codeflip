@@ -16,8 +16,8 @@ export default function CodeBlock({ children, inline = false }: CodeBlockProps) 
   }
 
   return (
-    <pre className="bg-[#282e39] p-3 rounded text-gray-200 font-mono text-xs overflow-x-auto">
-      <code>{children}</code>
+    <pre className="bg-surface-border p-3 rounded text-gray-200 font-mono text-xs overflow-x-auto">
+      <code>{code}</code>
     </pre>
   );
 }

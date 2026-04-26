@@ -187,11 +187,11 @@
   }
 
   .btn-primary {
-    @apply px-6 py-2 rounded bg-primary hover:bg-blue-600 text-white text-sm font-bold shadow-[0_0_15px_rgba(43,108,238,0.3)] transition-all;
+    @apply px-6 py-2 rounded bg-primary hover:bg-blue-600 text-white text-sm font-bold shadow-[0_0_15px_rgba(43,108,238,0.3)] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100;
   }
 
   .btn-secondary {
-    @apply px-6 py-2 rounded bg-[#282e39] hover:bg-[#323844] text-white text-sm font-medium transition-colors border border-transparent hover:border-gray-600;
+    @apply px-6 py-2 rounded bg-[#282e39] hover:bg-[#323844] text-white text-sm font-medium transition-colors border border-transparent hover:border-gray-600 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100;
   }
 
   p {
@@ -230,5 +230,53 @@
 @layer utilities {
   .selection\:bg-primary\/30::selection {
     background-color: rgb(43 108 238 / 0.3);
+  }
+
+  @keyframes move-right {
+    0% { transform: translateX(0) scaleX(0); opacity: 0; }
+    50% { transform: translateX(20px) scaleX(1); opacity: 1; }
+    100% { transform: translateX(40px) scaleX(0); opacity: 0; }
+  }
+  @keyframes move-left {
+    0% { transform: translateX(0) scaleX(0); opacity: 0; }
+    50% { transform: translateX(-25px) scaleX(1); opacity: 1; }
+    100% { transform: translateX(-50px) scaleX(0); opacity: 0; }
+  }
+  @keyframes loading-bar {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(300%); }
+  }
+  @keyframes pulse-glow {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.1); }
+  }
+  @keyframes scanning-line {
+    0% { top: 0%; opacity: 0; }
+    5% { opacity: 1; }
+    95% { opacity: 1; }
+    100% { top: 100%; opacity: 0; }
+  }
+  @keyframes grid-move {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(40px); }
+  }
+
+  .animate-move-right {
+    animation: move-right 1s infinite;
+  }
+  .animate-move-left {
+    animation: move-left 1.2s infinite;
+  }
+  .animate-loading-bar {
+    animation: loading-bar 1.5s infinite ease-in-out;
+  }
+  .animate-pulse-glow {
+    animation: pulse-glow 2s infinite ease-in-out;
+  }
+  .animate-scanning {
+    animation: scanning-line 3s infinite linear;
+  }
+  .animate-grid-move {
+    animation: grid-move 2s infinite linear;
   }
 }

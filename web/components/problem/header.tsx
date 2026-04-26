@@ -5,15 +5,15 @@ import IconButton from '@/components/icon-button';
 
 export default function ProblemHeader() {
   return (
-    <header className="h-12.5 shrink-0 flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#282e39] bg-[#1a1a1a] px-4">
-      <div className="flex items-center gap-6">
+    <header className="h-12.5 shrink-0 flex items-center justify-between whitespace-nowrap border-b border-solid border-b-surface-border bg-surface-dark px-4">
+      <div className="flex items-center gap-3">
         <Logo variant="problem" />
         
-        <div className="h-4 w-px bg-gray-600 mx-2 hidden md:block" />
+        <div className="h-4 w-px bg-gray-600 hidden md:block" />
         
         <div className="flex items-center gap-4">
           <Link href="/problems" className="flex items-center gap-1 text-gray-300 hover:text-white text-sm font-medium">
-            <span className="material-symbols-outlined text-[18px]">list</span>
+            <span className="material-symbols-outlined text-lg">list</span>
             Problem List
           </Link>
           
@@ -26,8 +26,8 @@ export default function ProblemHeader() {
       </div>
 
       <div className="flex items-center gap-4">
-        <button className="bg-[#282828] hover:bg-[#323232] text-gray-300 px-3 py-1.5 rounded text-xs font-medium flex items-center gap-2 transition-colors">
-          <span className="material-symbols-outlined text-[16px] text-yellow-500">bug_report</span>
+        <button className="bg-surface-border hover:bg-muted text-gray-300 px-3 py-1.5 rounded text-xs font-medium flex items-center gap-2 transition-colors">
+          <span className="material-symbols-outlined text-base text-yellow-500">bug_report</span>
           Debug
         </button>
         
@@ -37,7 +37,7 @@ export default function ProblemHeader() {
         
         <div className="flex items-center gap-3">
           <button className="text-gray-400 hover:text-white relative">
-            <span className="material-symbols-outlined text-[20px]">notifications</span>
+            <span className="material-symbols-outlined text-xl">notifications</span>
             <span className="absolute top-0 right-0 size-2 bg-red-500 rounded-full" />
           </button>
           

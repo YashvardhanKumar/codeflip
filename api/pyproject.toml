@@ -16,4 +16,7 @@ dependencies = [
     "psycopg2-binary==2.9.11",
     "sqlparse==0.5.3",
     "uv==0.9.11",
+    "drf-spectacular==0.29.0",
+    "drf-spectacular-sidecar==2024.12.1",
+    "requests==2.32.3",
 ]
