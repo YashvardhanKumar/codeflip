@@ -45,8 +45,8 @@ class UserViewSet(viewsets.ModelViewSet):
     def update_profile(self, request):
         """Update current user's profile"""
         serializer = self.get_serializer(
-            request.user, 
-            data=request.data, 
+            request.user,
+            data=request.data,
             partial=request.method == 'PATCH'
         )
         serializer.is_valid(raise_exception=True)
@@ -87,16 +87,16 @@ class UserViewSet(viewsets.ModelViewSet):
         """Get user statistics"""
         user = request.user
         solutions = Solution.objects.filter(user=user)
-        
+
         total_submissions = solutions.count()
         successful = solutions.filter(status=AnswerStatus.ACCEPTED).count()
         unique_problems = solutions.values('problem').distinct().count()
-        
+
         status_breakdown = {}
         for choice in AnswerStatus.choices:
             count = solutions.filter(status=choice[0]).count()
             status_breakdown[choice[1]] = count
-        
+
         data = {
             'total_submissions': total_submissions,
             'successful_submissions': successful,
@@ -104,33 +104,33 @@ class UserViewSet(viewsets.ModelViewSet):
             'success_rate': round((successful / total_submissions * 100), 2) if total_submissions > 0 else 0,
             'status_breakdown': status_breakdown
         }
-        
+
         return Response(data)
 
 
 class CustomAuthToken(ObtainAuthToken):
     """Custom authentication endpoint that returns user data with token"""
-    
+
     def post(self, request, *args, **kwargs):
         username = request.data.get('username')
         password = request.data.get('password')
-        
+
         if not username or not password:
             return Response(
                 {'error': 'Please provide both username and password'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         user = authenticate(username=username, password=password)
-        
+
         if not user:
             return Response(
                 {'error': 'Invalid credentials'},
                 status=status.HTTP_401_UNAUTHORIZED
             )
-        
+
         token, created = Token.objects.get_or_create(user=user)
-        
+
         return Response({
             'token': token.key,
             'user': UserSerializer(user).data
@@ -140,13 +140,13 @@ class CustomAuthToken(ObtainAuthToken):
 class RegisterView(viewsets.ViewSet):
     """User registration endpoint"""
     permission_classes = [AllowAny]
-    
+
     def create(self, request):
         serializer = UserRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         token, created = Token.objects.get_or_create(user=user)
-        
+
         return Response({
             'token': token.key,
             'user': UserSerializer(user).data
@@ -156,7 +156,7 @@ class RegisterView(viewsets.ViewSet):
 class LogoutView(viewsets.ViewSet):
     """User logout endpoint"""
     permission_classes = [IsAuthenticated]
-    
+
     def create(self, request):
         # Delete the user's token
         request.user.auth_token.delete()
@@ -196,10 +196,10 @@ class SocialAuthView(APIView):
         # Since setting up full PSA for a single DRF endpoint is complex,
         # we'll use a more direct approach if possible or mock for now if necessary.
         # But let's try to do it right.
-        
+
         from django.contrib.auth import login
         from social_django.utils import load_backend, load_strategy
-        
+
         strategy = load_strategy(self.request)
         try:
             backend = load_backend(strategy, provider, redirect_uri=None)
@@ -212,5 +212,5 @@ class SocialAuthView(APIView):
             raise serializers.ValidationError({'access_token': str(e)})
         except AuthForbidden as e:
             raise serializers.ValidationError({'access_token': 'Forbidden'})
-        
+
         return user

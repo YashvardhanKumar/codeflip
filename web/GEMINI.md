@@ -3,6 +3,7 @@
 This directory contains the Next.js frontend for CodeRacer.
 
 ## Tech Stack
+
 - **Framework**: Next.js 16 (App Router)
 - **Library**: React 19
 - **Language**: TypeScript
@@ -11,6 +12,7 @@ This directory contains the Next.js frontend for CodeRacer.
 - **API Client**: Axios / SWR
 
 ## Development Standards
+
 - **Components**: Use functional components with TypeScript interfaces for props.
 - **Styling**: Prefer utility classes from Tailwind CSS. Use `cn` helper for conditional classes.
 - **State Management**: Use React Hooks (`useState`, `useEffect`, `useMemo`) and `swr` for data fetching.
@@ -18,5 +20,6 @@ This directory contains the Next.js frontend for CodeRacer.
 - **Linting**: Ensure `npm run lint` passes before committing.
 
 ## Run Commands
+
 - `npm run dev` (local dev)
 - `npm run build` (production build)

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import (
-    Problem, Codeblock, Testcase, Solution, 
+    Problem, Codeblock, Testcase, Solution,
     Tags, ProblemTags, Discuss, DiscussTags
 )
 
@@ -30,12 +30,12 @@ class ProblemAdmin(admin.ModelAdmin):
     search_fields = ('id', 'name', 'problem_description')
     readonly_fields = ('id', 'created_at')
     inlines = [CodeblockInline, TestcaseInline, ProblemTagsInline]
-    
+
     fieldsets = (
         (None, {'fields': ('id', 'name', 'problem_description')}),
         ('Metadata', {'fields': ('created_at',)}),
     )
-    
+
     def get_description_preview(self, obj):
         return obj.problem_description[:100] + '...' if len(obj.problem_description) > 100 else obj.problem_description
     get_description_preview.short_description = 'Description'
@@ -48,7 +48,7 @@ class CodeblockAdmin(admin.ModelAdmin):
     search_fields = ('problem__id', 'imports', 'block', 'runner_code')
     readonly_fields = ('id',)
     raw_id_fields = ('problem',)
-    
+
     def get_block_preview(self, obj):
         return obj.block[:100] + '...' if len(obj.block) > 100 else obj.block
     get_block_preview.short_description = 'Code Block'
@@ -61,7 +61,7 @@ class TestcaseAdmin(admin.ModelAdmin):
     search_fields = ('problem__id', 'input', 'output', 'display_testcase')
     readonly_fields = ('id', 'created_at')
     raw_id_fields = ('problem',)
-    
+
     fieldsets = (
         (None, {'fields': ('id', 'problem', 'input', 'output', 'display_testcase')}),
         ('Metadata', {'fields': ('created_at',)}),
@@ -75,13 +75,13 @@ class SolutionAdmin(admin.ModelAdmin):
     search_fields = ('user__username', 'problem__id')
     readonly_fields = ('id', 'created_at', 'status')
     raw_id_fields = ('user', 'problem')
-    
+
     fieldsets = (
         (None, {'fields': ('id', 'user', 'problem', 'code', 'language')}),
         ('Status', {'fields': ('status',)}),
         ('Metadata', {'fields': ('created_at',)}),
     )
-    
+
     def get_readonly_fields(self, request, obj=None):
         # Make status readonly only for existing objects (after submission)
         if obj:
@@ -117,7 +117,7 @@ class DiscussAdmin(admin.ModelAdmin):
     readonly_fields = ('id', 'created_at')
     raw_id_fields = ('author', 'problem', 'user')
     inlines = [DiscussTagsInline]
-    
+
     fieldsets = (
         (None, {'fields': ('id', 'title', 'body')}),
         ('Relations', {'fields': ('author', 'user', 'problem')}),

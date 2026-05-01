@@ -32,24 +32,27 @@
 // }
 
 // app/layout.tsx
-import type { Metadata } from 'next';
-import { Inter, JetBrains_Mono } from 'next/font/google';
-import './globals.css';
-import { AuthProvider } from '@/components/auth-provider';
-import { Toaster } from 'sonner';
+import type { Metadata } from 'next'
+import { Inter, JetBrains_Mono } from 'next/font/google'
+import './globals.css'
+import { AuthProvider } from '@/components/auth-provider'
+import { Toaster } from 'sonner'
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
-const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-jetbrains' });
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-jetbrains',
+})
 
 export const metadata: Metadata = {
   title: 'CodeRacer - Master Your Coding Skills',
   description: 'A competitive coding platform for developers.',
-};
+}
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
   return (
     <html lang="en" className="dark">
@@ -60,12 +63,14 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className={`${inter.variable} ${jetbrainsMono.variable} font-display antialiased selection:bg-primary/30 bg-background-light dark:bg-background-dark text-slate-900 dark:text-white`}>
+      <body
+        className={`${inter.variable} ${jetbrainsMono.variable} font-display antialiased selection:bg-primary/30 bg-background-light dark:bg-background-dark text-slate-900 dark:text-white`}
+      >
         <AuthProvider>
           {children}
           <Toaster position="top-center" richColors />
         </AuthProvider>
       </body>
     </html>
-  );
+  )
 }

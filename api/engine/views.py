@@ -13,7 +13,7 @@ class RunCodeView(APIView):
     """
     Receives code execution request and proxies it to Judge0
     """
-    authentication_classes = [] 
+    authentication_classes = []
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
@@ -24,9 +24,9 @@ class RunCodeView(APIView):
                 serializer.errors,
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        
+
         # validated = serializer.validated_data
-        
+
         # submission = Solution.objects.create(
         #     problem=validated.get('problem_id'),
         #     user=request.user,
@@ -35,7 +35,7 @@ class RunCodeView(APIView):
         #     status=AnswerStatus.PENDING,
         #     created_at=now()
         # )
-        
+
         try:
             result = submit_to_judge0(serializer.validated_data, is_submit=False)
             return Response(result, status=status.HTTP_200_OK)
@@ -50,7 +50,7 @@ class SubmitCodeView(APIView):
     """
     Receives code execution request and proxies it to Judge0
     """
-    authentication_classes = [] 
+    authentication_classes = []
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
@@ -61,9 +61,9 @@ class SubmitCodeView(APIView):
                 serializer.errors,
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        
+
         validated = serializer.validated_data
-        
+
         # submission = Solution.objects.create(
         #     problem=validated.get('problem_id'),
         #     user=request.user,
@@ -72,11 +72,11 @@ class SubmitCodeView(APIView):
         #     status=AnswerStatus.PENDING,
         #     created_at=now()
         # )
-        
+
         try:
             result = submit_to_judge0(serializer.validated_data, is_submit=True)
             return Response(result, status=status.HTTP_200_OK)
-            
+
 
         except Exception as exc:
             return Response(

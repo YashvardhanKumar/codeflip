@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 // import { useState, useEffect, cache, Suspense, use } from "react"
 // import { PanelLeftClose, PanelLeft } from "lucide-react"
@@ -17,21 +17,21 @@
 //   )
 // }
 
-import Header from '@/components/header';
-import Sidebar from '@/components/sidebar';
-import DailyChallenge from '@/components/daily-challenge';
-import ProblemTable from '@/components/problem-table';
-import PageTransition from '@/components/page-transition';
+import Header from '@/components/header'
+import Sidebar from '@/components/sidebar'
+import DailyChallenge from '@/components/daily-challenge'
+import ProblemTable from '@/components/problem-table'
+import PageTransition from '@/components/page-transition'
 
 export default function ProblemsPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background-light dark:bg-background-dark">
       <Header />
-      
+
       <PageTransition>
         <div className="flex-1 w-full max-w-350 mx-auto p-4 md:p-6 lg:p-8 flex flex-col lg:flex-row gap-8">
           <Sidebar />
-          
+
           <main className="flex-1 min-w-0 flex flex-col gap-6">
             {/* Top Section: Daily Challenge & Heading */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -42,12 +42,16 @@ export default function ProblemsPage() {
                 </h1>
                 <div className="flex flex-wrap gap-3">
                   <button className="flex items-center gap-2 px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-lg text-sm font-bold shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all transform cursor-pointer">
-                    <span className="material-symbols-outlined text-lg">shuffle</span>
+                    <span className="material-symbols-outlined text-lg">
+                      shuffle
+                    </span>
                     Pick One
                   </button>
                   <div className="relative group">
                     <div className="flex items-center gap-2 px-4 py-2 bg-slate-200 dark:bg-surface-border text-slate-700 dark:text-text-secondary rounded-lg text-sm font-medium cursor-pointer hover:bg-slate-300 dark:hover:bg-muted hover:scale-105 active:scale-95 transition-all transform">
-                      <span className="material-symbols-outlined text-lg">calendar_month</span>
+                      <span className="material-symbols-outlined text-lg">
+                        calendar_month
+                      </span>
                       Session
                     </div>
                   </div>
@@ -55,10 +59,10 @@ export default function ProblemsPage() {
               </div>
 
               <DailyChallenge />
-              </div>
+            </div>
 
-              {/* Problem List Controls */}
-              <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center justify-between mt-2">
+            {/* Problem List Controls */}
+            <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center justify-between mt-2">
               <div className="relative flex-1 max-w-md group">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none group-focus-within:text-primary transition-colors">
                   <span className="material-symbols-outlined text-slate-400 dark:text-text-secondary text-xl">
@@ -78,11 +82,11 @@ export default function ProblemsPage() {
                   <option>Most Votes</option>
                 </select>
               </div>
-              </div>
+            </div>
             <ProblemTable />
           </main>
         </div>
       </PageTransition>
     </div>
-  );
+  )
 }

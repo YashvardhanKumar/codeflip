@@ -1,23 +1,19 @@
 // components/problem/TestPanel.tsx
-"use client";
+'use client'
 
-import {
-  Language,
-  Problem,
-  User,
-} from "@/lib/models";
+import { Language, Problem, User } from '@/lib/models'
 
 interface Props {
-  problem: Problem;
-  user: User | null;
-  language?: Language;
-  runData: any[] | null;
-  isLoading: boolean;
-  error: string | null;
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
-  activeCase: number;
-  setActiveCase: (index: number) => void;
+  problem: Problem
+  user: User | null
+  language?: Language
+  runData: any[] | null
+  isLoading: boolean
+  error: string | null
+  activeTab: string
+  setActiveTab: (tab: string) => void
+  activeCase: number
+  setActiveCase: (index: number) => void
 }
 
 export default function TestPanel({
@@ -34,49 +30,51 @@ export default function TestPanel({
 }: Props) {
   const testcases = problem.testcases
     .filter((e) => e.display_testcase == true)
-    .sort((a, b) => a.id - b.id);
+    .sort((a, b) => a.id - b.id)
 
   const getTabStatusClasses = (index: number) => {
-    const result = runData?.[index];
-    const isActive = activeCase === index;
+    const result = runData?.[index]
+    const isActive = activeCase === index
 
     if (result) {
-      const isAccepted = result.status?.id === 3;
+      const isAccepted = result.status?.id === 3
       if (isAccepted) {
         return isActive
-          ? "bg-green-600/20 text-green-500 border-green-500/50"
-          : "text-green-500 hover:bg-green-600/10 border-transparent";
+          ? 'bg-green-600/20 text-green-500 border-green-500/50'
+          : 'text-green-500 hover:bg-green-600/10 border-transparent'
       } else {
         return isActive
-          ? "bg-red-600/20 text-red-500 border-red-500/50"
-          : "text-red-500 hover:bg-red-600/10 border-transparent";
+          ? 'bg-red-600/20 text-red-500 border-red-500/50'
+          : 'text-red-500 hover:bg-red-600/10 border-transparent'
       }
     }
 
     return isActive
-      ? "bg-surface-border text-white border-surface-border"
-      : "text-gray-400 hover:text-white hover:bg-surface-border border-transparent";
-  };
+      ? 'bg-surface-border text-white border-surface-border'
+      : 'text-gray-400 hover:text-white hover:bg-surface-border border-transparent'
+  }
 
   return (
     <div className="h-full border-t border-surface-border bg-surface-dark flex flex-col shrink-0">
       {/* Panel Header */}
       <div className="flex items-center px-4 py-2 gap-4">
         <button
-          onClick={() => setActiveTab("testcase")}
-          className={`flex items-center gap-2 text-xs font-bold border-b-2 pb-2 transition-all active:scale-95 ${activeTab === "testcase"
-              ? "text-white border-primary"
-              : "text-gray-500 hover:text-white border-transparent"
-            }`}
+          onClick={() => setActiveTab('testcase')}
+          className={`flex items-center gap-2 text-xs font-bold border-b-2 pb-2 transition-all active:scale-95 ${
+            activeTab === 'testcase'
+              ? 'text-white border-primary'
+              : 'text-gray-500 hover:text-white border-transparent'
+          }`}
         >
           Testcase
         </button>
         <button
-          onClick={() => setActiveTab("result")}
-          className={`flex items-center gap-2 text-xs font-bold border-b-2 pb-2 transition-all active:scale-95 ${activeTab === "result"
-              ? "text-white border-primary"
-              : "text-gray-500 hover:text-white border-transparent"
-            }`}
+          onClick={() => setActiveTab('result')}
+          className={`flex items-center gap-2 text-xs font-bold border-b-2 pb-2 transition-all active:scale-95 ${
+            activeTab === 'result'
+              ? 'text-white border-primary'
+              : 'text-gray-500 hover:text-white border-transparent'
+          }`}
         >
           Test Result
         </button>
@@ -84,36 +82,39 @@ export default function TestPanel({
 
       {/* Panel Content */}
       <div className="flex-1 overflow-y-auto px-4 pb-4">
-        {activeTab === "testcase" && (
+        {activeTab === 'testcase' && (
           <div key="testcase-tab" className="animate-in fade-in duration-200">
             <div className="flex gap-2 mb-4 mt-2">
               {testcases.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => setActiveCase(index)}
-                  className={`px-4 py-1.5 rounded-md text-xs font-medium transition-all active:scale-95 border ${activeCase === index
-                    ? "bg-surface-border text-white border-surface-border"
-                    : "text-gray-400 hover:text-white hover:bg-surface-border border-transparent"}`}
+                  className={`px-4 py-1.5 rounded-md text-xs font-medium transition-all active:scale-95 border ${
+                    activeCase === index
+                      ? 'bg-surface-border text-white border-surface-border'
+                      : 'text-gray-400 hover:text-white hover:bg-surface-border border-transparent'
+                  }`}
                 >
                   Case {index + 1}
                 </button>
               ))}
 
               <button className="text-gray-400 hover:text-white hover:bg-surface-border size-7 flex items-center justify-center rounded-md transition-all active:scale-90">
-                <span className="material-symbols-outlined text-lg">
-                  add
-                </span>
+                <span className="material-symbols-outlined text-lg">add</span>
               </button>
             </div>
 
-            <div key={activeCase} className="space-y-3 font-mono text-xs animate-in fade-in duration-200">
+            <div
+              key={activeCase}
+              className="space-y-3 font-mono text-xs animate-in fade-in duration-200"
+            >
               {testcases &&
                 testcases
                   .at(activeCase)
-                  ?.input.replaceAll("\r\n", "\n")
-                  .split("\n")
+                  ?.input.replaceAll('\r\n', '\n')
+                  .split('\n')
                   .map((line, i) => {
-                    const [key, value] = line.split("=", 2);
+                    const [key, value] = line.split('=', 2)
                     return (
                       <div key={i}>
                         <p className="text-gray-400 mb-1">{key} = </p>
@@ -121,13 +122,16 @@ export default function TestPanel({
                           {value}
                         </div>
                       </div>
-                    );
+                    )
                   })}
             </div>
           </div>
         )}
-        {activeTab === "result" && (
-          <div key="result-tab" className="text-gray-400 text-sm animate-in fade-in duration-200">
+        {activeTab === 'result' && (
+          <div
+            key="result-tab"
+            className="text-gray-400 text-sm animate-in fade-in duration-200"
+          >
             {isLoading ? (
               <div className="flex items-center gap-2 py-4">
                 <div className="animate-spin size-4 border-2 border-primary border-t-transparent rounded-full"></div>
@@ -136,7 +140,9 @@ export default function TestPanel({
             ) : error ? (
               <div className="py-4">
                 <div className="text-red-500 font-bold mb-2 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-sm">error</span>
+                  <span className="material-symbols-outlined text-sm">
+                    error
+                  </span>
                   Error
                 </div>
                 <pre className="bg-surface-border p-3 rounded text-red-400 border border-red-900/50 font-mono text-xs whitespace-pre-wrap">
@@ -144,8 +150,13 @@ export default function TestPanel({
                 </pre>
               </div>
             ) : runData && runData[activeCase] ? (
-              <div key={activeCase} className="space-y-3 pb-3 animate-in fade-in duration-200">
-                <div className={`font-bold ${runData[activeCase]?.status?.id === 3 ? 'text-green-500' : 'text-red-500'}`}>
+              <div
+                key={activeCase}
+                className="space-y-3 pb-3 animate-in fade-in duration-200"
+              >
+                <div
+                  className={`font-bold ${runData[activeCase]?.status?.id === 3 ? 'text-green-500' : 'text-red-500'}`}
+                >
                   {runData[activeCase]?.status?.description}
                 </div>
                 <div className="flex gap-2 mb-4 mt-2">
@@ -162,23 +173,26 @@ export default function TestPanel({
                 <div className="space-y-3 font-mono text-xs">
                   <p className="text-gray-400 mb-1">Input</p>
                   {testcases[activeCase]?.input
-                    .replaceAll("\r\n", "\n")
-                    .split("\n")
+                    .replaceAll('\r\n', '\n')
+                    .split('\n')
                     .map((line, i) => {
-                      const [key, value] = line.split("=", 2);
+                      const [key, value] = line.split('=', 2)
                       return (
-                        <div key={i} className="bg-surface-border p-2 rounded text-white border border-gray-700">
+                        <div
+                          key={i}
+                          className="bg-surface-border p-2 rounded text-white border border-gray-700"
+                        >
                           <p className="text-gray-400 mb-1">{key} = </p>
                           <div>{value}</div>
                         </div>
-                      );
+                      )
                     })}
                 </div>
                 <div className="space-y-3 font-mono text-xs">
                   <p className="text-gray-400 mb-1">Output</p>
                   <div className="bg-surface-border p-2 rounded text-white border border-gray-700">
                     <code className="whitespace-pre-wrap">
-                      {runData[activeCase]?.stdout || "(no output)"}
+                      {runData[activeCase]?.stdout || '(no output)'}
                     </code>
                   </div>
                 </div>
@@ -194,7 +208,9 @@ export default function TestPanel({
                   <div className="space-y-3 font-mono text-xs">
                     <p className="text-red-400 mb-1">Standard Error</p>
                     <div className="bg-surface-border p-2 rounded text-red-400 border border-red-900/50">
-                      <pre className="whitespace-pre-wrap">{runData[activeCase]?.stderr}</pre>
+                      <pre className="whitespace-pre-wrap">
+                        {runData[activeCase]?.stderr}
+                      </pre>
                     </div>
                   </div>
                 )}
@@ -202,7 +218,9 @@ export default function TestPanel({
                   <div className="space-y-3 font-mono text-xs">
                     <p className="text-red-400 mb-1">Compile Output</p>
                     <div className="bg-surface-border p-2 rounded text-red-400 border border-red-900/50">
-                      <pre className="whitespace-pre-wrap">{runData[activeCase]?.compile_output}</pre>
+                      <pre className="whitespace-pre-wrap">
+                        {runData[activeCase]?.compile_output}
+                      </pre>
                     </div>
                   </div>
                 )}
@@ -214,5 +232,5 @@ export default function TestPanel({
         )}
       </div>
     </div>
-  );
+  )
 }

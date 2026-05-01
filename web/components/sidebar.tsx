@@ -1,16 +1,16 @@
 // components/Sidebar.tsx
-import useSWR from 'swr';
-import FilterAccordion from './filter-accordion';
-import { BASE_URL } from '@/lib/constants';
-import { Tag } from '@/lib/models';
-import { Skeleton } from './ui/skeleton';
-import { motion } from 'framer-motion';
-import { useAuth } from './auth-provider';
-import { Button } from './ui/button';
-import Link from 'next/link';
+import useSWR from 'swr'
+import FilterAccordion from './filter-accordion'
+import { BASE_URL } from '@/lib/constants'
+import { Tag } from '@/lib/models'
+import { Skeleton } from './ui/skeleton'
+import { motion } from 'framer-motion'
+import { useAuth } from './auth-provider'
+import { Button } from './ui/button'
+import Link from 'next/link'
 
 export default function Sidebar() {
-  const { user } = useAuth();
+  const { user } = useAuth()
   const fetcher = (url: string) => fetch(url).then((r) => r.json())
   const { data: tags, isLoading } = useSWR(`${BASE_URL}/api/tags/`, fetcher)
 
@@ -19,35 +19,43 @@ export default function Sidebar() {
     show: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
+        staggerChildren: 0.1,
+      },
+    },
+  }
 
   const item = {
     hidden: { opacity: 0, x: -20 },
-    show: { opacity: 1, x: 0 }
-  };
+    show: { opacity: 1, x: 0 },
+  }
 
   return (
     <aside className="w-full lg:w-72 shrink-0 flex flex-col gap-6">
       {!user && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="p-5 rounded-2xl bg-white dark:bg-background-dark border border-slate-200 dark:border-surface-border shadow-sm flex flex-col gap-4"
         >
           <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center">
-            <span className="material-symbols-outlined text-primary">login</span>
+            <span className="material-symbols-outlined text-primary">
+              login
+            </span>
           </div>
           <div>
-            <h4 className="font-bold text-slate-900 dark:text-white mb-1">Track your progress</h4>
+            <h4 className="font-bold text-slate-900 dark:text-white mb-1">
+              Track your progress
+            </h4>
             <p className="text-xs text-slate-500 dark:text-text-secondary leading-relaxed">
-              Sign in to save your solutions, track stats, and compete on the leaderboard.
+              Sign in to save your solutions, track stats, and compete on the
+              leaderboard.
             </p>
           </div>
           <Link href="/login" className="w-full">
-            <Button size="sm" className="w-full bg-primary hover:bg-primary/90 text-white font-bold">
+            <Button
+              size="sm"
+              className="w-full bg-primary hover:bg-primary/90 text-white font-bold"
+            >
               Sign In
             </Button>
           </Link>
@@ -60,7 +68,7 @@ export default function Sidebar() {
         <button className="text-primary text-sm font-medium">Reset</button>
       </div>
 
-      <motion.div 
+      <motion.div
         variants={container}
         initial="hidden"
         animate="show"
@@ -68,11 +76,7 @@ export default function Sidebar() {
       >
         {/* Status Accordion */}
         <motion.div variants={item}>
-          <FilterAccordion
-            icon="task_alt"
-            title="Status"
-            defaultOpen
-          >
+          <FilterAccordion icon="task_alt" title="Status" defaultOpen>
             <div className="pb-3 pt-1 flex flex-col gap-2">
               <CheckboxItem label="Solved" />
               <CheckboxItem label="Unsolved" />
@@ -110,10 +114,7 @@ export default function Sidebar() {
 
         {/* Tags Accordion */}
         <motion.div variants={item}>
-          <FilterAccordion
-            icon="label"
-            title="Tags"
-          >
+          <FilterAccordion icon="label" title="Tags">
             <div className="pb-3 pt-2 flex flex-wrap gap-2">
               {isLoading ? (
                 <>
@@ -137,14 +138,16 @@ export default function Sidebar() {
       </motion.div>
 
       {/* Company Tags Promo */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.5 }}
         className="rounded-xl bg-linear-to-br from-primary/20 to-transparent p-4 border border-primary/20"
       >
         <div className="flex items-start gap-3">
-          <span className="material-symbols-outlined text-primary">business_center</span>
+          <span className="material-symbols-outlined text-primary">
+            business_center
+          </span>
           <div>
             <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
               Company Tags
@@ -159,18 +162,18 @@ export default function Sidebar() {
         </div>
       </motion.div>
     </aside>
-  );
+  )
 }
 
 // Checkbox Item Component
 function CheckboxItem({
   label,
-  checkboxColor = "checked:bg-primary checked:border-primary",
-  labelColor = "text-slate-600 dark:text-text-secondary"
+  checkboxColor = 'checked:bg-primary checked:border-primary',
+  labelColor = 'text-slate-600 dark:text-text-secondary',
 }: {
-  label: string;
-  checkboxColor?: string;
-  labelColor?: string;
+  label: string
+  checkboxColor?: string
+  labelColor?: string
 }) {
   return (
     <label className="flex items-center gap-3 cursor-pointer group/item">
@@ -183,9 +186,11 @@ function CheckboxItem({
           check
         </span>
       </div>
-      <span className={`text-sm group-hover/item:text-primary transition-colors ${labelColor}`}>
+      <span
+        className={`text-sm group-hover/item:text-primary transition-colors ${labelColor}`}
+      >
         {label}
       </span>
     </label>
-  );
+  )
 }

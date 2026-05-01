@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly, AllowAny
 from django.db.models import Count, Q
 from .models import (
-    Problem, Codeblock, Testcase, Solution, 
+    Problem, Codeblock, Testcase, Solution,
     Tags, Discuss, AnswerStatus
 )
 from .serializers import (
@@ -59,22 +59,22 @@ class ProblemViewSet(viewsets.ModelViewSet):
         """Get statistics for a specific problem"""
         problem = self.get_object()
         solutions = problem.solutions.all()
-        
+
         total = solutions.count()
         successful = solutions.filter(status=AnswerStatus.ACCEPTED).count()
-        
+
         status_breakdown = {}
         for choice in AnswerStatus.choices:
             count = solutions.filter(status=choice[0]).count()
             status_breakdown[choice[1]] = count
-        
+
         language_breakdown = {}
         from user.models import CodingLanguage
         for choice in CodingLanguage.choices:
             count = solutions.filter(language=choice[0]).count()
             if count > 0:
                 language_breakdown[choice[1]] = count
-        
+
         data = {
             'total_submissions': total,
             'successful_submissions': successful,
@@ -82,7 +82,7 @@ class ProblemViewSet(viewsets.ModelViewSet):
             'status_breakdown': status_breakdown,
             'language_breakdown': language_breakdown
         }
-        
+
         serializer = ProblemStatisticsSerializer(data)
         return Response(serializer.data)
 
@@ -91,12 +91,12 @@ class ProblemViewSet(viewsets.ModelViewSet):
         """Get all solutions for a problem"""
         problem = self.get_object()
         solutions = problem.solutions.select_related('user').all()
-        
+
         # Filter by status if provided
         status_filter = request.query_params.get('status', None)
         if status_filter:
             solutions = solutions.filter(status=status_filter)
-        
+
         serializer = SolutionListSerializer(solutions, many=True)
         return Response(serializer.data)
 
@@ -114,10 +114,10 @@ class ProblemViewSet(viewsets.ModelViewSet):
         tag_name = request.query_params.get('tag', None)
         if not tag_name:
             return Response(
-                {'error': 'tag parameter is required'}, 
+                {'error': 'tag parameter is required'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         problems = self.queryset.filter(tags__tags__icontains=tag_name)
         serializer = self.get_serializer(problems, many=True)
         return Response(serializer.data)
@@ -127,10 +127,10 @@ class ProblemViewSet(viewsets.ModelViewSet):
         """Get problems the user has attempted"""
         if not request.user.is_authenticated:
             return Response(
-                {'error': 'Authentication required'}, 
+                {'error': 'Authentication required'},
                 status=status.HTTP_401_UNAUTHORIZED
             )
-        
+
         problem_ids = Solution.objects.filter(user=request.user).values_list('problem_id', flat=True).distinct()
         problems = self.queryset.filter(id__in=problem_ids)
         serializer = self.get_serializer(problems, many=True)
@@ -179,21 +179,21 @@ class SolutionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        
+
         # Users can only see their own solutions unless they're staff
         if not self.request.user.is_staff:
             queryset = queryset.filter(user=self.request.user)
-        
+
         # Filter by problem_id if provided
         problem_id = self.request.query_params.get('problem_id', None)
         if problem_id:
             queryset = queryset.filter(problem_id=problem_id)
-        
+
         # Filter by status if provided
         status_filter = self.request.query_params.get('status', None)
         if status_filter:
             queryset = queryset.filter(status=status_filter)
-        
+
         return queryset
 
     @action(detail=False, methods=['post'])
@@ -201,39 +201,39 @@ class SolutionViewSet(viewsets.ModelViewSet):
         """Submit a solution for evaluation"""
         serializer = SolutionSubmitSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
+
         problem_id = serializer.validated_data['problem_id']
         code = serializer.validated_data['code']
         language = serializer.validated_data.get('language', request.user.default_lang)
-        
+
         # Get problem and relevant codeblock
         try:
             problem = Problem.objects.get(id=problem_id)
             codeblock = problem.codeblocks.get(language=language)
         except (Problem.DoesNotExist, Codeblock.DoesNotExist):
             return Response(
-                {'error': 'Invalid problem or language selection'}, 
+                {'error': 'Invalid problem or language selection'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-            
+
         # Construct full source code for evaluation
         full_code = f"{codeblock.imports}\n\n{code}\n\n{codeblock.runner_code}"
-        
+
         # Prepare evaluation payload
         evaluation_payload = {
             'problem_id': problem_id,
             'source_code': full_code,
             'language_id': JUDGE0_LANGUAGE_MAP.get(language, 71), # Default to Python if missing
         }
-        
+
         try:
             # Run against all testcases
             result = submit_to_judge0(evaluation_payload, is_submit=True)
-            
+
             # Map Judge0 status to internal status
             judge0_id = result.get('status', {}).get('id', 4) # Default to Wrong Answer if unknown
             internal_status = JUDGE0_STATUS_MAP.get(judge0_id, AnswerStatus.WRONG_ANSWER)
-            
+
             # Create solution with actual status
             solution = Solution.objects.create(
                 user=request.user,
@@ -242,10 +242,10 @@ class SolutionViewSet(viewsets.ModelViewSet):
                 language=language,
                 status=internal_status
             )
-            
+
             response_serializer = SolutionDetailSerializer(solution)
             return Response(response_serializer.data, status=status.HTTP_201_CREATED)
-            
+
         except Exception as exc:
             return Response(
                 {"error": f"Evaluation failed: {str(exc)}"},
@@ -263,20 +263,20 @@ class SolutionViewSet(viewsets.ModelViewSet):
     def statistics(self, request):
         """Get user's solution statistics"""
         solutions = Solution.objects.filter(user=request.user)
-        
+
         total = solutions.count()
         status_counts = {}
         for choice in AnswerStatus.choices:
             count = solutions.filter(status=choice[0]).count()
             status_counts[choice[1]] = count
-        
+
         data = {
             'total_submissions': total,
             'successful_submissions': status_counts.get('Accepted', 0),
             'status_breakdown': status_counts,
             'unique_problems_attempted': solutions.values('problem').distinct().count()
         }
-        
+
         return Response(data)
 
 
@@ -325,7 +325,7 @@ class DiscussViewSet(viewsets.ModelViewSet):
         # Only author can update
         if serializer.instance.author != self.request.user:
             return Response(
-                {'error': 'You can only edit your own discussions'}, 
+                {'error': 'You can only edit your own discussions'},
                 status=status.HTTP_403_FORBIDDEN
             )
         serializer.save()
@@ -334,7 +334,7 @@ class DiscussViewSet(viewsets.ModelViewSet):
         # Only author can delete
         if instance.author != self.request.user and not self.request.user.is_staff:
             return Response(
-                {'error': 'You can only delete your own discussions'}, 
+                {'error': 'You can only delete your own discussions'},
                 status=status.HTTP_403_FORBIDDEN
             )
         instance.delete()
@@ -352,10 +352,10 @@ class DiscussViewSet(viewsets.ModelViewSet):
         problem_id = request.query_params.get('problem_id', None)
         if not problem_id:
             return Response(
-                {'error': 'problem_id parameter is required'}, 
+                {'error': 'problem_id parameter is required'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         discussions = self.queryset.filter(problem_id=problem_id)
         serializer = self.get_serializer(discussions, many=True)
         return Response(serializer.data)

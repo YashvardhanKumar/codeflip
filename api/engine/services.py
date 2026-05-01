@@ -29,16 +29,16 @@ def format_stdin(raw_input: str) -> str:
     """
     if not raw_input:
         return ""
-    
+
     lines = raw_input.strip().splitlines()
     formatted_lines = []
-    
+
     for line in lines:
         if '=' in line:
             value = line.split('=', 1)[1].strip()
         else:
             value = line.strip()
-            
+
         # Handle array format [1,2,3] -> "3 1 2 3"
         if value.startswith('[') and value.endswith(']'):
             try:
@@ -48,9 +48,9 @@ def format_stdin(raw_input: str) -> str:
                     continue
             except Exception:
                 pass
-        
+
         formatted_lines.append(value)
-        
+
     return "\n".join(formatted_lines)
 
 def submit_to_judge0(payload: dict, is_submit: bool) -> dict:
@@ -66,10 +66,10 @@ def submit_to_judge0(payload: dict, is_submit: bool) -> dict:
 
     # Prepare base payload (without stdin/expected_output)
     base_judge0_payload = {
-        k: v for k, v in merged_payload.items() 
+        k: v for k, v in merged_payload.items()
         if k in VALID_JUDGE0_FIELDS and k not in ['stdin', 'expected_output'] and v is not None
     }
-    
+
     # Pre-encode source code
     if 'source_code' in base_judge0_payload:
         base_judge0_payload['source_code'] = encode_base64(base_judge0_payload['source_code'])
@@ -79,11 +79,11 @@ def submit_to_judge0(payload: dict, is_submit: bool) -> dict:
     if specific_stdin is not None:
         # Normalize and encode the provided stdin
         formatted_stdin = format_stdin(specific_stdin)
-        
+
         judge0_payload = {**base_judge0_payload}
         if formatted_stdin:
             judge0_payload['stdin'] = encode_base64(formatted_stdin)
-            
+
         response = requests.post(
             url=f'{JUDGE0_URL}/submissions?base64_encoded=true&wait=true',
             json=judge0_payload,
@@ -91,7 +91,7 @@ def submit_to_judge0(payload: dict, is_submit: bool) -> dict:
         )
         response.raise_for_status()
         res = response.json()
-        
+
         # Decode results
         for field in ['stdout', 'stderr', 'compile_output', 'message']:
             if res.get(field):
@@ -105,12 +105,12 @@ def submit_to_judge0(payload: dict, is_submit: bool) -> dict:
     for tc in testcases:
         # Create fresh payload for each case
         judge0_payload = {**base_judge0_payload}
-        
+
         # Format and encode stdin from testcase
         formatted_tc_stdin = format_stdin(tc.input)
         if formatted_tc_stdin:
             judge0_payload['stdin'] = encode_base64(formatted_tc_stdin)
-            
+
         # Add expected output from testcase
         if tc.output:
             judge0_payload['expected_output'] = encode_base64(tc.output)
@@ -130,7 +130,7 @@ def submit_to_judge0(payload: dict, is_submit: bool) -> dict:
                     res[field] = base64.b64decode(res[field]).decode("utf-8")
                 except Exception:
                     pass
-        
+
         # Ensure expected_output is present and matches the original tc.output
         res['expected_output'] = tc.output
 

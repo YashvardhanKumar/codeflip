@@ -1,24 +1,24 @@
 // components/problem/ProblemDescription.tsx
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import TabButton from '@/components/tab-button';
-import DifficultyBadge from '@/components/difficulty-badge';
-import CodeBlock from '@/components/code-block';
-import { ResizablePanel } from '../ui/resizable';
-import { Problem, Solution, Status } from '@/lib/models';
-import Script from 'next/script';
-import { useAuth } from '@/components/auth-provider';
-import useSWR from 'swr';
-import { BASE_URL } from '@/lib/constants';
-import { Loader } from '@/components/loader';
-import { format } from 'date-fns';
-import { CheckCircle2, XCircle, Clock, AlertCircle } from 'lucide-react';
-import Link from 'next/link';
+import { useState, useEffect } from 'react'
+import TabButton from '@/components/tab-button'
+import DifficultyBadge from '@/components/difficulty-badge'
+import CodeBlock from '@/components/code-block'
+import { ResizablePanel } from '../ui/resizable'
+import { Problem, Solution, Status } from '@/lib/models'
+import Script from 'next/script'
+import { useAuth } from '@/components/auth-provider'
+import useSWR from 'swr'
+import { BASE_URL } from '@/lib/constants'
+import { Loader } from '@/components/loader'
+import { format } from 'date-fns'
+import { CheckCircle2, XCircle, Clock, AlertCircle } from 'lucide-react'
+import Link from 'next/link'
 
 declare global {
   interface Window {
-    MathJax: any;
+    MathJax: any
   }
 }
 
@@ -26,25 +26,28 @@ const tabs = [
   { id: 'description', label: 'Description', icon: 'description' },
   { id: 'editorial', label: 'Editorial', icon: 'edit_note' },
   { id: 'solutions', label: 'Solutions', icon: 'science' },
-  { id: 'submissions', label: 'Submissions', icon: 'history' }
-];
+  { id: 'submissions', label: 'Submissions', icon: 'history' },
+]
 
 interface Props {
   problem: Problem
 }
 
 export default function ProblemDescription({ problem }: Props) {
-  const [activeTab, setActiveTab] = useState('description');
-  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState('description')
+  const { user } = useAuth()
 
   useEffect(() => {
     if (window.MathJax && window.MathJax.typesetPromise) {
-      window.MathJax.typesetPromise();
+      window.MathJax.typesetPromise()
     }
-  }, [problem, activeTab]);
+  }, [problem, activeTab])
 
   return (
-    <ResizablePanel defaultSize={50} className="flex flex-col border-r border-surface-border bg-background-dark overflow-hidden relative">
+    <ResizablePanel
+      defaultSize={50}
+      className="flex flex-col border-r border-surface-border bg-background-dark overflow-hidden relative"
+    >
       <Script id="mathjax-config" strategy="lazyOnload">
         {`
           window.MathJax = {
@@ -66,7 +69,7 @@ export default function ProblemDescription({ problem }: Props) {
       />
       {/* Tabs Header */}
       <div className="h-10 bg-surface-dark flex items-center px-2 gap-1 border-b border-surface-border shrink-0">
-        {tabs.map(tab => (
+        {tabs.map((tab) => (
           <TabButton
             key={tab.id}
             icon={tab.icon}
@@ -79,9 +82,15 @@ export default function ProblemDescription({ problem }: Props) {
 
       {/* Content Scroll Area */}
       <div className="flex-1 overflow-y-auto p-5 pb-20">
-        {activeTab === 'description' && <DescriptionContent problem={problem} />}
-        {activeTab === 'editorial' && <div className="text-gray-400">Editorial content...</div>}
-        {activeTab === 'solutions' && <div className="text-gray-400">Solutions content...</div>}
+        {activeTab === 'description' && (
+          <DescriptionContent problem={problem} />
+        )}
+        {activeTab === 'editorial' && (
+          <div className="text-gray-400">Editorial content...</div>
+        )}
+        {activeTab === 'solutions' && (
+          <div className="text-gray-400">Solutions content...</div>
+        )}
         {activeTab === 'submissions' && (
           <SubmissionsTab problemId={problem.id} authenticated={!!user} />
         )}
@@ -93,22 +102,29 @@ export default function ProblemDescription({ problem }: Props) {
           <span className="material-symbols-outlined text-base">forum</span>
           Discussion (32)
         </button>
-        <span className="text-xs text-gray-600">Copyright © 2025 Coderacer</span>
+        <span className="text-xs text-gray-600">
+          Copyright © 2025 Coderacer
+        </span>
       </div>
     </ResizablePanel>
-  );
+  )
 }
 
 function DescriptionContent({ problem }: Props) {
-  const [showTags, setShowTags] = useState(false);
+  const [showTags, setShowTags] = useState(false)
 
   return (
     <>
       {/* Title & Header */}
       <div className="flex justify-between items-start mb-4">
-        <h1 className="text-2xl font-bold text-white tracking-tight">{problem.id}. {problem.name}</h1>
+        <h1 className="text-2xl font-bold text-white tracking-tight">
+          {problem.id}. {problem.name}
+        </h1>
         <div className="flex gap-2">
-          <a href="#" className="text-gray-500 hover:text-white transition-colors">
+          <a
+            href="#"
+            className="text-gray-500 hover:text-white transition-colors"
+          >
             <span className="material-symbols-outlined text-xl">help</span>
           </a>
         </div>
@@ -118,13 +134,17 @@ function DescriptionContent({ problem }: Props) {
       <div className="flex gap-2 mb-4 flex-wrap items-center">
         <DifficultyBadge difficulty={problem.difficulty ?? 'EASY'} />
         <div className="h-5 w-px bg-gray-700" />
-        <button 
+        <button
           onClick={() => setShowTags(!showTags)}
           className="flex items-center gap-1 bg-surface-border hover:bg-muted px-2 py-0.5 rounded-full text-xs text-gray-300 transition-colors group"
         >
           <span className="material-symbols-outlined text-xs">sell</span>
           Topics
-          <span className={`material-symbols-outlined text-sm transition-transform duration-200 ${showTags ? 'rotate-180' : ''}`}>keyboard_arrow_down</span>
+          <span
+            className={`material-symbols-outlined text-sm transition-transform duration-200 ${showTags ? 'rotate-180' : ''}`}
+          >
+            keyboard_arrow_down
+          </span>
         </button>
       </div>
 
@@ -132,8 +152,8 @@ function DescriptionContent({ problem }: Props) {
       {showTags && problem.tags && problem.tags.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-4 animate-in fade-in duration-200">
           {problem.tags.map((tag) => (
-            <span 
-              key={tag.id} 
+            <span
+              key={tag.id}
               className="px-2 py-1 rounded bg-surface-border text-xs text-gray-400 font-medium hover:text-white transition-colors cursor-default"
             >
               {tag.tags}
@@ -144,51 +164,81 @@ function DescriptionContent({ problem }: Props) {
 
       {/* Problem Text */}
       <div className="text-sm text-gray-300 leading-relaxed space-y-4">
-        <div dangerouslySetInnerHTML={{ __html: problem?.problem_description ?? '' }}></div>
+        <div
+          dangerouslySetInnerHTML={{
+            __html: problem?.problem_description ?? '',
+          }}
+        ></div>
 
         <div className="mt-12 border-t border-surface-border pt-6 flex flex-wrap gap-4">
           <div className="flex items-center gap-1 cursor-pointer group">
-            <span className="material-symbols-outlined text-gray-500 group-hover:text-green-500 transition-colors text-xl">thumb_up</span>
-            <span className="text-gray-500 text-xs font-bold group-hover:text-white">24.5K</span>
+            <span className="material-symbols-outlined text-gray-500 group-hover:text-green-500 transition-colors text-xl">
+              thumb_up
+            </span>
+            <span className="text-gray-500 text-xs font-bold group-hover:text-white">
+              24.5K
+            </span>
           </div>
           <div className="flex items-center gap-1 cursor-pointer group">
-            <span className="material-symbols-outlined text-gray-500 group-hover:text-red-500 transition-colors text-xl">thumb_down</span>
-            <span className="text-gray-500 text-xs font-bold group-hover:text-white">1.2K</span>
+            <span className="material-symbols-outlined text-gray-500 group-hover:text-red-500 transition-colors text-xl">
+              thumb_down
+            </span>
+            <span className="text-gray-500 text-xs font-bold group-hover:text-white">
+              1.2K
+            </span>
           </div>
           <div className="flex items-center gap-1 cursor-pointer group ml-auto">
-            <span className="material-symbols-outlined text-gray-500 group-hover:text-yellow-400 transition-colors text-xl">star</span>
-            <span className="text-gray-500 text-xs font-bold group-hover:text-white">Add to List</span>
+            <span className="material-symbols-outlined text-gray-500 group-hover:text-yellow-400 transition-colors text-xl">
+              star
+            </span>
+            <span className="text-gray-500 text-xs font-bold group-hover:text-white">
+              Add to List
+            </span>
           </div>
           <div className="flex items-center gap-1 cursor-pointer group">
-            <span className="material-symbols-outlined text-gray-500 group-hover:text-blue-400 transition-colors text-xl">share</span>
-            <span className="text-gray-500 text-xs font-bold group-hover:text-white">Share</span>
+            <span className="material-symbols-outlined text-gray-500 group-hover:text-blue-400 transition-colors text-xl">
+              share
+            </span>
+            <span className="text-gray-500 text-xs font-bold group-hover:text-white">
+              Share
+            </span>
           </div>
         </div>
       </div>
     </>
-  );
+  )
 }
 
-function SubmissionsTab({ problemId, authenticated }: { problemId: number, authenticated: boolean }) {
-  const fetcher = (url: string) => fetch(url, {
-    headers: {
-      'Authorization': `Token ${localStorage.getItem('token')}`
-    }
-  }).then((r) => r.json());
+function SubmissionsTab({
+  problemId,
+  authenticated,
+}: {
+  problemId: number
+  authenticated: boolean
+}) {
+  const fetcher = (url: string) =>
+    fetch(url, {
+      headers: {
+        Authorization: `Token ${localStorage.getItem('token')}`,
+      },
+    }).then((r) => r.json())
 
   const { data, error, isLoading } = useSWR(
     authenticated ? `${BASE_URL}/api/solutions/?problem_id=${problemId}` : null,
     fetcher
-  );
+  )
 
   if (!authenticated) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
         <Clock size={48} className="text-gray-600" />
         <div className="space-y-2">
-          <h3 className="text-xl font-bold text-white">Sign in to view submissions</h3>
+          <h3 className="text-xl font-bold text-white">
+            Sign in to view submissions
+          </h3>
           <p className="text-gray-400 text-sm max-w-xs">
-            You need to be logged in to track your progress and see your previous attempts.
+            You need to be logged in to track your progress and see your
+            previous attempts.
           </p>
         </div>
         <Link href="/login">
@@ -197,27 +247,37 @@ function SubmissionsTab({ problemId, authenticated }: { problemId: number, authe
           </button>
         </Link>
       </div>
-    );
+    )
   }
 
-  if (isLoading) return <div className="py-10"><Loader /></div>;
-  
-  if (error || !data) return (
-    <div className="py-10 text-red-500 flex items-center gap-2">
-      <AlertCircle size={20} />
-      <span>Failed to load submissions</span>
-    </div>
-  );
+  if (isLoading)
+    return (
+      <div className="py-10">
+        <Loader />
+      </div>
+    )
 
-  const submissions: Solution[] = Array.isArray(data) ? data : data.results || [];
+  if (error || !data)
+    return (
+      <div className="py-10 text-red-500 flex items-center gap-2">
+        <AlertCircle size={20} />
+        <span>Failed to load submissions</span>
+      </div>
+    )
+
+  const submissions: Solution[] = Array.isArray(data)
+    ? data
+    : data.results || []
 
   if (submissions.length === 0) {
     return (
       <div className="py-20 text-center space-y-4">
         <div className="text-gray-500 italic">No submissions yet</div>
-        <p className="text-gray-600 text-sm">Submit your code to see your history here.</p>
+        <p className="text-gray-600 text-sm">
+          Submit your code to see your history here.
+        </p>
       </div>
-    );
+    )
   }
 
   return (
@@ -234,7 +294,10 @@ function SubmissionsTab({ problemId, authenticated }: { problemId: number, authe
           </thead>
           <tbody className="divide-y divide-surface-border bg-background-dark">
             {submissions.map((sub) => (
-              <tr key={sub.id} className="hover:bg-white/5 transition-colors group">
+              <tr
+                key={sub.id}
+                className="hover:bg-white/5 transition-colors group"
+              >
                 <td className="px-4 py-4">
                   <div className="flex items-center gap-2">
                     {sub.status === Status.SUCCESS ? (
@@ -242,7 +305,9 @@ function SubmissionsTab({ problemId, authenticated }: { problemId: number, authe
                     ) : (
                       <XCircle size={16} className="text-red-500" />
                     )}
-                    <span className={`font-bold text-sm ${sub.status === Status.SUCCESS ? 'text-green-500' : 'text-red-500'}`}>
+                    <span
+                      className={`font-bold text-sm ${sub.status === Status.SUCCESS ? 'text-green-500' : 'text-red-500'}`}
+                    >
                       {sub.status_display}
                     </span>
                   </div>
@@ -259,5 +324,5 @@ function SubmissionsTab({ problemId, authenticated }: { problemId: number, authe
         </table>
       </div>
     </div>
-  );
+  )
 }

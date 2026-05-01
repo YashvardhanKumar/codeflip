@@ -1,9 +1,9 @@
-"use client";
+'use client'
 
-import Link from 'next/link';
-import Logo from '@/components/logo';
-import { useAuth } from './auth-provider';
-import { Button } from './ui/button';
+import Link from 'next/link'
+import Logo from '@/components/logo'
+import { useAuth } from './auth-provider'
+import { Button } from './ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,11 +11,11 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+} from '@/components/ui/dropdown-menu'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 export default function Header() {
-  const { user, logout } = useAuth();
+  const { user, logout } = useAuth()
 
   return (
     <header className="sticky top-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 dark:border-surface-border bg-white dark:bg-background-dark px-6 py-3 shadow-sm dark:shadow-none">
@@ -77,39 +77,56 @@ export default function Header() {
           <span className="material-symbols-outlined text-slate-500 dark:text-text-secondary cursor-pointer hover:text-slate-900 dark:hover:text-white transition-colors">
             notifications
           </span>
-          
+
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <div className="flex items-center gap-2 cursor-pointer group">
                   <Avatar className="size-8 border border-slate-200 dark:border-surface-border transition-transform group-hover:scale-110">
-                    <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} />
-                    <AvatarFallback>{user.username.substring(0, 2).toUpperCase()}</AvatarFallback>
+                    <AvatarImage
+                      src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`}
+                    />
+                    <AvatarFallback>
+                      {user.username.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
                   </Avatar>
                 </div>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 border-slate-200 dark:border-surface-border bg-white dark:bg-background-dark">
+              <DropdownMenuContent
+                align="end"
+                className="w-56 border-slate-200 dark:border-surface-border bg-white dark:bg-background-dark"
+              >
                 <DropdownMenuLabel>
                   <div className="flex flex-col">
-                    <span className="font-bold text-slate-900 dark:text-white">{user.name}</span>
-                    <span className="text-xs text-slate-500 dark:text-text-secondary">{user.email}</span>
+                    <span className="font-bold text-slate-900 dark:text-white">
+                      {user.name}
+                    </span>
+                    <span className="text-xs text-slate-500 dark:text-text-secondary">
+                      {user.email}
+                    </span>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="bg-slate-200 dark:bg-surface-border" />
                 <DropdownMenuItem className="cursor-pointer hover:bg-slate-100 dark:hover:bg-surface-border">
-                  <span className="material-symbols-outlined mr-2 text-lg">person</span>
+                  <span className="material-symbols-outlined mr-2 text-lg">
+                    person
+                  </span>
                   Profile
                 </DropdownMenuItem>
                 <DropdownMenuItem className="cursor-pointer hover:bg-slate-100 dark:hover:bg-surface-border">
-                  <span className="material-symbols-outlined mr-2 text-lg">settings</span>
+                  <span className="material-symbols-outlined mr-2 text-lg">
+                    settings
+                  </span>
                   Settings
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-slate-200 dark:bg-surface-border" />
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   className="cursor-pointer text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
                   onClick={logout}
                 >
-                  <span className="material-symbols-outlined mr-2 text-lg">logout</span>
+                  <span className="material-symbols-outlined mr-2 text-lg">
+                    logout
+                  </span>
                   Logout
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -117,17 +134,17 @@ export default function Header() {
           ) : (
             <div className="flex items-center gap-2">
               <Link href="/login">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-surface-border"
                 >
                   Sign In
                 </Button>
               </Link>
               <Link href="/signup">
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   className="bg-primary hover:bg-primary/90 text-white"
                 >
                   Sign Up
@@ -138,5 +155,5 @@ export default function Header() {
         </div>
       </div>
     </header>
-  );
+  )
 }

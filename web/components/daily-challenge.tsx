@@ -1,6 +1,6 @@
 // components/DailyChallenge.tsx
-import Link from 'next/link';
-import { motion } from 'framer-motion';
+import Link from 'next/link'
+import { motion } from 'framer-motion'
 
 export default function DailyChallenge() {
   return (
@@ -15,7 +15,9 @@ export default function DailyChallenge() {
         className="relative block h-full overflow-hidden rounded-xl border border-slate-200 dark:border-surface-border bg-white dark:bg-surface-dark shadow-sm dark:shadow-lg group cursor-pointer hover:border-primary/50 transition-all hover:shadow-xl hover:shadow-primary/5"
       >
         <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-          <span className="material-symbols-outlined text-6xl">emoji_events</span>
+          <span className="material-symbols-outlined text-6xl">
+            emoji_events
+          </span>
         </div>
 
         <div className="p-4 flex flex-col h-full justify-between gap-3 relative z-10">
@@ -48,5 +50,5 @@ export default function DailyChallenge() {
         </div>
       </Link>
     </motion.div>
-  );
+  )
 }

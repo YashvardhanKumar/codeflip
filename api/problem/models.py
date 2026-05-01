@@ -68,8 +68,8 @@ class Problem(models.Model):
 class Codeblock(models.Model):
     id = models.BigAutoField(primary_key=True)
     problem = models.ForeignKey(
-        Problem, 
-        on_delete=models.CASCADE, 
+        Problem,
+        on_delete=models.CASCADE,
         related_name='codeblocks'
     )
     imports = models.TextField(blank=True, null=False)
@@ -95,8 +95,8 @@ class Codeblock(models.Model):
 class Testcase(models.Model):
     id = models.BigAutoField(primary_key=True)
     problem = models.ForeignKey(
-        Problem, 
-        on_delete=models.CASCADE, 
+        Problem,
+        on_delete=models.CASCADE,
         related_name='testcases'
     )
     input = models.TextField(blank=True, null=False)
@@ -123,13 +123,13 @@ class Testcase(models.Model):
 class Solution(models.Model):
     id = models.BigAutoField(primary_key=True)
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, 
-        on_delete=models.CASCADE, 
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
         related_name='solutions'
     )
     problem = models.ForeignKey(
-        Problem, 
-        on_delete=models.CASCADE, 
+        Problem,
+        on_delete=models.CASCADE,
         related_name='solutions'
     )
     code = models.TextField()
@@ -174,21 +174,21 @@ class ProblemTags(models.Model):
 class Discuss(models.Model):
     id = models.BigAutoField(primary_key=True)
     author = models.ForeignKey(
-        settings.AUTH_USER_MODEL, 
-        on_delete=models.CASCADE, 
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
         related_name='discussions_authored',
         db_column='author_id'
     )
     problem = models.ForeignKey(
-        Problem, 
-        on_delete=models.CASCADE, 
+        Problem,
+        on_delete=models.CASCADE,
         related_name='discussions'
     )
     title = models.CharField(max_length=255)
     body = RichTextField(blank=True, null=False, help_text='Content of the post')
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, 
-        on_delete=models.CASCADE, 
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
         related_name='discussions',
         help_text='User associated with this discussion'
     )

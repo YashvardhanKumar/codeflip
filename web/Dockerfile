@@ -73,9 +73,9 @@ COPY package.json bun.lock* ./
 
 # Install dependencies
 RUN bun install
- 
+
 # Copy the rest of your application files
 COPY . .
- 
+
 
 CMD ["bun", "dev"]

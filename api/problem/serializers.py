@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import (
-    Problem, Codeblock, Testcase, Solution, 
+    Problem, Codeblock, Testcase, Solution,
     Tags, ProblemTags, Discuss, DiscussTags, AnswerStatus
 )
 from user.models import User, CodingLanguage
@@ -42,12 +42,12 @@ class TagsSerializer(serializers.ModelSerializer):
 class CodeblockSerializer(serializers.ModelSerializer):
     language_display = serializers.CharField(source='get_language_display', read_only=True)
     full_code = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = Codeblock
         fields = ['id', 'problem', 'imports', 'block', 'runner_code', 'language', 'language_display', 'full_code']
         read_only_fields = ['id']
-    
+
     def get_full_code(self, obj):
         return f"{obj.imports}\n\n{obj.block}\n\n{obj.runner_code}"
 
@@ -71,7 +71,7 @@ class ProblemListSerializer(serializers.ModelSerializer):
     tags = TagsSerializer(many=True, read_only=True)
     total_solutions = serializers.SerializerMethodField()
     total_testcases = serializers.SerializerMethodField()
-    
+
 
     class Meta:
         model = Problem
@@ -99,7 +99,7 @@ class ProblemDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Problem
         fields = [
-            'id', 'name', 'problem_description', 'difficulty', 'tags', 'tag_ids', 
+            'id', 'name', 'problem_description', 'difficulty', 'tags', 'tag_ids',
             'codeblocks', 'testcases', 'created_at', 'success_rate'
         ]
         read_only_fields = ['id', 'created_at']
@@ -197,7 +197,7 @@ class DiscussDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Discuss
         fields = [
-            'id', 'title', 'body', 'author', 'user', 
+            'id', 'title', 'body', 'author', 'user',
             'problem', 'tags', 'tag_ids', 'created_at'
         ]
         read_only_fields = ['id', 'author', 'user', 'created_at']
