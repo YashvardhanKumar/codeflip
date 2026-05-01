@@ -1,13 +1,17 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.views import APIView
 from django.contrib.auth import authenticate
 from problem.serializers import UserSerializer, UserRegistrationSerializer
 from problem.models import Solution, AnswerStatus
 from .models import User
+from social_django.utils import psa
+from social_core.exceptions import MissingBackend, AuthTokenError, AuthForbidden
+from social_core.backends.oauth import BaseOAuth2
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -85,7 +89,7 @@ class UserViewSet(viewsets.ModelViewSet):
         solutions = Solution.objects.filter(user=user)
         
         total_submissions = solutions.count()
-        successful = solutions.filter(status=AnswerStatus.SUCCESS).count()
+        successful = solutions.filter(status=AnswerStatus.ACCEPTED).count()
         unique_problems = solutions.values('problem').distinct().count()
         
         status_breakdown = {}
@@ -157,3 +161,56 @@ class LogoutView(viewsets.ViewSet):
         # Delete the user's token
         request.user.auth_token.delete()
         return Response({'message': 'Successfully logged out'}, status=status.HTTP_200_OK)
+
+
+class SocialAuthSerializer(serializers.Serializer):
+    provider = serializers.CharField(max_length=255)
+    access_token = serializers.CharField(max_length=4096)
+
+
+class SocialAuthView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = SocialAuthSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        provider = serializer.validated_data['provider']
+        access_token = serializer.validated_data['access_token']
+
+        try:
+            # This is a simplified version. In a real app, you'd use the PSA pipeline properly.
+            # For now, we'll implement a helper that handles the exchange.
+            user = self.get_user_from_social_token(provider, access_token)
+            if user:
+                token, _ = Token.objects.get_or_create(user=user)
+                return Response({
+                    'token': token.key,
+                    'user': UserSerializer(user).data
+                })
+            return Response({'error': 'Authentication failed'}, status=status.HTTP_401_UNAUTHORIZED)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def get_user_from_social_token(self, provider, token):
+        # Psuedo-implementation ofPSA token exchange
+        # Since setting up full PSA for a single DRF endpoint is complex,
+        # we'll use a more direct approach if possible or mock for now if necessary.
+        # But let's try to do it right.
+        
+        from django.contrib.auth import login
+        from social_django.utils import load_backend, load_strategy
+        
+        strategy = load_strategy(self.request)
+        try:
+            backend = load_backend(strategy, provider, redirect_uri=None)
+        except MissingBackend:
+            raise serializers.ValidationError({'provider': 'Invalid provider'})
+
+        try:
+            user = backend.do_auth(token)
+        except AuthTokenError as e:
+            raise serializers.ValidationError({'access_token': str(e)})
+        except AuthForbidden as e:
+            raise serializers.ValidationError({'access_token': 'Forbidden'})
+        
+        return user

@@ -1,10 +1,8 @@
-// components/problem/CodeEditor.tsx
 "use client";
 
 import EditorToolbar from "./editor-toolbar";
 import TestPanel from "./test-panel";
 import Editor from "@monaco-editor/react";
-import * as monaco from "monaco-editor";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -15,14 +13,20 @@ import { useEffect, useState, useRef } from "react";
 import apiClient from "@/lib/utils";
 import { AxiosResponse } from "axios";
 import { ImperativePanelHandle } from "react-resizable-panels";
+import { useAuth } from "../auth-provider";
+import { Button } from "../ui/button";
+import Link from "next/link";
+import { toast } from "sonner";
+import { mutate } from "swr";
+import { BASE_URL } from "@/lib/constants";
 
 interface Props {
   problem: Problem;
-  user: User;
+  user: User | null;
 }
 
 export default function CodeEditor({ problem, user }: Props) {
-  const [language, setLanguage] = useState<Language>(user.default_lang ?? Language.CPP);
+  const [language, setLanguage] = useState<Language>(user?.default_lang ?? Language.CPP);
   const [code, setCode] = useState<string | null>(null);
   const [runData, setRunData] = useState<any[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -33,9 +37,11 @@ export default function CodeEditor({ problem, user }: Props) {
   
   const testPanelRef = useRef<ImperativePanelHandle>(null);
 
-  const availableLanguages = problem.codeblocks.map((cb) => cb.language);
+  const availableLanguages = problem.codeblocks?.map((cb) => cb.language) ?? [];
 
   useEffect(() => {
+    if (!problem.id) return;
+    
     const storageKey = `code-racer-${problem.id}-${language}`;
     const savedCode = localStorage.getItem(storageKey);
 
@@ -43,13 +49,13 @@ export default function CodeEditor({ problem, user }: Props) {
       setCode(savedCode);
     } else {
       const defaultCode =
-        problem.codeblocks.find((e) => e.language === language)?.block ?? "";
+        problem.codeblocks?.find((e) => e.language === language)?.block ?? "";
       setCode(defaultCode);
     }
   }, [problem.id, language, problem.codeblocks]);
 
   useEffect(() => {
-    if (code === null) return;
+    if (code === null || !problem.id) return;
     const storageKey = `code-racer-${problem.id}-${language}`;
     localStorage.setItem(storageKey, code);
   }, [code, problem.id, language]);
@@ -58,7 +64,7 @@ export default function CodeEditor({ problem, user }: Props) {
     const storageKey = `code-racer-${problem.id}-${language}`;
     localStorage.removeItem(storageKey);
     const defaultCode =
-      problem.codeblocks.find((e) => e.language === language)?.block ?? "";
+      problem.codeblocks?.find((e) => e.language === language)?.block ?? "";
     setCode(defaultCode);
   };
 
@@ -79,13 +85,12 @@ export default function CodeEditor({ problem, user }: Props) {
     setError(null);
     setRunData(null);
     
-    // Auto-expand panel if it was collapsed
     if (isTestPanelCollapsed) {
       testPanelRef.current?.expand();
     }
 
     try {
-      const codeblock = problem.codeblocks.find(
+      const codeblock = problem.codeblocks?.find(
         (e) => e.language === language
       );
 
@@ -116,7 +121,6 @@ export default function CodeEditor({ problem, user }: Props) {
 
       if (Array.isArray(response.data)) {
         setRunData(response.data);
-        // Find the first erroneous testcase
         const firstErrorIndex = response.data.findIndex((res: any) => res.status?.id !== 3);
         if (firstErrorIndex !== -1) {
           setActiveCase(firstErrorIndex);
@@ -139,14 +143,41 @@ export default function CodeEditor({ problem, user }: Props) {
     }
   };
 
+  const submitCode = async () => {
+    if (!user) {
+      toast.error("Please sign in to submit code");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await apiClient.post("/api/solutions/submit/", {
+        problem_id: problem.id,
+        code: code,
+        language: language,
+      });
+      
+      if (response.status === 201) {
+        toast.success("Solution submitted successfully!");
+        // Refresh submissions tab
+        mutate(`${BASE_URL}/api/solutions/?problem_id=${problem.id}`);
+      }
+    } catch (err: any) {
+      console.error("Error submitting code:", err);
+      toast.error(err.response?.data?.error || "Failed to submit solution");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <ResizablePanel defaultSize={50} minSize={20}>
-      <div className="h-full flex flex-col bg-editor-bg relative min-w-100 overflow-y-hidden">
+    <ResizablePanel defaultSize={50} minSize={20} className="h-full flex flex-col">
+      <div className="h-full flex flex-col bg-[#1e1e1e] relative overflow-hidden">
         <ResizablePanelGroup
           direction="vertical"
           className="flex-1"
         >
-          <ResizablePanel defaultSize={60} minSize={15}>
+          <ResizablePanel defaultSize={60} minSize={15} className="flex flex-col">
             <div className="h-full flex flex-col">
               <EditorToolbar 
                 onReset={handleReset} 
@@ -184,6 +215,7 @@ export default function CodeEditor({ problem, user }: Props) {
             ref={testPanelRef}
             onCollapse={() => setIsTestPanelCollapsed(true)}
             onExpand={() => setIsTestPanelCollapsed(false)}
+            className="flex flex-col"
           >
             <div className="h-full">
               <TestPanel
@@ -202,7 +234,6 @@ export default function CodeEditor({ problem, user }: Props) {
           </ResizablePanel>
         </ResizablePanelGroup>
 
-        {/* Run/Submit Footer */}
         <div className="p-2 flex justify-between items-center bg-surface-dark border-t border-surface-border shrink-0">
           <button 
             onClick={toggleTestPanel}
@@ -218,19 +249,44 @@ export default function CodeEditor({ problem, user }: Props) {
             Console
           </button>
           <div className="flex gap-2">
-            <button 
-              className="btn-primary" 
-              onClick={() => runCode()}
-              disabled={isLoading}
-            >
-              Run
-            </button>
-            <button 
-              className="btn-secondary"
-              disabled={isLoading}
-            >
-              Submit
-            </button>
+            {user ? (
+              <>
+                <button 
+                  className="bg-primary hover:bg-primary/90 text-white px-4 py-1.5 rounded text-sm font-bold transition-all active:scale-95 disabled:opacity-50" 
+                  onClick={() => runCode()}
+                  disabled={isLoading}
+                >
+                  Run
+                </button>
+                <button 
+                  className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-1.5 rounded text-sm font-bold transition-all active:scale-95 disabled:opacity-50"
+                  disabled={isLoading}
+                  onClick={() => submitCode()}
+                >
+                  Submit
+                </button>
+              </>
+            ) : (
+              <div className="flex gap-2">
+                <Link href="/login">
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="text-white hover:bg-surface-border text-xs h-8"
+                  >
+                    Sign In to Run
+                  </Button>
+                </Link>
+                <Link href="/signup">
+                  <Button 
+                    size="sm" 
+                    className="bg-primary hover:bg-primary/90 text-white text-xs h-8"
+                  >
+                    Sign Up
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </div>

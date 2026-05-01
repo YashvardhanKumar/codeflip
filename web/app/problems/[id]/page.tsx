@@ -9,19 +9,20 @@ import { BASE_URL } from '@/lib/constants';
 import { useParams } from 'next/navigation';
 import {Loader} from '@/components/loader';
 import PageTransition from '@/components/page-transition';
+import { useAuth } from '@/components/auth-provider';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
 export default function ProblemDetailPage() {
   const { id } = useParams();
-  const { data, error, isLoading } = useSWR(`${BASE_URL}/api/problems/${id}/`, fetcher)
-  const { data: userData, error: userError, isLoading: userIsLoading } = useSWR(`${BASE_URL}/auth/users/me/`, fetcher)
+  const { user, loading: authLoading } = useAuth();
+  const { data, error, isLoading: problemLoading } = useSWR(`${BASE_URL}/api/problems/${id}/`, fetcher)
 
-  if(isLoading || userIsLoading) {
+  if(problemLoading || authLoading) {
     return <Loader />;
   }
 
-  if(error || userError) {
+  if(error) {
     return <div className="h-screen flex items-center justify-center text-white bg-background-dark text-sm font-mono tracking-wider uppercase opacity-50">Error loading problem.</div>
   }
 
@@ -33,7 +34,7 @@ export default function ProblemDetailPage() {
         <ResizablePanelGroup direction="horizontal">
           <ProblemDescription problem={data} />
           <ResizableHandle withHandle />
-          <CodeEditor user={userData} problem={data} />
+          <CodeEditor user={user} problem={data} />
         </ResizablePanelGroup>
       </div>
     </PageTransition>

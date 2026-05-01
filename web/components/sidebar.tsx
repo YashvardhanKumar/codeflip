@@ -5,8 +5,12 @@ import { BASE_URL } from '@/lib/constants';
 import { Tag } from '@/lib/models';
 import { Skeleton } from './ui/skeleton';
 import { motion } from 'framer-motion';
+import { useAuth } from './auth-provider';
+import { Button } from './ui/button';
+import Link from 'next/link';
 
 export default function Sidebar() {
+  const { user } = useAuth();
   const fetcher = (url: string) => fetch(url).then((r) => r.json())
   const { data: tags, isLoading } = useSWR(`${BASE_URL}/api/tags/`, fetcher)
 
@@ -27,6 +31,29 @@ export default function Sidebar() {
 
   return (
     <aside className="w-full lg:w-72 shrink-0 flex flex-col gap-6">
+      {!user && (
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-5 rounded-2xl bg-white dark:bg-background-dark border border-slate-200 dark:border-surface-border shadow-sm flex flex-col gap-4"
+        >
+          <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center">
+            <span className="material-symbols-outlined text-primary">login</span>
+          </div>
+          <div>
+            <h4 className="font-bold text-slate-900 dark:text-white mb-1">Track your progress</h4>
+            <p className="text-xs text-slate-500 dark:text-text-secondary leading-relaxed">
+              Sign in to save your solutions, track stats, and compete on the leaderboard.
+            </p>
+          </div>
+          <Link href="/login" className="w-full">
+            <Button size="sm" className="w-full bg-primary hover:bg-primary/90 text-white font-bold">
+              Sign In
+            </Button>
+          </Link>
+        </motion.div>
+      )}
+
       {/* Filter Header for Mobile */}
       <div className="flex lg:hidden items-center justify-between">
         <h3 className="font-bold text-lg">Filters</h3>

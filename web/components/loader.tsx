@@ -32,6 +32,7 @@ export function Loader() {
               Code<span className="text-primary">Racer</span>
             </span>
             {/* Reflective shine effect */}
+            
           </div>
           
           {/* Enhanced Progress Container */}

@@ -60,6 +60,9 @@ export default function Logo({ variant = 'default' }: LogoProps) {
   return (
     <Link href="/" className="flex items-center gap-2 cursor-pointer group">
       <LogoIcon className="size-7 transition-transform group-hover:scale-110 duration-200" />
+      <h2 className={`text-lg font-bold leading-tight tracking-[-0.015em] ${textColor}`}>
+        CodeRacer
+      </h2>
     </Link>
   );
 }

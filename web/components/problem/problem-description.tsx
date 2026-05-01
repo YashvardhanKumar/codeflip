@@ -6,8 +6,15 @@ import TabButton from '@/components/tab-button';
 import DifficultyBadge from '@/components/difficulty-badge';
 import CodeBlock from '@/components/code-block';
 import { ResizablePanel } from '../ui/resizable';
-import { Problem } from '@/lib/models';
+import { Problem, Solution, Status } from '@/lib/models';
 import Script from 'next/script';
+import { useAuth } from '@/components/auth-provider';
+import useSWR from 'swr';
+import { BASE_URL } from '@/lib/constants';
+import { Loader } from '@/components/loader';
+import { format } from 'date-fns';
+import { CheckCircle2, XCircle, Clock, AlertCircle } from 'lucide-react';
+import Link from 'next/link';
 
 declare global {
   interface Window {
@@ -28,6 +35,7 @@ interface Props {
 
 export default function ProblemDescription({ problem }: Props) {
   const [activeTab, setActiveTab] = useState('description');
+  const { user } = useAuth();
 
   useEffect(() => {
     if (window.MathJax && window.MathJax.typesetPromise) {
@@ -74,7 +82,9 @@ export default function ProblemDescription({ problem }: Props) {
         {activeTab === 'description' && <DescriptionContent problem={problem} />}
         {activeTab === 'editorial' && <div className="text-gray-400">Editorial content...</div>}
         {activeTab === 'solutions' && <div className="text-gray-400">Solutions content...</div>}
-        {activeTab === 'submissions' && <div className="text-gray-400">Submissions content...</div>}
+        {activeTab === 'submissions' && (
+          <SubmissionsTab problemId={problem.id} authenticated={!!user} />
+        )}
       </div>
 
       {/* Footer */}
@@ -156,5 +166,98 @@ function DescriptionContent({ problem }: Props) {
         </div>
       </div>
     </>
+  );
+}
+
+function SubmissionsTab({ problemId, authenticated }: { problemId: number, authenticated: boolean }) {
+  const fetcher = (url: string) => fetch(url, {
+    headers: {
+      'Authorization': `Token ${localStorage.getItem('token')}`
+    }
+  }).then((r) => r.json());
+
+  const { data, error, isLoading } = useSWR(
+    authenticated ? `${BASE_URL}/api/solutions/?problem_id=${problemId}` : null,
+    fetcher
+  );
+
+  if (!authenticated) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+        <Clock size={48} className="text-gray-600" />
+        <div className="space-y-2">
+          <h3 className="text-xl font-bold text-white">Sign in to view submissions</h3>
+          <p className="text-gray-400 text-sm max-w-xs">
+            You need to be logged in to track your progress and see your previous attempts.
+          </p>
+        </div>
+        <Link href="/login">
+          <button className="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-lg font-bold transition-all">
+            Sign In
+          </button>
+        </Link>
+      </div>
+    );
+  }
+
+  if (isLoading) return <div className="py-10"><Loader /></div>;
+  
+  if (error || !data) return (
+    <div className="py-10 text-red-500 flex items-center gap-2">
+      <AlertCircle size={20} />
+      <span>Failed to load submissions</span>
+    </div>
+  );
+
+  const submissions: Solution[] = Array.isArray(data) ? data : data.results || [];
+
+  if (submissions.length === 0) {
+    return (
+      <div className="py-20 text-center space-y-4">
+        <div className="text-gray-500 italic">No submissions yet</div>
+        <p className="text-gray-600 text-sm">Submit your code to see your history here.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4 animate-in fade-in duration-300">
+      <h3 className="text-lg font-bold text-white mb-6">Past Submissions</h3>
+      <div className="w-full overflow-hidden rounded-xl border border-surface-border">
+        <table className="w-full text-left border-collapse">
+          <thead className="bg-surface-dark/50 text-gray-400 text-xs uppercase tracking-wider">
+            <tr>
+              <th className="px-4 py-3 font-medium">Status</th>
+              <th className="px-4 py-3 font-medium">Language</th>
+              <th className="px-4 py-3 font-medium">Date</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-surface-border bg-background-dark">
+            {submissions.map((sub) => (
+              <tr key={sub.id} className="hover:bg-white/5 transition-colors group">
+                <td className="px-4 py-4">
+                  <div className="flex items-center gap-2">
+                    {sub.status === Status.SUCCESS ? (
+                      <CheckCircle2 size={16} className="text-green-500" />
+                    ) : (
+                      <XCircle size={16} className="text-red-500" />
+                    )}
+                    <span className={`font-bold text-sm ${sub.status === Status.SUCCESS ? 'text-green-500' : 'text-red-500'}`}>
+                      {sub.status_display}
+                    </span>
+                  </div>
+                </td>
+                <td className="px-4 py-4 text-sm text-gray-300">
+                  {sub.language_display}
+                </td>
+                <td className="px-4 py-4 text-xs text-gray-500">
+                  {format(new Date(sub.created_at), 'MMM d, yyyy HH:mm')}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }

@@ -66,13 +66,21 @@ export enum Difficulty {
 }
 
 export enum Status {
-  INVALID_TESTCASE = 'INVALID_TESTCASE',
-  RUNTIME_ERROR = 'RUNTIME_ERROR',
-  COMPILE_ERROR = 'COMPILE_ERROR',
-  WRONG_ANSWER = 'WRONG_ANSWER',
-  SUCCESS = 'SUCCESS',
-  TIME_LIMIT_EXCEEDED = 'TIME_LIMIT_EXCEEDED',
-  MEMORY_LIMIT_EXCEEDED = 'MEMORY_LIMIT_EXCEEDED'
+  QUEUE = 'In Queue',
+  PROCESS = 'Processing',
+  SUCCESS = 'Accepted',
+  WRONG_ANSWER = 'Wrong Answer',
+  TIME_LIMIT_EXCEEDED = 'Time Limit Exceeded',
+  COMPILE_ERROR = 'Compilation Error',
+  RUNTIME_ERROR_SIGSEGV = 'Runtime Error (SIGSEGV)',
+  RUNTIME_ERROR_SIGXFSZ = 'Runtime Error (SIGXFSZ)',
+  RUNTIME_ERROR_SIGFPE = 'Runtime Error (SIGFPE)',
+  RUNTIME_ERROR_SIGABRT = 'Runtime Error (SIGABRT)',
+  RUNTIME_ERROR_NZEC = 'Runtime Error (NZEC)',
+  RUNTIME_ERROR_OTHER = 'Runtime Error (Other)',
+  INTERNAL_ERROR = 'Internal Error',
+  EXEC_FORMAT_ERROR = 'Exec Format Error',
+  INVALID_TESTCASE = 'Invalid Testcase'
 }
 
 export enum DataType {
@@ -167,7 +175,7 @@ export interface Solution {
   code: string;
   language: Language;
   language_display: string;
-  status: Status | null;
+  status: Status | string | null;
   status_display: string;
   created_at: string;
 }
@@ -178,7 +186,7 @@ export interface SolutionList {
   problem_id: number;
   language: Language;
   language_display: string;
-  status: Status | null;
+  status: Status | string | null;
   status_display: string;
   created_at: string;
 }
@@ -188,24 +196,10 @@ export interface Discussion {
   title: string;
   body?: string;
   author: User;
-  user: User;
   problem: number;
   tags: Tag[];
   created_at: string;
 }
-
-export interface DiscussionList {
-  id: number;
-  title: string;
-  author: User;
-  problem_id: number;
-  tags: Tag[];
-  created_at: string;
-}
-
-// ============================================================================
-// REQUEST/RESPONSE TYPES
-// ============================================================================
 
 export interface PaginatedResponse<T> {
   count: number;
@@ -241,174 +235,4 @@ export interface ProblemUpdateRequest {
   problem_description?: string;
   difficulty?: Difficulty;
   tag_ids?: number[];
-}
-
-export interface DiscussionCreateRequest {
-  title: string;
-  body?: string;
-  problem: number;
-  tag_ids?: number[];
-}
-
-export interface DiscussionUpdateRequest {
-  title?: string;
-  body?: string;
-  problem?: number;
-  tag_ids?: number[];
-}
-
-export interface CodeblockCreateRequest {
-  problem: number;
-  imports: string;
-  block: string;
-  runner_code: string;
-  language: Language;
-}
-
-export interface TestcaseCreateRequest {
-  problem: number;
-  input: string;
-  output: string;
-}
-
-export interface UserUpdateRequest {
-  username?: string;
-  email?: string;
-  name?: string | null;
-  default_lang?: Language;
-}
-
-// ============================================================================
-// API SERVICE INTERFACES
-// ============================================================================
-
-export interface IAuthService {
-  login(data: AuthTokenRequest): Promise<AuthTokenResponse>;
-  logout(): Promise<void>;
-  register(data: UserRegistration): Promise<void>;
-  getCurrentUser(): Promise<User>;
-  updateProfile(data: UserUpdateRequest): Promise<User>;
-  changePassword(oldPassword: string, newPassword: string): Promise<User>;
-  getUserStats(): Promise<any>;
-}
-
-export interface IProblemService {
-  list(params?: {
-    ordering?: string;
-    page?: number;
-    search?: string;
-  }): Promise<PaginatedResponse<ProblemList>>;
-  get(id: number): Promise<Problem>;
-  create(data: ProblemCreateRequest): Promise<Problem>;
-  update(id: number, data: ProblemUpdateRequest): Promise<Problem>;
-  partialUpdate(id: number, data: Partial<ProblemUpdateRequest>): Promise<Problem>;
-  delete(id: number): Promise<void>;
-  getByTag(tag: string): Promise<Problem[]>;
-  getMyAttempts(): Promise<Problem[]>;
-  getDiscussions(id: number): Promise<Discussion[]>;
-  getSolutions(id: number): Promise<Solution[]>;
-  getStatistics(id: number): Promise<any>;
-}
-
-export interface ISolutionService {
-  list(params?: {
-    ordering?: string;
-    page?: number;
-  }): Promise<PaginatedResponse<SolutionList>>;
-  get(id: number): Promise<Solution>;
-  create(data: SolutionSubmitRequest): Promise<Solution>;
-  update(id: number, data: Partial<Solution>): Promise<Solution>;
-  partialUpdate(id: number, data: Partial<Solution>): Promise<Solution>;
-  delete(id: number): Promise<void>;
-  submit(data: SolutionSubmitRequest): Promise<any>;
-  getMySolutions(): Promise<Solution[]>;
-  getStatistics(): Promise<any>;
-}
-
-export interface IDiscussionService {
-  list(params?: {
-    ordering?: string;
-    page?: number;
-    search?: string;
-  }): Promise<PaginatedResponse<DiscussionList>>;
-  get(id: number): Promise<Discussion>;
-  create(data: DiscussionCreateRequest): Promise<Discussion>;
-  update(id: number, data: DiscussionUpdateRequest): Promise<Discussion>;
-  partialUpdate(id: number, data: Partial<DiscussionUpdateRequest>): Promise<Discussion>;
-  delete(id: number): Promise<void>;
-  getByProblem(problemId: number): Promise<Discussion[]>;
-  getMyDiscussions(): Promise<Discussion[]>;
-}
-
-export interface ICodeblockService {
-  list(params?: {
-    ordering?: string;
-    page?: number;
-    search?: string;
-  }): Promise<PaginatedResponse<Codeblock>>;
-  get(id: number): Promise<Codeblock>;
-  create(data: CodeblockCreateRequest): Promise<Codeblock>;
-  update(id: number, data: CodeblockCreateRequest): Promise<Codeblock>;
-  partialUpdate(id: number, data: Partial<CodeblockCreateRequest>): Promise<Codeblock>;
-  delete(id: number): Promise<void>;
-}
-
-export interface ITestcaseService {
-  list(params?: {
-    ordering?: string;
-    page?: number;
-    search?: string;
-  }): Promise<PaginatedResponse<Testcase>>;
-  get(id: number): Promise<Testcase>;
-  create(data: TestcaseCreateRequest): Promise<Testcase>;
-  update(id: number, data: TestcaseCreateRequest): Promise<Testcase>;
-  partialUpdate(id: number, data: Partial<TestcaseCreateRequest>): Promise<Testcase>;
-  delete(id: number): Promise<void>;
-}
-
-export interface ITagService {
-  list(params?: {
-    page?: number;
-    search?: string;
-  }): Promise<PaginatedResponse<Tag>>;
-  get(id: number): Promise<Tag>;
-  create(data: { tags: string }): Promise<Tag>;
-  update(id: number, data: { tags: string }): Promise<Tag>;
-  partialUpdate(id: number, data: Partial<{ tags: string }>): Promise<Tag>;
-  delete(id: number): Promise<void>;
-  getPopular(): Promise<Tag[]>;
-  getProblems(id: number): Promise<Problem[]>;
-}
-
-export interface IUserService {
-  list(params?: {
-    ordering?: string;
-    page?: number;
-    search?: string;
-  }): Promise<PaginatedResponse<User>>;
-  get(id: number): Promise<User>;
-  update(id: number, data: UserUpdateRequest): Promise<User>;
-  partialUpdate(id: number, data: Partial<UserUpdateRequest>): Promise<User>;
-  delete(id: number): Promise<void>;
-}
-
-// ============================================================================
-// API CLIENT CONFIGURATION
-// ============================================================================
-
-export interface ApiConfig {
-  baseUrl: string;
-  token?: string;
-  headers?: Record<string, string>;
-}
-
-export interface ApiClient {
-  auth: IAuthService;
-  problems: IProblemService;
-  solutions: ISolutionService;
-  discussions: IDiscussionService;
-  codeblocks: ICodeblockService;
-  testcases: ITestcaseService;
-  tags: ITagService;
-  users: IUserService;
 }

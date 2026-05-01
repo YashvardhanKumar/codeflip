@@ -14,7 +14,32 @@ from .serializers import (
     TagsSerializer, DiscussListSerializer, DiscussDetailSerializer,
     ProblemStatisticsSerializer
 )
+from engine.services import submit_to_judge0
 
+# Map our internal Language choices to Judge0 language IDs
+JUDGE0_LANGUAGE_MAP = {
+    'CPP': 54,        # C++ (GCC 9.2.0)
+    'JAVA': 62,       # Java (OpenJDK 13.0.1)
+    'PYTHON': 71,     # Python (3.8.1)
+    'JAVASCRIPT': 63, # JavaScript (Node.js 12.14.0)
+    'TYPESCRIPT': 74  # TypeScript (3.7.4)
+}
+
+# Map Judge0 status IDs to our AnswerStatus
+JUDGE0_STATUS_MAP = {
+    3: AnswerStatus.ACCEPTED,            # Accepted
+    4: AnswerStatus.WRONG_ANSWER,        # Wrong Answer
+    5: AnswerStatus.TIME_LIMIT_EXCEEDED, # Time Limit Exceeded
+    6: AnswerStatus.COMPILATION_ERROR,   # Compilation Error
+    7: AnswerStatus.RUNTIME_ERROR_SIGSEGV, # Runtime Error (SIGSEGV)
+    8: AnswerStatus.RUNTIME_ERROR_SIGXFSZ, # Runtime Error (SIGXFSZ)
+    9: AnswerStatus.RUNTIME_ERROR_SIGFPE,  # Runtime Error (SIGFPE)
+    10: AnswerStatus.RUNTIME_ERROR_SIGABRT,# Runtime Error (SIGABRT)
+    11: AnswerStatus.RUNTIME_ERROR_NZEC,   # Runtime Error (NZEC)
+    12: AnswerStatus.RUNTIME_ERROR_OTHER,  # Runtime Error (Other)
+    13: AnswerStatus.INTERNAL_ERROR,      # Internal Error
+    14: AnswerStatus.EXEC_FORMAT_ERROR,   # Exec Format Error
+}
 
 class ProblemViewSet(viewsets.ModelViewSet):
     queryset = Problem.objects.prefetch_related('tags', 'codeblocks', 'testcases').all()
@@ -36,7 +61,7 @@ class ProblemViewSet(viewsets.ModelViewSet):
         solutions = problem.solutions.all()
         
         total = solutions.count()
-        successful = solutions.filter(status=AnswerStatus.SUCCESS).count()
+        successful = solutions.filter(status=AnswerStatus.ACCEPTED).count()
         
         status_breakdown = {}
         for choice in AnswerStatus.choices:
@@ -177,23 +202,55 @@ class SolutionViewSet(viewsets.ModelViewSet):
         serializer = SolutionSubmitSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
-        # Get language from request or use user's default
+        problem_id = serializer.validated_data['problem_id']
+        code = serializer.validated_data['code']
         language = serializer.validated_data.get('language', request.user.default_lang)
         
-        # Create solution
-        solution = Solution.objects.create(
-            user=request.user,
-            problem_id=serializer.validated_data['problem_id'],
-            code=serializer.validated_data['code'],
-            language=language,
-            status=AnswerStatus.SUCCESS  # This should be set by your evaluation system
-        )
+        # Get problem and relevant codeblock
+        try:
+            problem = Problem.objects.get(id=problem_id)
+            codeblock = problem.codeblocks.get(language=language)
+        except (Problem.DoesNotExist, Codeblock.DoesNotExist):
+            return Response(
+                {'error': 'Invalid problem or language selection'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        # Construct full source code for evaluation
+        full_code = f"{codeblock.imports}\n\n{code}\n\n{codeblock.runner_code}"
         
-        # TODO: Add actual code evaluation logic here
-        # For now, just returning success
+        # Prepare evaluation payload
+        evaluation_payload = {
+            'problem_id': problem_id,
+            'source_code': full_code,
+            'language_id': JUDGE0_LANGUAGE_MAP.get(language, 71), # Default to Python if missing
+        }
         
-        response_serializer = SolutionDetailSerializer(solution)
-        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+        try:
+            # Run against all testcases
+            result = submit_to_judge0(evaluation_payload, is_submit=True)
+            
+            # Map Judge0 status to internal status
+            judge0_id = result.get('status', {}).get('id', 4) # Default to Wrong Answer if unknown
+            internal_status = JUDGE0_STATUS_MAP.get(judge0_id, AnswerStatus.WRONG_ANSWER)
+            
+            # Create solution with actual status
+            solution = Solution.objects.create(
+                user=request.user,
+                problem_id=problem_id,
+                code=code,
+                language=language,
+                status=internal_status
+            )
+            
+            response_serializer = SolutionDetailSerializer(solution)
+            return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+            
+        except Exception as exc:
+            return Response(
+                {"error": f"Evaluation failed: {str(exc)}"},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
 
     @action(detail=False, methods=['get'])
     def my_solutions(self, request):
@@ -215,7 +272,7 @@ class SolutionViewSet(viewsets.ModelViewSet):
         
         data = {
             'total_submissions': total,
-            'successful_submissions': status_counts.get('Success', 0),
+            'successful_submissions': status_counts.get('Accepted', 0),
             'status_breakdown': status_counts,
             'unique_problems_attempted': solutions.values('problem').distinct().count()
         }

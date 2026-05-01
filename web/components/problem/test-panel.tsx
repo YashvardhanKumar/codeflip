@@ -9,7 +9,7 @@ import {
 
 interface Props {
   problem: Problem;
-  user: User;
+  user: User | null;
   language?: Language;
   runData: any[] | null;
   isLoading: boolean;

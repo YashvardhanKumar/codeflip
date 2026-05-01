@@ -108,7 +108,7 @@ class ProblemDetailSerializer(serializers.ModelSerializer):
         total = obj.solutions.count()
         if total == 0:
             return 0
-        success = obj.solutions.filter(status=AnswerStatus.SUCCESS).count()
+        success = obj.solutions.filter(status=AnswerStatus.ACCEPTED).count()
         return round((success / total) * 100, 2)
 
     def create(self, validated_data):

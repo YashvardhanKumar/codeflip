@@ -5,21 +5,21 @@ from ckeditor.fields import RichTextField
 
 
 class AnswerStatus(models.TextChoices):
-    QUEUE     = "In Queue"
-    PROCESS   = "Processing"
-    AC        = "Accepted"
-    WA        = "Wrong Answer"
-    TLE       = "Time Limit Exceeded"
-    CE        = "Compilation Error"
-    SIGSEGV   = "Runtime Error (SIGSEGV)"
-    SIGXFSZ   = "Runtime Error (SIGXFSZ)"
-    SIGFPE    = "Runtime Error (SIGFPE)"
-    SIGABRT   = "Runtime Error (SIGABRT)"
-    NZEC      = "Runtime Error (NZEC)"
-    OTHER     = "Runtime Error (Other)"
-    BOXERR    = "Internal Error"
-    EXEERR    = "Exec Format Error"
-    INVTCL    = "Invalid Testcase"
+    QUEUE               = "QUEUE", "In Queue"
+    PROCESSING          = "PROCESSING", "Processing"
+    ACCEPTED            = "Accepted", "Accepted"
+    WRONG_ANSWER        = "Wrong Answer", "Wrong Answer"
+    TIME_LIMIT_EXCEEDED = "Time Limit Exceeded", "Time Limit Exceeded"
+    COMPILATION_ERROR   = "Compilation Error", "Compilation Error"
+    RUNTIME_ERROR_SIGSEGV = "Runtime Error (SIGSEGV)", "Runtime Error (SIGSEGV)"
+    RUNTIME_ERROR_SIGXFSZ = "Runtime Error (SIGXFSZ)", "Runtime Error (SIGXFSZ)"
+    RUNTIME_ERROR_SIGFPE  = "Runtime Error (SIGFPE)", "Runtime Error (SIGFPE)"
+    RUNTIME_ERROR_SIGABRT = "Runtime Error (SIGABRT)", "Runtime Error (SIGABRT)"
+    RUNTIME_ERROR_NZEC    = "Runtime Error (NZEC)", "Runtime Error (NZEC)"
+    RUNTIME_ERROR_OTHER   = "Runtime Error (Other)", "Runtime Error (Other)"
+    INTERNAL_ERROR      = "Internal Error", "Internal Error"
+    EXEC_FORMAT_ERROR   = "Exec Format Error", "Exec Format Error"
+    INVALID_TESTCASE    = "Invalid Testcase", "Invalid Testcase"
 
 class Difficulty(models.TextChoices):
     EASY = 'EASY', 'Easy'
@@ -48,22 +48,21 @@ class Problem(models.Model):
     name = models.CharField(max_length=255, null=False, default='', help_text='Title of the problem')
     problem_description = RichTextField(blank=True, null=False)
     tags = models.ManyToManyField(Tags, through='ProblemTags', related_name='problems')
-    created_at = models.DateTimeField(auto_now_add=True)
     difficulty = models.CharField(
         max_length=10,
         choices=Difficulty.choices,
-        default=Difficulty.EASY,
-        verbose_name="Difficulty Level"
+        default=Difficulty.EASY
     )
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'problem'
         verbose_name = 'Problem'
         verbose_name_plural = 'Problems'
-        ordering = ['-created_at']
+        ordering = ['id']
 
     def __str__(self):
-        return f"Problem #{self.id}"
+        return self.name
 
 
 class Codeblock(models.Model):
@@ -73,9 +72,9 @@ class Codeblock(models.Model):
         on_delete=models.CASCADE, 
         related_name='codeblocks'
     )
-    imports = models.TextField(blank=True, null=True)
-    block = models.TextField()
-    runner_code = models.TextField(blank=True, null=True)
+    imports = models.TextField(blank=True, null=False)
+    block = models.TextField(blank=True, null=False)
+    runner_code = models.TextField(blank=True, null=False)
     language = models.CharField(
         max_length=20,
         choices=CodingLanguage.choices,
@@ -87,6 +86,7 @@ class Codeblock(models.Model):
         db_table = 'codeblock'
         verbose_name = 'Code Block'
         verbose_name_plural = 'Code Blocks'
+        unique_together = ('problem', 'language')
 
     def __str__(self):
         return f"Codeblock for Problem #{self.problem.id} ({self.get_language_display()})"
