@@ -5,6 +5,7 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
     """
     Custom permission to only allow owners of an object to edit it.
     """
+
     def has_object_permission(self, request, view, obj):
         # Read permissions are allowed to any request
         if request.method in permissions.SAFE_METHODS:
@@ -18,6 +19,7 @@ class IsAuthorOrReadOnly(permissions.BasePermission):
     """
     Custom permission to only allow authors of a discussion to edit it.
     """
+
     def has_object_permission(self, request, view, obj):
         # Read permissions are allowed to any request
         if request.method in permissions.SAFE_METHODS:
@@ -31,6 +33,7 @@ class IsSolutionOwnerOrStaff(permissions.BasePermission):
     """
     Custom permission for solutions - owner can view/edit, staff can view all.
     """
+
     def has_object_permission(self, request, view, obj):
         # Staff can view all solutions
         if request.user.is_staff:
@@ -44,6 +47,7 @@ class IsStaffOrReadOnly(permissions.BasePermission):
     """
     Custom permission to only allow staff to edit.
     """
+
     def has_permission(self, request, view):
         # Read permissions are allowed to any request
         if request.method in permissions.SAFE_METHODS:

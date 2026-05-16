@@ -6,23 +6,37 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('problem', '0003_problem_name'),
+        ("problem", "0003_problem_name"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='codeblock',
-            name='imports',
+            model_name="codeblock",
+            name="imports",
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='codeblock',
-            name='runner_code',
+            model_name="codeblock",
+            name="runner_code",
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='solution',
-            name='status',
-            field=models.CharField(blank=True, choices=[('PENDING', 'Pending'), ('INVALID_TESTCASE', 'Invalid Testcase'), ('RUNTIME_ERROR', 'Runtime Error'), ('COMPILE_ERROR', 'Compile Error'), ('WRONG_ANSWER', 'Wrong Answer'), ('SUCCESS', 'Success'), ('TIME_LIMIT_EXCEEDED', 'Time Limit Exceeded'), ('MEMORY_LIMIT_EXCEEDED', 'Memory Limit Exceeded')], max_length=30, null=True),
+            model_name="solution",
+            name="status",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("PENDING", "Pending"),
+                    ("INVALID_TESTCASE", "Invalid Testcase"),
+                    ("RUNTIME_ERROR", "Runtime Error"),
+                    ("COMPILE_ERROR", "Compile Error"),
+                    ("WRONG_ANSWER", "Wrong Answer"),
+                    ("SUCCESS", "Success"),
+                    ("TIME_LIMIT_EXCEEDED", "Time Limit Exceeded"),
+                    ("MEMORY_LIMIT_EXCEEDED", "Memory Limit Exceeded"),
+                ],
+                max_length=30,
+                null=True,
+            ),
         ),
     ]

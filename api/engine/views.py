@@ -7,12 +7,14 @@ from .serializers import SubmissionSerializer
 from .services import submit_to_judge0
 from problem.models import Solution, AnswerStatus
 from django.utils.timezone import now
-from rest_framework import permissions # You can use this for clarity
+from rest_framework import permissions  # You can use this for clarity
+
 
 class RunCodeView(APIView):
     """
     Receives code execution request and proxies it to Judge0
     """
+
     authentication_classes = []
     permission_classes = [permissions.AllowAny]
 
@@ -46,10 +48,12 @@ class RunCodeView(APIView):
                 status=status.HTTP_502_BAD_GATEWAY,
             )
 
+
 class SubmitCodeView(APIView):
     """
     Receives code execution request and proxies it to Judge0
     """
+
     authentication_classes = []
     permission_classes = [permissions.AllowAny]
 
@@ -76,7 +80,6 @@ class SubmitCodeView(APIView):
         try:
             result = submit_to_judge0(serializer.validated_data, is_submit=True)
             return Response(result, status=status.HTTP_200_OK)
-
 
         except Exception as exc:
             return Response(

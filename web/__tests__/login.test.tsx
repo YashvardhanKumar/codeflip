@@ -1,5 +1,5 @@
-const mockPush = jest.fn();
-const mockLogin = jest.fn();
+const mockPush = jest.fn()
+const mockLogin = jest.fn()
 
 // Mock next/navigation
 jest.mock('next/navigation', () => ({
@@ -19,7 +19,7 @@ const mockUseAuth = {
   loading: false,
   logout: jest.fn(),
   refreshUser: jest.fn(),
-};
+}
 
 jest.mock('@/components/auth-provider', () => ({
   AuthProvider: ({ children }: any) => <>{children}</>,
@@ -32,9 +32,9 @@ jest.mock('@/lib/utils', () => ({
   default: {
     post: jest.fn(),
     get: jest.fn(() => Promise.resolve({ data: {} })),
-    defaults: { 
+    defaults: {
       baseURL: 'http://localhost:8000',
-      headers: { common: {} }
+      headers: { common: {} },
     },
   },
   cn: (...inputs: any[]) => inputs.filter(Boolean).join(' '),
@@ -63,26 +63,32 @@ jest.mock('framer-motion', () => ({
 
 describe('LoginPage', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-  });
+    jest.clearAllMocks()
+  })
 
   it('renders login form', () => {
     render(<LoginPage />)
     expect(screen.getByLabelText(/Username/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/Password/i)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Sign In to Race/i })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /Sign In to Race/i })
+    ).toBeInTheDocument()
   })
 
   it('handles successful login', async () => {
-    const userData = { username: 'testuser', name: 'Test User' };
+    const userData = { username: 'testuser', name: 'Test User' }
     ;(apiClient.post as jest.Mock).mockResolvedValueOnce({
       data: { token: 'fake-token', user: userData },
     })
 
     render(<LoginPage />)
 
-    fireEvent.change(screen.getByLabelText(/Username/i), { target: { value: 'testuser' } })
-    fireEvent.change(screen.getByLabelText(/Password/i), { target: { value: 'password123' } })
+    fireEvent.change(screen.getByLabelText(/Username/i), {
+      target: { value: 'testuser' },
+    })
+    fireEvent.change(screen.getByLabelText(/Password/i), {
+      target: { value: 'password123' },
+    })
     fireEvent.click(screen.getByRole('button', { name: /Sign In to Race/i }))
 
     await waitFor(() => {
@@ -101,8 +107,12 @@ describe('LoginPage', () => {
 
     render(<LoginPage />)
 
-    fireEvent.change(screen.getByLabelText(/Username/i), { target: { value: 'wronguser' } })
-    fireEvent.change(screen.getByLabelText(/Password/i), { target: { value: 'wrongpass' } })
+    fireEvent.change(screen.getByLabelText(/Username/i), {
+      target: { value: 'wronguser' },
+    })
+    fireEvent.change(screen.getByLabelText(/Password/i), {
+      target: { value: 'wrongpass' },
+    })
     fireEvent.click(screen.getByRole('button', { name: /Sign In to Race/i }))
 
     await waitFor(() => {

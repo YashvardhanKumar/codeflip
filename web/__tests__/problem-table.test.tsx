@@ -29,48 +29,48 @@ const mockProblems = {
 
 // Mock framer-motion to avoid animation issues in tests
 jest.mock('framer-motion', () => {
-  const React = require('react');
+  const React = require('react')
   const Dummy = ({ children, ...props }: any) => {
-    const { 
-      whileInView, 
-      whileHover, 
-      whileTap, 
-      whileFocus, 
-      whileDrag, 
-      initial, 
-      animate, 
-      exit, 
-      variants, 
+    const {
+      whileInView,
+      whileHover,
+      whileTap,
+      whileFocus,
+      whileDrag,
+      initial,
+      animate,
+      exit,
+      variants,
       transition,
       viewport,
-      ...validProps 
-    } = props;
-    return React.createElement('div', validProps, children);
-  };
+      ...validProps
+    } = props
+    return React.createElement('div', validProps, children)
+  }
   const DummyTr = ({ children, ...props }: any) => {
-    const { 
-      whileInView, 
-      whileHover, 
-      whileTap, 
-      whileFocus, 
-      whileDrag, 
-      initial, 
-      animate, 
-      exit, 
-      variants, 
+    const {
+      whileInView,
+      whileHover,
+      whileTap,
+      whileFocus,
+      whileDrag,
+      initial,
+      animate,
+      exit,
+      variants,
       transition,
       viewport,
-      ...validProps 
-    } = props;
-    return React.createElement('tr', validProps, children);
-  };
+      ...validProps
+    } = props
+    return React.createElement('tr', validProps, children)
+  }
   return {
     motion: {
       div: Dummy,
       tr: DummyTr,
     },
     AnimatePresence: ({ children }: any) => <>{children}</>,
-  };
+  }
 })
 
 describe('ProblemTable', () => {
@@ -107,7 +107,7 @@ describe('ProblemTable', () => {
     })
 
     render(<ProblemTable />)
-    
+
     expect(screen.getByText(/Two Sum/i)).toBeInTheDocument()
     expect(screen.getByText(/Longest Substring/i)).toBeInTheDocument()
     expect(screen.getByText(/EASY/i)).toBeInTheDocument()

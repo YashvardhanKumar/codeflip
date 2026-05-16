@@ -1,5 +1,5 @@
-const mockPush = jest.fn();
-const mockLogin = jest.fn();
+const mockPush = jest.fn()
+const mockLogin = jest.fn()
 
 // Mock next/navigation
 jest.mock('next/navigation', () => ({
@@ -19,7 +19,7 @@ const mockUseAuth = {
   loading: false,
   logout: jest.fn(),
   refreshUser: jest.fn(),
-};
+}
 
 jest.mock('@/components/auth-provider', () => ({
   AuthProvider: ({ children }: any) => <>{children}</>,
@@ -32,9 +32,9 @@ jest.mock('@/lib/utils', () => ({
   default: {
     post: jest.fn(),
     get: jest.fn(() => Promise.resolve({ data: {} })),
-    defaults: { 
+    defaults: {
       baseURL: 'http://localhost:8000',
-      headers: { common: {} }
+      headers: { common: {} },
     },
   },
   cn: (...inputs: any[]) => inputs.filter(Boolean).join(' '),
@@ -61,8 +61,8 @@ jest.mock('framer-motion', () => ({
 
 describe('SignupPage', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-  });
+    jest.clearAllMocks()
+  })
 
   it('renders signup form', () => {
     render(<SignupPage />)
@@ -75,36 +75,63 @@ describe('SignupPage', () => {
   it('validates matching passwords', async () => {
     render(<SignupPage />)
 
-    fireEvent.change(screen.getByLabelText(/Username/i), { target: { value: 'testuser' } })
-    fireEvent.change(screen.getByLabelText(/Full Name/i), { target: { value: 'Test User' } })
-    fireEvent.change(screen.getByLabelText(/Email Address/i), { target: { value: 'test@example.com' } })
-    fireEvent.change(screen.getAllByLabelText(/Password/i)[0], { target: { value: 'pass1' } })
-    fireEvent.change(screen.getByLabelText(/Confirm/i), { target: { value: 'pass2' } })
-    fireEvent.click(screen.getByRole('button', { name: /Create Free Account/i }))
+    fireEvent.change(screen.getByLabelText(/Username/i), {
+      target: { value: 'testuser' },
+    })
+    fireEvent.change(screen.getByLabelText(/Full Name/i), {
+      target: { value: 'Test User' },
+    })
+    fireEvent.change(screen.getByLabelText(/Email Address/i), {
+      target: { value: 'test@example.com' },
+    })
+    fireEvent.change(screen.getAllByLabelText(/Password/i)[0], {
+      target: { value: 'pass1' },
+    })
+    fireEvent.change(screen.getByLabelText(/Confirm/i), {
+      target: { value: 'pass2' },
+    })
+    fireEvent.click(
+      screen.getByRole('button', { name: /Create Free Account/i })
+    )
 
     expect(toast.error).toHaveBeenCalledWith('Passwords do not match')
   })
 
   it('handles successful signup', async () => {
-    const userData = { username: 'testuser', email: 'test@example.com' };
+    const userData = { username: 'testuser', email: 'test@example.com' }
     ;(apiClient.post as jest.Mock).mockResolvedValueOnce({
       data: { token: 'fake-token', user: userData },
     })
 
     render(<SignupPage />)
 
-    fireEvent.change(screen.getByLabelText(/Username/i), { target: { value: 'testuser' } })
-    fireEvent.change(screen.getByLabelText(/Full Name/i), { target: { value: 'Test User' } })
-    fireEvent.change(screen.getByLabelText(/Email Address/i), { target: { value: 'test@example.com' } })
-    fireEvent.change(screen.getAllByLabelText(/Password/i)[0], { target: { value: 'password123' } })
-    fireEvent.change(screen.getByLabelText(/Confirm/i), { target: { value: 'password123' } })
-    fireEvent.click(screen.getByRole('button', { name: /Create Free Account/i }))
+    fireEvent.change(screen.getByLabelText(/Username/i), {
+      target: { value: 'testuser' },
+    })
+    fireEvent.change(screen.getByLabelText(/Full Name/i), {
+      target: { value: 'Test User' },
+    })
+    fireEvent.change(screen.getByLabelText(/Email Address/i), {
+      target: { value: 'test@example.com' },
+    })
+    fireEvent.change(screen.getAllByLabelText(/Password/i)[0], {
+      target: { value: 'password123' },
+    })
+    fireEvent.change(screen.getByLabelText(/Confirm/i), {
+      target: { value: 'password123' },
+    })
+    fireEvent.click(
+      screen.getByRole('button', { name: /Create Free Account/i })
+    )
 
     await waitFor(() => {
-      expect(apiClient.post).toHaveBeenCalledWith('/auth/register/', expect.objectContaining({
-        username: 'testuser',
-        email: 'test@example.com',
-      }))
+      expect(apiClient.post).toHaveBeenCalledWith(
+        '/auth/register/',
+        expect.objectContaining({
+          username: 'testuser',
+          email: 'test@example.com',
+        })
+      )
       expect(mockLogin).toHaveBeenCalledWith('fake-token', userData)
     })
   })

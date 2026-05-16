@@ -1,60 +1,68 @@
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly, AllowAny
-from django.db.models import Count, Q
-from .models import (
-    Problem, Codeblock, Testcase, Solution,
-    Tags, Discuss, AnswerStatus
+from rest_framework.permissions import (
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly,
+    AllowAny,
 )
+from django.db.models import Count, Q
+from .models import Problem, Codeblock, Testcase, Solution, Tags, Discuss, AnswerStatus
 from .serializers import (
-    ProblemListSerializer, ProblemDetailSerializer,
-    CodeblockSerializer, TestcaseSerializer,
-    SolutionListSerializer, SolutionDetailSerializer, SolutionSubmitSerializer,
-    TagsSerializer, DiscussListSerializer, DiscussDetailSerializer,
-    ProblemStatisticsSerializer
+    ProblemListSerializer,
+    ProblemDetailSerializer,
+    CodeblockSerializer,
+    TestcaseSerializer,
+    SolutionListSerializer,
+    SolutionDetailSerializer,
+    SolutionSubmitSerializer,
+    TagsSerializer,
+    DiscussListSerializer,
+    DiscussDetailSerializer,
+    ProblemStatisticsSerializer,
 )
 from engine.services import submit_to_judge0
 
 # Map our internal Language choices to Judge0 language IDs
 JUDGE0_LANGUAGE_MAP = {
-    'CPP': 54,        # C++ (GCC 9.2.0)
-    'JAVA': 62,       # Java (OpenJDK 13.0.1)
-    'PYTHON': 71,     # Python (3.8.1)
-    'JAVASCRIPT': 63, # JavaScript (Node.js 12.14.0)
-    'TYPESCRIPT': 74  # TypeScript (3.7.4)
+    "CPP": 54,  # C++ (GCC 9.2.0)
+    "JAVA": 62,  # Java (OpenJDK 13.0.1)
+    "PYTHON": 71,  # Python (3.8.1)
+    "JAVASCRIPT": 63,  # JavaScript (Node.js 12.14.0)
+    "TYPESCRIPT": 74,  # TypeScript (3.7.4)
 }
 
 # Map Judge0 status IDs to our AnswerStatus
 JUDGE0_STATUS_MAP = {
-    3: AnswerStatus.ACCEPTED,            # Accepted
-    4: AnswerStatus.WRONG_ANSWER,        # Wrong Answer
-    5: AnswerStatus.TIME_LIMIT_EXCEEDED, # Time Limit Exceeded
-    6: AnswerStatus.COMPILATION_ERROR,   # Compilation Error
-    7: AnswerStatus.RUNTIME_ERROR_SIGSEGV, # Runtime Error (SIGSEGV)
-    8: AnswerStatus.RUNTIME_ERROR_SIGXFSZ, # Runtime Error (SIGXFSZ)
+    3: AnswerStatus.ACCEPTED,  # Accepted
+    4: AnswerStatus.WRONG_ANSWER,  # Wrong Answer
+    5: AnswerStatus.TIME_LIMIT_EXCEEDED,  # Time Limit Exceeded
+    6: AnswerStatus.COMPILATION_ERROR,  # Compilation Error
+    7: AnswerStatus.RUNTIME_ERROR_SIGSEGV,  # Runtime Error (SIGSEGV)
+    8: AnswerStatus.RUNTIME_ERROR_SIGXFSZ,  # Runtime Error (SIGXFSZ)
     9: AnswerStatus.RUNTIME_ERROR_SIGFPE,  # Runtime Error (SIGFPE)
-    10: AnswerStatus.RUNTIME_ERROR_SIGABRT,# Runtime Error (SIGABRT)
-    11: AnswerStatus.RUNTIME_ERROR_NZEC,   # Runtime Error (NZEC)
+    10: AnswerStatus.RUNTIME_ERROR_SIGABRT,  # Runtime Error (SIGABRT)
+    11: AnswerStatus.RUNTIME_ERROR_NZEC,  # Runtime Error (NZEC)
     12: AnswerStatus.RUNTIME_ERROR_OTHER,  # Runtime Error (Other)
-    13: AnswerStatus.INTERNAL_ERROR,      # Internal Error
-    14: AnswerStatus.EXEC_FORMAT_ERROR,   # Exec Format Error
+    13: AnswerStatus.INTERNAL_ERROR,  # Internal Error
+    14: AnswerStatus.EXEC_FORMAT_ERROR,  # Exec Format Error
 }
 
+
 class ProblemViewSet(viewsets.ModelViewSet):
-    queryset = Problem.objects.prefetch_related('tags', 'codeblocks', 'testcases').all()
+    queryset = Problem.objects.prefetch_related("tags", "codeblocks", "testcases").all()
     permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['name', 'problem_description']
-    ordering_fields = ['created_at', 'id']
-    ordering = ['-created_at']
+    search_fields = ["name", "problem_description"]
+    ordering_fields = ["created_at", "id"]
+    ordering = ["-created_at"]
 
     def get_serializer_class(self):
-        if self.action == 'list':
+        if self.action == "list":
             return ProblemListSerializer
         return ProblemDetailSerializer
 
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=["get"])
     def statistics(self, request, pk=None):
         """Get statistics for a specific problem"""
         problem = self.get_object()
@@ -70,110 +78,117 @@ class ProblemViewSet(viewsets.ModelViewSet):
 
         language_breakdown = {}
         from user.models import CodingLanguage
+
         for choice in CodingLanguage.choices:
             count = solutions.filter(language=choice[0]).count()
             if count > 0:
                 language_breakdown[choice[1]] = count
 
         data = {
-            'total_submissions': total,
-            'successful_submissions': successful,
-            'success_rate': round((successful / total * 100), 2) if total > 0 else 0,
-            'status_breakdown': status_breakdown,
-            'language_breakdown': language_breakdown
+            "total_submissions": total,
+            "successful_submissions": successful,
+            "success_rate": round((successful / total * 100), 2) if total > 0 else 0,
+            "status_breakdown": status_breakdown,
+            "language_breakdown": language_breakdown,
         }
 
         serializer = ProblemStatisticsSerializer(data)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=["get"])
     def solutions(self, request, pk=None):
         """Get all solutions for a problem"""
         problem = self.get_object()
-        solutions = problem.solutions.select_related('user').all()
+        solutions = problem.solutions.select_related("user").all()
 
         # Filter by status if provided
-        status_filter = request.query_params.get('status', None)
+        status_filter = request.query_params.get("status", None)
         if status_filter:
             solutions = solutions.filter(status=status_filter)
 
         serializer = SolutionListSerializer(solutions, many=True)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=["get"])
     def discussions(self, request, pk=None):
         """Get all discussions for a problem"""
         problem = self.get_object()
-        discussions = problem.discussions.select_related('author').prefetch_related('tags').all()
+        discussions = (
+            problem.discussions.select_related("author").prefetch_related("tags").all()
+        )
         serializer = DiscussListSerializer(discussions, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=["get"])
     def by_tag(self, request):
         """Filter problems by tag"""
-        tag_name = request.query_params.get('tag', None)
+        tag_name = request.query_params.get("tag", None)
         if not tag_name:
             return Response(
-                {'error': 'tag parameter is required'},
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "tag parameter is required"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         problems = self.queryset.filter(tags__tags__icontains=tag_name)
         serializer = self.get_serializer(problems, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=["get"])
     def my_attempts(self, request):
         """Get problems the user has attempted"""
         if not request.user.is_authenticated:
             return Response(
-                {'error': 'Authentication required'},
-                status=status.HTTP_401_UNAUTHORIZED
+                {"error": "Authentication required"},
+                status=status.HTTP_401_UNAUTHORIZED,
             )
 
-        problem_ids = Solution.objects.filter(user=request.user).values_list('problem_id', flat=True).distinct()
+        problem_ids = (
+            Solution.objects.filter(user=request.user)
+            .values_list("problem_id", flat=True)
+            .distinct()
+        )
         problems = self.queryset.filter(id__in=problem_ids)
         serializer = self.get_serializer(problems, many=True)
         return Response(serializer.data)
 
 
 class CodeblockViewSet(viewsets.ModelViewSet):
-    queryset = Codeblock.objects.select_related('problem').all()
+    queryset = Codeblock.objects.select_related("problem").all()
     serializer_class = CodeblockSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        problem_id = self.request.query_params.get('problem_id', None)
+        problem_id = self.request.query_params.get("problem_id", None)
         if problem_id:
             queryset = queryset.filter(problem_id=problem_id)
         return queryset
 
 
 class TestcaseViewSet(viewsets.ModelViewSet):
-    queryset = Testcase.objects.select_related('problem').all()
+    queryset = Testcase.objects.select_related("problem").all()
     serializer_class = TestcaseSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        problem_id = self.request.query_params.get('problem_id', None)
+        problem_id = self.request.query_params.get("problem_id", None)
         if problem_id:
             queryset = queryset.filter(problem_id=problem_id)
         return queryset
 
 
 class SolutionViewSet(viewsets.ModelViewSet):
-    queryset = Solution.objects.select_related('user', 'problem').all()
+    queryset = Solution.objects.select_related("user", "problem").all()
     permission_classes = [IsAuthenticated]
     filter_backends = [filters.OrderingFilter]
-    ordering_fields = ['created_at', 'status']
-    ordering = ['-created_at']
+    ordering_fields = ["created_at", "status"]
+    ordering = ["-created_at"]
 
     def get_serializer_class(self):
-        if self.action == 'list':
+        if self.action == "list":
             return SolutionListSerializer
-        elif self.action == 'submit':
+        elif self.action == "submit":
             return SolutionSubmitSerializer
         return SolutionDetailSerializer
 
@@ -185,26 +200,26 @@ class SolutionViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(user=self.request.user)
 
         # Filter by problem_id if provided
-        problem_id = self.request.query_params.get('problem_id', None)
+        problem_id = self.request.query_params.get("problem_id", None)
         if problem_id:
             queryset = queryset.filter(problem_id=problem_id)
 
         # Filter by status if provided
-        status_filter = self.request.query_params.get('status', None)
+        status_filter = self.request.query_params.get("status", None)
         if status_filter:
             queryset = queryset.filter(status=status_filter)
 
         return queryset
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=["post"])
     def submit(self, request):
         """Submit a solution for evaluation"""
         serializer = SolutionSubmitSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        problem_id = serializer.validated_data['problem_id']
-        code = serializer.validated_data['code']
-        language = serializer.validated_data.get('language', request.user.default_lang)
+        problem_id = serializer.validated_data["problem_id"]
+        code = serializer.validated_data["code"]
+        language = serializer.validated_data.get("language", request.user.default_lang)
 
         # Get problem and relevant codeblock
         try:
@@ -212,8 +227,8 @@ class SolutionViewSet(viewsets.ModelViewSet):
             codeblock = problem.codeblocks.get(language=language)
         except (Problem.DoesNotExist, Codeblock.DoesNotExist):
             return Response(
-                {'error': 'Invalid problem or language selection'},
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "Invalid problem or language selection"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Construct full source code for evaluation
@@ -221,9 +236,11 @@ class SolutionViewSet(viewsets.ModelViewSet):
 
         # Prepare evaluation payload
         evaluation_payload = {
-            'problem_id': problem_id,
-            'source_code': full_code,
-            'language_id': JUDGE0_LANGUAGE_MAP.get(language, 71), # Default to Python if missing
+            "problem_id": problem_id,
+            "source_code": full_code,
+            "language_id": JUDGE0_LANGUAGE_MAP.get(
+                language, 71
+            ),  # Default to Python if missing
         }
 
         try:
@@ -231,8 +248,12 @@ class SolutionViewSet(viewsets.ModelViewSet):
             result = submit_to_judge0(evaluation_payload, is_submit=True)
 
             # Map Judge0 status to internal status
-            judge0_id = result.get('status', {}).get('id', 4) # Default to Wrong Answer if unknown
-            internal_status = JUDGE0_STATUS_MAP.get(judge0_id, AnswerStatus.WRONG_ANSWER)
+            judge0_id = result.get("status", {}).get(
+                "id", 4
+            )  # Default to Wrong Answer if unknown
+            internal_status = JUDGE0_STATUS_MAP.get(
+                judge0_id, AnswerStatus.WRONG_ANSWER
+            )
 
             # Create solution with actual status
             solution = Solution.objects.create(
@@ -240,7 +261,7 @@ class SolutionViewSet(viewsets.ModelViewSet):
                 problem_id=problem_id,
                 code=code,
                 language=language,
-                status=internal_status
+                status=internal_status,
             )
 
             response_serializer = SolutionDetailSerializer(solution)
@@ -252,14 +273,14 @@ class SolutionViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_502_BAD_GATEWAY,
             )
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=["get"])
     def my_solutions(self, request):
         """Get current user's solutions"""
         solutions = self.queryset.filter(user=request.user)
         serializer = self.get_serializer(solutions, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=["get"])
     def statistics(self, request):
         """Get user's solution statistics"""
         solutions = Solution.objects.filter(user=request.user)
@@ -271,10 +292,10 @@ class SolutionViewSet(viewsets.ModelViewSet):
             status_counts[choice[1]] = count
 
         data = {
-            'total_submissions': total,
-            'successful_submissions': status_counts.get('Accepted', 0),
-            'status_breakdown': status_counts,
-            'unique_problems_attempted': solutions.values('problem').distinct().count()
+            "total_submissions": total,
+            "successful_submissions": status_counts.get("Accepted", 0),
+            "status_breakdown": status_counts,
+            "unique_problems_attempted": solutions.values("problem").distinct().count(),
         }
 
         return Response(data)
@@ -285,9 +306,9 @@ class TagsViewSet(viewsets.ModelViewSet):
     serializer_class = TagsSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = [filters.SearchFilter]
-    search_fields = ['tags']
+    search_fields = ["tags"]
 
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=["get"])
     def problems(self, request, pk=None):
         """Get all problems with this tag"""
         tag = self.get_object()
@@ -295,26 +316,30 @@ class TagsViewSet(viewsets.ModelViewSet):
         serializer = ProblemListSerializer(problems, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=["get"])
     def popular(self, request):
         """Get most used tags"""
-        tags = self.queryset.annotate(
-            problem_count=Count('problems')
-        ).order_by('-problem_count')[:10]
+        tags = self.queryset.annotate(problem_count=Count("problems")).order_by(
+            "-problem_count"
+        )[:10]
         serializer = self.get_serializer(tags, many=True)
         return Response(serializer.data)
 
 
 class DiscussViewSet(viewsets.ModelViewSet):
-    queryset = Discuss.objects.select_related('author', 'problem', 'user').prefetch_related('tags').all()
+    queryset = (
+        Discuss.objects.select_related("author", "problem", "user")
+        .prefetch_related("tags")
+        .all()
+    )
     permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['title', 'body']
-    ordering_fields = ['created_at']
-    ordering = ['-created_at']
+    search_fields = ["title", "body"]
+    ordering_fields = ["created_at"]
+    ordering = ["-created_at"]
 
     def get_serializer_class(self):
-        if self.action == 'list':
+        if self.action == "list":
             return DiscussListSerializer
         return DiscussDetailSerializer
 
@@ -325,8 +350,8 @@ class DiscussViewSet(viewsets.ModelViewSet):
         # Only author can update
         if serializer.instance.author != self.request.user:
             return Response(
-                {'error': 'You can only edit your own discussions'},
-                status=status.HTTP_403_FORBIDDEN
+                {"error": "You can only edit your own discussions"},
+                status=status.HTTP_403_FORBIDDEN,
             )
         serializer.save()
 
@@ -334,26 +359,26 @@ class DiscussViewSet(viewsets.ModelViewSet):
         # Only author can delete
         if instance.author != self.request.user and not self.request.user.is_staff:
             return Response(
-                {'error': 'You can only delete your own discussions'},
-                status=status.HTTP_403_FORBIDDEN
+                {"error": "You can only delete your own discussions"},
+                status=status.HTTP_403_FORBIDDEN,
             )
         instance.delete()
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=["get"])
     def my_discussions(self, request):
         """Get current user's discussions"""
         discussions = self.queryset.filter(author=request.user)
         serializer = self.get_serializer(discussions, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=["get"])
     def by_problem(self, request):
         """Get discussions for a specific problem"""
-        problem_id = request.query_params.get('problem_id', None)
+        problem_id = request.query_params.get("problem_id", None)
         if not problem_id:
             return Response(
-                {'error': 'problem_id parameter is required'},
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "problem_id parameter is required"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         discussions = self.queryset.filter(problem_id=problem_id)

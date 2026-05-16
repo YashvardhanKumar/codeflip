@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('problem', '0004_codeblock_imports_codeblock_runner_code_and_more'),
+        ("problem", "0004_codeblock_imports_codeblock_runner_code_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='testcase',
-            name='display_testcase',
+            model_name="testcase",
+            name="display_testcase",
             field=models.BooleanField(default=False),
         ),
     ]

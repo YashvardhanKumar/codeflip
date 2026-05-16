@@ -18,42 +18,52 @@ jest.mock('swr')
 
 // Mock framer-motion
 jest.mock('framer-motion', () => {
-  const React = require('react');
+  const React = require('react')
   const Dummy = ({ children, ...props }: any) => {
-    const { 
-      whileInView, 
-      whileHover, 
-      whileTap, 
-      whileFocus, 
-      whileDrag, 
-      initial, 
-      animate, 
-      exit, 
-      variants, 
+    const {
+      whileInView,
+      whileHover,
+      whileTap,
+      whileFocus,
+      whileDrag,
+      initial,
+      animate,
+      exit,
+      variants,
       transition,
       viewport,
-      ...validProps 
-    } = props;
-    return React.createElement('div', validProps, children);
-  };
+      ...validProps
+    } = props
+    return React.createElement('div', validProps, children)
+  }
   return {
     motion: {
       div: Dummy,
     },
     AnimatePresence: ({ children }: any) => <>{children}</>,
-  };
+  }
 })
 
 // Mock heavy components
-jest.mock('@/components/problem/code-editor', () => () => <div data-testid="code-editor">Code Editor</div>)
-jest.mock('@/components/problem/problem-description', () => () => <div data-testid="problem-description">Description</div>)
-jest.mock('@/components/problem/header', () => () => <div data-testid="problem-header">Header</div>)
+jest.mock('@/components/problem/code-editor', () => () => (
+  <div data-testid="code-editor">Code Editor</div>
+))
+jest.mock('@/components/problem/problem-description', () => () => (
+  <div data-testid="problem-description">Description</div>
+))
+jest.mock('@/components/problem/header', () => () => (
+  <div data-testid="problem-header">Header</div>
+))
 
 // Mock react-resizable-panels
 jest.mock('react-resizable-panels', () => ({
-  PanelGroup: ({ children }: any) => <div data-testid="panel-group">{children}</div>,
+  PanelGroup: ({ children }: any) => (
+    <div data-testid="panel-group">{children}</div>
+  ),
   Panel: ({ children }: any) => <div data-testid="panel">{children}</div>,
-  PanelResizeHandle: ({ children }: any) => <div data-testid="resize-handle">{children}</div>,
+  PanelResizeHandle: ({ children }: any) => (
+    <div data-testid="resize-handle">{children}</div>
+  ),
 }))
 
 // Mock apiClient
@@ -62,9 +72,9 @@ jest.mock('@/lib/utils', () => ({
   default: {
     post: jest.fn(),
     get: jest.fn(() => Promise.resolve({ data: {} })),
-    defaults: { 
+    defaults: {
       baseURL: 'http://localhost:8000',
-      headers: { common: {} }
+      headers: { common: {} },
     },
   },
   cn: (...inputs: any[]) => inputs.filter(Boolean).join(' '),
@@ -73,7 +83,11 @@ jest.mock('@/lib/utils', () => ({
 describe('ProblemDetailPage', () => {
   it('renders loader while fetching', () => {
     ;(useParams as jest.Mock).mockReturnValue({ id: '1' })
-    ;(useSWR as jest.Mock).mockReturnValue({ data: null, error: null, isLoading: true })
+    ;(useSWR as jest.Mock).mockReturnValue({
+      data: null,
+      error: null,
+      isLoading: true,
+    })
 
     render(
       <AuthProvider>
@@ -87,10 +101,10 @@ describe('ProblemDetailPage', () => {
 
   it('renders problem details when loaded', () => {
     ;(useParams as jest.Mock).mockReturnValue({ id: '1' })
-    ;(useSWR as jest.Mock).mockReturnValue({ 
-      data: { id: 1, name: 'Two Sum' }, 
-      error: null, 
-      isLoading: false 
+    ;(useSWR as jest.Mock).mockReturnValue({
+      data: { id: 1, name: 'Two Sum' },
+      error: null,
+      isLoading: false,
     })
 
     render(
@@ -106,7 +120,11 @@ describe('ProblemDetailPage', () => {
 
   it('renders error state', () => {
     ;(useParams as jest.Mock).mockReturnValue({ id: '1' })
-    ;(useSWR as jest.Mock).mockReturnValue({ data: null, error: true, isLoading: false })
+    ;(useSWR as jest.Mock).mockReturnValue({
+      data: null,
+      error: true,
+      isLoading: false,
+    })
 
     render(
       <AuthProvider>
