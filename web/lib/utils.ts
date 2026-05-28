@@ -3,8 +3,27 @@ import { twMerge } from "tailwind-merge"
 import axios from "axios";
 import { BASE_URL } from "./constants";
 
+import { format } from "date-fns";
+import { toZonedTime } from "date-fns-tz";
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
+}
+
+/**
+ * Formats a date string into the user's local timezone.
+ * If the timezone cannot be detected, it defaults to the system time.
+ */
+export function formatInUserTimezone(dateString: string, formatStr: string): string {
+  try {
+    const date = new Date(dateString);
+    const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const zonedDate = toZonedTime(date, userTimezone);
+    return format(zonedDate, formatStr);
+  } catch (error) {
+    console.error("Error formatting date:", error);
+    return dateString;
+  }
 }
 
 function getToken() {

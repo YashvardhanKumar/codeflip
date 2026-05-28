@@ -44,10 +44,69 @@ JUDGE0_STATUS_MAP = {
 class ProblemViewSet(viewsets.ModelViewSet):
     queryset = Problem.objects.prefetch_related('tags', 'codeblocks', 'testcases').all()
     permission_classes = [IsAuthenticatedOrReadOnly]
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['name', 'problem_description']
-    ordering_fields = ['created_at', 'id']
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = ['created_at', 'id', 'total_solutions']
     ordering = ['-created_at']
+
+    def get_queryset(self):
+        queryset = super().get_queryset().annotate(
+            total_solutions=Count('solutions', distinct=True)
+        )
+
+        search = self.request.query_params.get('search')
+        if search:
+            search_filter = Q(name__icontains=search) | Q(problem_description__icontains=search)
+            if search.isdigit():
+                search_filter |= Q(id=int(search))
+            queryset = queryset.filter(search_filter)
+
+        difficulty = self.request.query_params.get('difficulty')
+        if difficulty:
+            difficulties = [value.strip().upper() for value in difficulty.split(',') if value.strip()]
+            queryset = queryset.filter(difficulty__in=difficulties)
+
+        tags = self.request.query_params.get('tags')
+        if tags:
+            tag_values = [value.strip() for value in tags.split(',') if value.strip()]
+            tag_ids = [value for value in tag_values if value.isdigit()]
+            tag_names = [value for value in tag_values if not value.isdigit()]
+
+            tag_filter = Q()
+            if tag_ids:
+                tag_filter |= Q(tags__id__in=tag_ids)
+            if tag_names:
+                tag_filter |= Q(tags__tags__in=tag_names)
+
+            queryset = queryset.filter(tag_filter).distinct()
+
+        progress = self.request.query_params.get('status')
+        if progress:
+            statuses = {value.strip().lower() for value in progress.split(',') if value.strip()}
+
+            if not self.request.user.is_authenticated:
+                if statuses == {'unsolved'}:
+                    return queryset
+                return queryset.none()
+
+            attempted_ids = Solution.objects.filter(
+                user=self.request.user
+            ).values_list('problem_id', flat=True).distinct()
+            solved_ids = Solution.objects.filter(
+                user=self.request.user,
+                status=AnswerStatus.ACCEPTED
+            ).values_list('problem_id', flat=True).distinct()
+
+            progress_filter = Q()
+            if 'solved' in statuses:
+                progress_filter |= Q(id__in=solved_ids)
+            if 'attempted' in statuses:
+                progress_filter |= Q(id__in=attempted_ids) & ~Q(id__in=solved_ids)
+            if 'unsolved' in statuses:
+                progress_filter |= ~Q(id__in=attempted_ids)
+
+            queryset = queryset.filter(progress_filter)
+
+        return queryset
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -134,6 +193,19 @@ class ProblemViewSet(viewsets.ModelViewSet):
         problem_ids = Solution.objects.filter(user=request.user).values_list('problem_id', flat=True).distinct()
         problems = self.queryset.filter(id__in=problem_ids)
         serializer = self.get_serializer(problems, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def random(self, request):
+        """Pick a random problem from the current filtered set"""
+        problem = self.filter_queryset(self.get_queryset()).order_by('?').first()
+        if not problem:
+            return Response(
+                {'error': 'No problems match the current filters'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = ProblemListSerializer(problem)
         return Response(serializer.data)
 
 

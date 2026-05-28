@@ -1,6 +1,6 @@
 // app/problems/[id]/page.tsx
 "use client";
-import ProblemHeader from '@/components/problem/header';
+import Header from '@/components/header';
 import ProblemDescription from '@/components/problem/problem-description';
 import CodeEditor from '@/components/problem/code-editor';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
@@ -32,7 +32,7 @@ export default function ProblemDetailPage() {
   return (
     <PageTransition>
       <div className="h-screen flex flex-col overflow-hidden bg-background-dark">
-        <ProblemHeader />
+        <Header variant="problem" />
 
         <ResizablePanelGroup direction="horizontal">
           <ProblemDescription problem={data} />

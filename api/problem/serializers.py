@@ -7,10 +7,22 @@ from user.models import User, CodingLanguage
 
 
 class UserSerializer(serializers.ModelSerializer):
+    profile_picture_url = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'name', 'default_lang', 'date_joined']
+        fields = ['id', 'username', 'email', 'name', 'default_lang', 'profile_picture', 'profile_picture_url', 'date_joined']
         read_only_fields = ['id', 'date_joined']
+
+    def get_profile_picture_url(self, obj):
+        if not obj.profile_picture:
+            return None
+
+        request = self.context.get('request')
+        url = obj.profile_picture.url
+        if request:
+            return request.build_absolute_uri(url)
+        return url
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):

@@ -1,8 +1,44 @@
 // components/DailyChallenge.tsx
+'use client';
+
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import useSWR from 'swr';
+import { PaginatedResponse, Problem } from '@/lib/models';
+import { apiFetcher } from '@/lib/utils';
+import { Skeleton } from './ui/skeleton';
 
 export default function DailyChallenge() {
+  const { data, isLoading } = useSWR<PaginatedResponse<Problem>>(
+    'problems/?ordering=id',
+    apiFetcher
+  );
+  const problem = data?.results[0];
+  const userTimezone = typeof window !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'UTC';
+  const today = new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    timeZone: userTimezone,
+  }).format(new Date());
+
+  if (isLoading) {
+    return (
+      <div className="h-full rounded-xl border border-slate-200 dark:border-surface-border bg-white dark:bg-surface-dark p-4">
+        <Skeleton className="h-3 w-28 mb-4" />
+        <Skeleton className="h-6 w-48 mb-6" />
+        <Skeleton className="h-8 w-full" />
+      </div>
+    );
+  }
+
+  if (!problem) {
+    return (
+      <div className="h-full rounded-xl border border-slate-200 dark:border-surface-border bg-white dark:bg-surface-dark p-4 text-sm text-slate-500 dark:text-text-secondary">
+        No daily challenge available.
+      </div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
@@ -11,7 +47,7 @@ export default function DailyChallenge() {
       transition={{ duration: 0.4 }}
     >
       <Link
-        href="/problems/daily"
+        href={`/problems/${problem.id}`}
         className="relative block h-full overflow-hidden rounded-xl border border-slate-200 dark:border-surface-border bg-white dark:bg-surface-dark shadow-sm dark:shadow-lg group cursor-pointer hover:border-primary/50 transition-all hover:shadow-xl hover:shadow-primary/5"
       >
         <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
@@ -25,11 +61,11 @@ export default function DailyChallenge() {
                 Daily Challenge
               </p>
               <span className="bg-primary/10 text-primary text-xs font-bold px-2 py-0.5 rounded-full">
-                APR 12
+                {today}
               </span>
             </div>
             <h3 className="text-slate-900 dark:text-white text-lg font-bold leading-tight line-clamp-1 group-hover:text-primary transition-colors">
-              Invert Binary Tree
+              {problem.name}
             </h3>
           </div>
 
@@ -41,9 +77,9 @@ export default function DailyChallenge() {
                 +99
               </div>
             </div>
-            <button className="text-primary text-xs font-bold hover:underline">
+            <span className="text-primary text-xs font-bold group-hover:underline">
               Solve Now →
-            </button>
+            </span>
           </div>
         </div>
       </Link>

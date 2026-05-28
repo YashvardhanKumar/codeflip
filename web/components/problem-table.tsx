@@ -1,19 +1,23 @@
 import Link from 'next/link';
 import Pagination from './pagination';
-import useSWR from 'swr';
 import { Skeleton } from './ui/skeleton';
 import { PaginatedResponse, Problem } from '@/lib/models';
 import { motion } from 'framer-motion';
-import { apiFetcher } from '@/lib/utils';
 
+interface ProblemTableProps {
+    data?: PaginatedResponse<Problem>;
+    error?: Error;
+    isLoading: boolean;
+    page: number;
+    onPageChange: (page: number) => void;
+}
 
-export default function ProblemTable() {
-    const { data, error, isLoading } = useSWR<PaginatedResponse<Problem>>("problems/", apiFetcher)
-
+export default function ProblemTable({ data, error, isLoading, page, onPageChange }: ProblemTableProps) {
     if (isLoading) return <ProblemTableSkeleton />;
 
     if (error) return <div>Error: {error.message}</div>
-    console.log(data);
+
+    const problems = data?.results ?? [];
 
     return (
         <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-surface-border rounded-xl overflow-hidden shadow-sm dark:shadow-none animate-in fade-in duration-700">
@@ -26,14 +30,29 @@ export default function ProblemTable() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-surface-border text-sm">
-                        {data?.results.map((problem: Problem, index: number) => (
-                            <ProblemRow key={problem.id} problem={problem} index={index} />
-                        ))}
+                        {problems.length > 0 ? (
+                            problems.map((problem: Problem, index: number) => (
+                                <ProblemRow key={problem.id} problem={problem} index={index} />
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan={2} className="px-6 py-12 text-center text-slate-500 dark:text-text-secondary">
+                                    No problems match the current filters.
+                                </td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </div>
 
-            <Pagination />
+            <Pagination
+                count={data?.count ?? 0}
+                currentPage={page}
+                pageSize={20}
+                hasNext={Boolean(data?.next)}
+                hasPrevious={Boolean(data?.previous)}
+                onPageChange={onPageChange}
+            />
         </div>
     );
 }
@@ -80,16 +99,6 @@ function ProblemRow({ problem, index }: { problem: Problem; index: number }) {
         HARD: 'text-red-600 dark:text-red-500'
     };
 
-    const statusIcons = {
-        solved: 'check_circle',
-        attempted: 'hourglass_top'
-    };
-
-    const statusColors = {
-        solved: 'text-green-500',
-        attempted: 'text-yellow-500'
-    };
-
     return (
         <motion.tr
             initial={{ opacity: 0, x: -10 }}
@@ -105,6 +114,18 @@ function ProblemRow({ problem, index }: { problem: Problem; index: number }) {
                 >
                     {problem.id}. {problem.name}
                 </Link>
+                {problem.tags?.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                        {problem.tags.slice(0, 4).map((tag) => (
+                            <span
+                                key={tag.id}
+                                className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[11px] text-slate-500 dark:text-text-secondary"
+                            >
+                                {tag.tags}
+                            </span>
+                        ))}
+                    </div>
+                )}
             </td>
             <td className="px-6 py-4">
                 <span className={`font-medium ${difficultyColors[problem.difficulty ?? 'EASY']}`}>

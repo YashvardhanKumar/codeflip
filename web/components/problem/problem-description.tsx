@@ -11,10 +11,9 @@ import Script from 'next/script';
 import { useAuth } from '@/components/auth-provider';
 import useSWR from 'swr';
 import { Loader } from '@/components/loader';
-import { format } from 'date-fns';
 import { CheckCircle2, XCircle, Clock, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
-import { apiFetcher } from '@/lib/utils';
+import { apiFetcher, formatInUserTimezone } from '@/lib/utils';
 
 declare global {
   interface Window {
@@ -245,7 +244,7 @@ function SubmissionsTab({ problemId, authenticated }: { problemId: number, authe
                   {sub.language_display}
                 </td>
                 <td className="px-4 py-4 text-xs text-gray-500">
-                  {format(new Date(sub.created_at), 'MMM d, yyyy HH:mm')}
+                  {formatInUserTimezone(sub.created_at, 'MMM d, yyyy HH:mm')}
                 </td>
               </tr>
             ))}
