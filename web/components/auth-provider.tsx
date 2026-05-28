@@ -28,7 +28,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("user");
     setToken(null);
     setUser(null);
-    delete apiClient.defaults.headers.common["Authorization"];
     toast.success("Logged out successfully");
     router.push("/");
   }, [router]);
@@ -38,7 +37,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("user", JSON.stringify(newUser));
     setToken(newToken);
     setUser(newUser);
-    apiClient.defaults.headers.common["Authorization"] = `Token ${newToken}`;
     toast.success(`Welcome back, ${newUser.name || newUser.username}!`);
     router.push("/problems");
   }, [router]);
@@ -48,9 +46,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await apiClient.get("/auth/users/me/");
       setUser(response.data);
       localStorage.setItem("user", JSON.stringify(response.data));
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to refresh user", error);
-      logout();
+      // Only logout on definitive auth failure
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        logout();
+      }
     }
   }, [logout]);
 
@@ -60,16 +61,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (storedToken && storedUser) {
       setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-      apiClient.defaults.headers.common["Authorization"] = `Token ${storedToken}`;
-      // Verify token/refresh user data
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.error("Failed to parse stored user", e);
+        logout();
+        return;
+      }
+      
+      // Verify token/refresh user data in background
       apiClient.get("/auth/users/me/")
         .then(res => {
           setUser(res.data);
           localStorage.setItem("user", JSON.stringify(res.data));
         })
-        .catch(() => {
-          logout();
+        .catch((err) => {
+          console.error("Hydration auth check failed", err);
+          // Only clear session if it's an authentication error
+          if (err.response?.status === 401 || err.response?.status === 403) {
+            logout();
+          }
         })
         .finally(() => {
           setLoading(false);

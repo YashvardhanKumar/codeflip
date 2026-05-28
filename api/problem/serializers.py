@@ -136,8 +136,8 @@ class SolutionListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Solution
-        fields = ['id', 'user', 'problem_id', 'language', 'language_display', 'status', 'status_display', 'created_at']
-        read_only_fields = ['id', 'user', 'status', 'created_at']
+        fields = ['id', 'user', 'problem_id', 'language', 'language_display', 'status', 'status_display', 'testcase_results', 'created_at']
+        read_only_fields = ['id', 'user', 'status', 'created_at', 'testcase_results']
 
 
 class SolutionDetailSerializer(serializers.ModelSerializer):
@@ -147,8 +147,8 @@ class SolutionDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Solution
-        fields = ['id', 'user', 'problem', 'code', 'language', 'language_display', 'status', 'status_display', 'created_at']
-        read_only_fields = ['id', 'user', 'status', 'created_at']
+        fields = ['id', 'user', 'problem', 'code', 'language', 'language_display', 'status', 'status_display', 'testcase_results', 'created_at']
+        read_only_fields = ['id', 'user', 'status', 'created_at', 'testcase_results']
 
     def create(self, validated_data):
         validated_data['user'] = self.context['request'].user

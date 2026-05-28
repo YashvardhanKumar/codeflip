@@ -8,17 +8,15 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "../ui/resizable";
-import { Language, LanguageCodes, Problem, RunCodePayload, User } from "@/lib/models";
+import { Language, LanguageCodes, Problem, User } from "@/lib/models";
 import { useEffect, useState, useRef } from "react";
 import apiClient from "@/lib/utils";
-import { AxiosResponse } from "axios";
 import { ImperativePanelHandle } from "react-resizable-panels";
-import { useAuth } from "../auth-provider";
-import { Button } from "../ui/button";
-import Link from "next/link";
 import { toast } from "sonner";
 import { mutate } from "swr";
 import { BASE_URL } from "@/lib/constants";
+import Link from "next/link";
+import { Button } from "../ui/button";
 
 interface Props {
   problem: Problem;
@@ -29,6 +27,7 @@ export default function CodeEditor({ problem, user }: Props) {
   const [language, setLanguage] = useState<Language>(user?.default_lang ?? Language.CPP);
   const [code, setCode] = useState<string | null>(null);
   const [runData, setRunData] = useState<any[] | null>(null);
+  const [submitData, setSubmitData] = useState<any[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("testcase");
@@ -38,6 +37,14 @@ export default function CodeEditor({ problem, user }: Props) {
   const testPanelRef = useRef<ImperativePanelHandle>(null);
 
   const availableLanguages = problem.codeblocks?.map((cb) => cb.language) ?? [];
+
+  // Update default language in backend whenever it changes
+  useEffect(() => {
+    if (user && language !== user.default_lang) {
+      apiClient.patch("/auth/users/update_language/", { default_lang: language })
+        .catch(err => console.error("Failed to update default language", err));
+    }
+  }, [language, user]);
 
   useEffect(() => {
     if (!problem.id) return;
@@ -83,89 +90,160 @@ export default function CodeEditor({ problem, user }: Props) {
     setIsLoading(true);
     setActiveTab("result");
     setError(null);
-    setRunData(null);
     
+    const relevantTestcases = problem.testcases
+      .filter((e) => e.display_testcase == true)
+      .sort((a, b) => a.id - b.id);
+    
+    const initialRunData = relevantTestcases.map(() => ({ status: { id: 1, description: "Running" } }));
+    setRunData(initialRunData);
+    setActiveCase(0);
+
     if (isTestPanelCollapsed) {
       testPanelRef.current?.expand();
     }
 
     try {
-      const codeblock = problem.codeblocks?.find(
-        (e) => e.language === language
-      );
-
-      if (!codeblock) {
-        throw new Error(`No codeblock found for language: ${language}`);
-      }
-
-      const fullCode =
-        codeblock.imports +
-        "\n\n" +
-        (code ?? codeblock.block) +
-        "\n\n" +
-        codeblock.runner_code;
-      
-      const response = await apiClient.post<
-        any,
-        AxiosResponse<any, any, {}>,
-        RunCodePayload
-      >("/engine/run/", {
-        problem_id: problem.id,
-        source_code: fullCode ?? "",
-        language_id: LanguageCodes[language],
-        number_of_runs: 1,
-        enable_per_process_and_thread_time_limit: true,
-        enable_per_process_and_thread_memory_limit: true,
-        enable_network: true,
+      const response = await fetch(`${BASE_URL}/engine/submit-stream/?mode=run`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          problem_id: problem.id,
+          source_code: code, // Send raw code, backend will wrap it
+          language: language,
+          language_id: LanguageCodes[language],
+        })
       });
 
-      if (Array.isArray(response.data)) {
-        setRunData(response.data);
-        const firstErrorIndex = response.data.findIndex((res: any) => res.status?.id !== 3);
-        if (firstErrorIndex !== -1) {
-          setActiveCase(firstErrorIndex);
-        } else {
-          setActiveCase(0);
-        }
-      } else if (response.data?.status?.id >= 6) {
-        setError(response.data.compile_output || response.data.status.description);
-      } else {
-        setRunData([response.data]);
-        if (response.data?.status?.id !== 3) {
-          setActiveCase(0);
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("Stream reader not available");
+
+      const decoder = new TextDecoder();
+      let currentResults = [...initialRunData];
+      let buffer = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+        
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const payload = JSON.parse(line);
+            if (payload.status === "case_result") {
+              const res = payload.data;
+              currentResults[res.index] = res;
+              setRunData([...currentResults]);
+            } else if (payload.status === "complete") {
+              setIsLoading(false);
+              if (payload.compile_output) {
+                 setError(payload.compile_output);
+              }
+            } else if (payload.status === "error") {
+              setError(payload.message);
+              setIsLoading(false);
+            }
+          } catch (e) {
+            console.error("JSON parse error on line:", line, e);
+          }
         }
       }
     } catch (err: any) {
       console.error("Error running code:", err);
-      setError(err.response?.data?.error || err.message || "Failed to run code");
-    } finally {
+      setError(err.message || "Failed to run code");
       setIsLoading(false);
     }
   };
 
   const submitCode = async () => {
-    if (!user) {
+    const token = localStorage.getItem("token");
+    if (!user || !token) {
       toast.error("Please sign in to submit code");
       return;
     }
 
     setIsLoading(true);
+    setActiveTab("submission");
+    setError(null);
+    
+    const allTestcases = [...problem.testcases].sort((a, b) => a.id - b.id);
+    const initialSubmitData = allTestcases.map(() => ({ status: { id: 1, description: "Queued" } }));
+    setSubmitData(initialSubmitData);
+    setActiveCase(0);
+
+    if (isTestPanelCollapsed) {
+      testPanelRef.current?.expand();
+    }
+
     try {
-      const response = await apiClient.post("/api/solutions/submit/", {
-        problem_id: problem.id,
-        code: code,
-        language: language,
+      const response = await fetch(`${BASE_URL}/engine/submit-stream/?mode=submit`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Token ${token}`
+        },
+        body: JSON.stringify({
+          problem_id: problem.id,
+          source_code: code, // Send raw code, backend will wrap it
+          language: language,
+          language_id: LanguageCodes[language],
+        })
       });
-      
-      if (response.status === 201) {
-        toast.success("Solution submitted successfully!");
-        // Refresh submissions tab
-        mutate(`${BASE_URL}/api/solutions/?problem_id=${problem.id}`);
+
+      if (response.status === 401) {
+        throw new Error("Authentication failed. Please login again.");
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("Stream reader not available");
+
+      const decoder = new TextDecoder();
+      let currentResults = [...initialSubmitData];
+      let buffer = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+        
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const payload = JSON.parse(line);
+            if (payload.status === "case_result") {
+              const res = payload.data;
+              currentResults[res.index] = res;
+              setSubmitData([...currentResults]);
+            } else if (payload.status === "complete") {
+              if (payload.total_status === "Accepted") {
+                toast.success("All test cases passed!");
+              } else if (payload.compile_output) {
+                setError(payload.compile_output);
+                toast.error("Compilation Error");
+              } else {
+                toast.error(`Solution failed: ${payload.total_status}`);
+              }
+              setIsLoading(false);
+              mutate(`${BASE_URL}/api/solutions/?problem_id=${problem.id}`);
+            } else if (payload.status === "error") {
+              setError(payload.message);
+              setIsLoading(false);
+            }
+          } catch (e) {
+            console.error("JSON parse error on line:", line, e);
+          }
+        }
       }
     } catch (err: any) {
-      console.error("Error submitting code:", err);
-      toast.error(err.response?.data?.error || "Failed to submit solution");
-    } finally {
+      console.error("Error streaming submission:", err);
+      setError(err.message || "Failed to process submission stream");
       setIsLoading(false);
     }
   };
@@ -223,6 +301,7 @@ export default function CodeEditor({ problem, user }: Props) {
                 user={user}
                 language={language}
                 runData={runData}
+                submitData={submitData}
                 isLoading={isLoading}
                 error={error}
                 activeTab={activeTab}

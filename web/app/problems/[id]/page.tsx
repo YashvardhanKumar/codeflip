@@ -10,8 +10,9 @@ import { useParams } from 'next/navigation';
 import {Loader} from '@/components/loader';
 import PageTransition from '@/components/page-transition';
 import { useAuth } from '@/components/auth-provider';
+import apiClient from '@/lib/utils';
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+const fetcher = (url: string) => apiClient.get(url).then((res) => res.data)
 
 export default function ProblemDetailPage() {
   const { id } = useParams();

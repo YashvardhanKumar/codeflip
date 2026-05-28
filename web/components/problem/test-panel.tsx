@@ -1,17 +1,16 @@
 // components/problem/TestPanel.tsx
 "use client";
 
-import {
-  Language,
-  Problem,
-  User,
-} from "@/lib/models";
+import { Language, Problem, TestcaseList, User } from "@/lib/models";
+import { useEffect, useState } from "react";
+import TestResultDetail from "./test-result-detail";
 
 interface Props {
   problem: Problem;
   user: User | null;
   language?: Language;
   runData: any[] | null;
+  submitData: any[] | null;
   isLoading: boolean;
   error: string | null;
   activeTab: string;
@@ -25,6 +24,7 @@ export default function TestPanel({
   user,
   language = Language.PYTHON,
   runData,
+  submitData,
   isLoading,
   error,
   activeTab,
@@ -32,17 +32,26 @@ export default function TestPanel({
   activeCase,
   setActiveCase,
 }: Props) {
-  const testcases = problem.testcases
-    .filter((e) => e.display_testcase == true)
-    .sort((a, b) => a.id - b.id);
+  // Original Sample Testcases (Sample cases only)
+  const [sampleTestcases, setSampleTestcases] = useState<TestcaseList[]>([]);
 
-  const getTabStatusClasses = (index: number) => {
-    const result = runData?.[index];
+  useEffect(() => {
+    setSampleTestcases(
+      problem.testcases.filter((e) => e.display_testcase == true),
+    );
+  }, [problem]);
+
+  const getTabStatusClasses = (index: number, isSubmit?: boolean) => {
+    const result = isSubmit ? submitData?.[index] : runData?.[index];
     const isActive = activeCase === index;
 
     if (result) {
       const isAccepted = result.status?.id === 3;
-      if (isAccepted) {
+      if (result.status === null) {
+        return isActive
+          ? "bg-gray-600/20 text-gray-500 border-gray-500/50"
+          : "bg-gray-400 text-gray-500 hover:bg-gray-600/10 border-transparent";
+      } else if (isAccepted) {
         return isActive
           ? "bg-green-600/20 text-green-500 border-green-500/50"
           : "text-green-500 hover:bg-green-600/10 border-transparent";
@@ -61,54 +70,69 @@ export default function TestPanel({
   return (
     <div className="h-full border-t border-surface-border bg-surface-dark flex flex-col shrink-0">
       {/* Panel Header */}
-      <div className="flex items-center px-4 py-2 gap-4">
+      <div className="flex items-center px-4 py-2 gap-4 border-b border-surface-border bg-black/20">
         <button
           onClick={() => setActiveTab("testcase")}
-          className={`flex items-center gap-2 text-xs font-bold border-b-2 pb-2 transition-all active:scale-95 ${activeTab === "testcase"
+          className={`flex items-center gap-2 text-xs font-bold border-b-2 pb-2 transition-all ${
+            activeTab === "testcase"
               ? "text-white border-primary"
               : "text-gray-500 hover:text-white border-transparent"
-            }`}
+          }`}
         >
           Testcase
         </button>
         <button
           onClick={() => setActiveTab("result")}
-          className={`flex items-center gap-2 text-xs font-bold border-b-2 pb-2 transition-all active:scale-95 ${activeTab === "result"
+          className={`flex items-center gap-2 text-xs font-bold border-b-2 pb-2 transition-all ${
+            activeTab === "result"
               ? "text-white border-primary"
               : "text-gray-500 hover:text-white border-transparent"
-            }`}
+          }`}
         >
           Test Result
+        </button>
+        <button
+          onClick={() => setActiveTab("submission")}
+          className={`flex items-center gap-2 text-xs font-bold border-b-2 pb-2 transition-all ${
+            activeTab === "submission"
+              ? "text-white border-primary"
+              : "text-gray-500 hover:text-white border-transparent"
+          }`}
+        >
+          Code Submission
         </button>
       </div>
 
       {/* Panel Content */}
-      <div className="flex-1 overflow-y-auto px-4 pb-4">
+      <div className="flex-1 overflow-hidden px-4 pb-4 flex flex-col">
         {activeTab === "testcase" && (
-          <div key="testcase-tab" className="animate-in fade-in duration-200">
+          <div key="testcase-tab" className="animate-in fade-in duration-200 flex-1 overflow-y-auto min-h-0 py-2 pr-1">
             <div className="flex gap-2 mb-4 mt-2">
-              {testcases.map((_, index) => (
+              {sampleTestcases.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => setActiveCase(index)}
-                  className={`px-4 py-1.5 rounded-md text-xs font-medium transition-all active:scale-95 border ${activeCase === index
-                    ? "bg-surface-border text-white border-surface-border"
-                    : "text-gray-400 hover:text-white hover:bg-surface-border border-transparent"}`}
+                  className={`px-4 py-1.5 rounded-md text-xs font-medium transition-all active:scale-95 border ${
+                    activeCase === index
+                      ? "bg-surface-border text-white border-surface-border"
+                      : "text-gray-400 hover:text-white hover:bg-surface-border border-transparent"
+                  }`}
                 >
                   Case {index + 1}
                 </button>
               ))}
 
               <button className="text-gray-400 hover:text-white hover:bg-surface-border size-7 flex items-center justify-center rounded-md transition-all active:scale-90">
-                <span className="material-symbols-outlined text-lg">
-                  add
-                </span>
+                <span className="material-symbols-outlined text-lg">add</span>
               </button>
             </div>
 
-            <div key={activeCase} className="space-y-3 font-mono text-xs animate-in fade-in duration-200">
-              {testcases &&
-                testcases
+            <div
+              key={activeCase}
+              className="space-y-3 font-mono text-xs animate-in fade-in duration-200"
+            >
+              {sampleTestcases &&
+                sampleTestcases
                   .at(activeCase)
                   ?.input.replaceAll("\r\n", "\n")
                   .split("\n")
@@ -127,7 +151,10 @@ export default function TestPanel({
           </div>
         )}
         {activeTab === "result" && (
-          <div key="result-tab" className="text-gray-400 text-sm animate-in fade-in duration-200">
+          <div
+            key="result-tab"
+            className="text-gray-400 text-sm animate-in fade-in duration-200 flex-1 overflow-y-auto min-h-0 py-2 pr-1"
+          >
             {isLoading ? (
               <div className="flex items-center gap-2 py-4">
                 <div className="animate-spin size-4 border-2 border-primary border-t-transparent rounded-full"></div>
@@ -136,7 +163,9 @@ export default function TestPanel({
             ) : error ? (
               <div className="py-4">
                 <div className="text-red-500 font-bold mb-2 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-sm">error</span>
+                  <span className="material-symbols-outlined text-sm">
+                    error
+                  </span>
                   Error
                 </div>
                 <pre className="bg-surface-border p-3 rounded text-red-400 border border-red-900/50 font-mono text-xs whitespace-pre-wrap">
@@ -144,12 +173,17 @@ export default function TestPanel({
                 </pre>
               </div>
             ) : runData && runData[activeCase] ? (
-              <div key={activeCase} className="space-y-3 pb-3 animate-in fade-in duration-200">
-                <div className={`font-bold ${runData[activeCase]?.status?.id === 3 ? 'text-green-500' : 'text-red-500'}`}>
+              <div
+                key={activeCase}
+                className="space-y-3 pb-3 animate-in fade-in duration-200"
+              >
+                <div
+                  className={`font-bold ${runData[activeCase]?.status?.id === 3 ? "text-green-500" : "text-red-500"}`}
+                >
                   {runData[activeCase]?.status?.description}
                 </div>
                 <div className="flex gap-2 mb-4 mt-2">
-                  {testcases.map((_, index) => (
+                  {sampleTestcases.map((_, index) => (
                     <button
                       key={index}
                       onClick={() => setActiveCase(index)}
@@ -159,56 +193,52 @@ export default function TestPanel({
                     </button>
                   ))}
                 </div>
-                <div className="space-y-3 font-mono text-xs">
-                  <p className="text-gray-400 mb-1">Input</p>
-                  {testcases[activeCase]?.input
-                    .replaceAll("\r\n", "\n")
-                    .split("\n")
-                    .map((line, i) => {
-                      const [key, value] = line.split("=", 2);
-                      return (
-                        <div key={i} className="bg-surface-border p-2 rounded text-white border border-gray-700">
-                          <p className="text-gray-400 mb-1">{key} = </p>
-                          <div>{value}</div>
-                        </div>
-                      );
-                    })}
-                </div>
-                <div className="space-y-3 font-mono text-xs">
-                  <p className="text-gray-400 mb-1">Output</p>
-                  <div className="bg-surface-border p-2 rounded text-white border border-gray-700">
-                    <code className="whitespace-pre-wrap">
-                      {runData[activeCase]?.stdout || "(no output)"}
-                    </code>
-                  </div>
-                </div>
-                <div className="space-y-3 font-mono text-xs">
-                  <p className="text-gray-400 mb-1">Expected Output</p>
-                  <div className="bg-surface-border p-2 rounded text-white border border-gray-700">
-                    <code className="whitespace-pre-wrap">
-                      {runData[activeCase]?.expected_output}
-                    </code>
-                  </div>
-                </div>
-                {runData[activeCase]?.stderr && (
-                  <div className="space-y-3 font-mono text-xs">
-                    <p className="text-red-400 mb-1">Standard Error</p>
-                    <div className="bg-surface-border p-2 rounded text-red-400 border border-red-900/50">
-                      <pre className="whitespace-pre-wrap">{runData[activeCase]?.stderr}</pre>
-                    </div>
-                  </div>
-                )}
-                {runData[activeCase]?.compile_output && (
-                  <div className="space-y-3 font-mono text-xs">
-                    <p className="text-red-400 mb-1">Compile Output</p>
-                    <div className="bg-surface-border p-2 rounded text-red-400 border border-red-900/50">
-                      <pre className="whitespace-pre-wrap">{runData[activeCase]?.compile_output}</pre>
-                    </div>
-                  </div>
-                )}
+
+                <TestResultDetail
+                  result={runData[activeCase]}
+                  testcase={sampleTestcases[activeCase]}
+                />
               </div>
             ) : (
               <div className="py-4 italic">Run code first to show</div>
+            )}
+          </div>
+        )}
+
+        {activeTab === "submission" && (
+          <div className="text-gray-400 text-sm animate-in fade-in slide-in-from-bottom-2 duration-300 flex-1 flex flex-col min-h-0 py-2">
+            {submitData ? (
+              <div className="flex divide-x relative space-x-3 flex-1 min-h-0 h-full">
+                <div className="overflow-y-auto h-full space-y-3 pr-3 shrink-0">
+                    {submitData.map((res, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setActiveCase(index)}
+                        className={`px-3 py-1.5 rounded-md w-24 flex gap-1 text-xs font-medium transition-all active:scale-95 border ${submitData[index]?.status?.id === 1 ? "" : getTabStatusClasses(index, true)}`}
+                      >
+                        {submitData[index]?.status?.id === 1 && (
+                          <div className="animate-spin size-3 border border-primary border-t-transparent rounded-full"></div>
+                        )}
+                        <span>Case {index + 1}</span>
+                      </button>
+                    ))}
+                  </div>
+                <div className="flex-1 overflow-y-auto h-full pl-3 pr-1">
+                  <TestResultDetail
+                    result={submitData[activeCase]}
+                    testcase={sampleTestcases[activeCase]}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="py-20 flex flex-col items-center justify-center gap-4 text-gray-600">
+                <span className="material-symbols-outlined text-4xl opacity-20">
+                  publish
+                </span>
+                <p className="text-xs font-bold uppercase tracking-widest opacity-50">
+                  Submit code for full evaluation
+                </p>
+              </div>
             )}
           </div>
         )}

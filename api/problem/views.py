@@ -198,7 +198,7 @@ class SolutionViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'])
     def submit(self, request):
-        """Submit a solution for evaluation"""
+        """Submit a solution for evaluation asynchronously via Celery"""
         serializer = SolutionSubmitSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
@@ -206,49 +206,32 @@ class SolutionViewSet(viewsets.ModelViewSet):
         code = serializer.validated_data['code']
         language = serializer.validated_data.get('language', request.user.default_lang)
         
-        # Get problem and relevant codeblock
+        # Verify problem exists
         try:
             problem = Problem.objects.get(id=problem_id)
-            codeblock = problem.codeblocks.get(language=language)
-        except (Problem.DoesNotExist, Codeblock.DoesNotExist):
-            return Response(
-                {'error': 'Invalid problem or language selection'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        except Problem.DoesNotExist:
+            return Response({'error': 'Problem does not exist'}, status=status.HTTP_404_NOT_FOUND)
             
-        # Construct full source code for evaluation
-        full_code = f"{codeblock.imports}\n\n{code}\n\n{codeblock.runner_code}"
-        
-        # Prepare evaluation payload
-        evaluation_payload = {
-            'problem_id': problem_id,
-            'source_code': full_code,
-            'language_id': JUDGE0_LANGUAGE_MAP.get(language, 71), # Default to Python if missing
-        }
-        
         try:
-            # Run against all testcases
-            result = submit_to_judge0(evaluation_payload, is_submit=True)
-            
-            # Map Judge0 status to internal status
-            judge0_id = result.get('status', {}).get('id', 4) # Default to Wrong Answer if unknown
-            internal_status = JUDGE0_STATUS_MAP.get(judge0_id, AnswerStatus.WRONG_ANSWER)
-            
-            # Create solution with actual status
+            # Create solution with QUEUE status
             solution = Solution.objects.create(
                 user=request.user,
                 problem_id=problem_id,
                 code=code,
                 language=language,
-                status=internal_status
+                status=AnswerStatus.QUEUE
             )
+            
+            # Trigger background task
+            from engine.tasks import submit_solution_task
+            submit_solution_task.delay(solution.id)
             
             response_serializer = SolutionDetailSerializer(solution)
             return Response(response_serializer.data, status=status.HTTP_201_CREATED)
             
         except Exception as exc:
             return Response(
-                {"error": f"Evaluation failed: {str(exc)}"},
+                {"error": f"Task queuing failed: {str(exc)}"},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
 

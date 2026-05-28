@@ -2,8 +2,11 @@
 import Link from 'next/link';
 import Logo from '@/components/logo';
 import IconButton from '@/components/icon-button';
+import { useAuth } from '@/components/auth-provider';
 
 export default function ProblemHeader() {
+  const { user } = useAuth();
+
   return (
     <header className="h-12.5 shrink-0 flex items-center justify-between whitespace-nowrap border-b border-solid border-b-surface-border bg-surface-dark px-4">
       <div className="flex items-center gap-3">
@@ -42,11 +45,16 @@ export default function ProblemHeader() {
           </button>
           
           <div
-            className="bg-center bg-no-repeat bg-cover rounded-full size-7 cursor-pointer border border-gray-600"
-            style={{
-              backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuBvv9YVwwDpVlRZWQTOkT3G5121GnaiCW5cjxYWtRv17gYpzz39qrjMYh41j8575cBKpM8sofVT7E09AtYRQLyUYoZdtkWMnqxwRaEXbDfVTR7UpO97NQy5BoxDts6eb4wJDleKzsSXD96b9UV9PvzorjAUeXGC_d4hP2Glg66kNeWquJMGwnqkOuqiGcpjjSElg-7eEF6BrvKZDs4KZW43eJ-e7v50mYoE58K1uiFJBiRhDJrqJVvlAQmudFZOhaEiwJqFhcWhd5cN")'
-            }}
-          />
+            className="bg-center bg-no-repeat bg-cover rounded-full size-7 cursor-pointer border border-gray-600 flex items-center justify-center bg-slate-700 overflow-hidden"
+            style={user?.avatar ? { backgroundImage: `url("${user.avatar}")` } : {}}
+            title={user?.name || user?.username || "Guest"}
+          >
+            {!user?.avatar && (
+               <span className="text-[10px] font-bold text-white uppercase">
+                 {(user?.name || user?.username || "G").substring(0, 1)}
+               </span>
+            )}
+          </div>
         </div>
       </div>
     </header>

@@ -72,9 +72,9 @@ class Codeblock(models.Model):
         on_delete=models.CASCADE, 
         related_name='codeblocks'
     )
-    imports = models.TextField(blank=True, null=False)
-    block = models.TextField(blank=True, null=False)
-    runner_code = models.TextField(blank=True, null=False)
+    imports = models.TextField(blank=True, null=False, default='')
+    block = models.TextField(blank=True, null=False, default='')
+    runner_code = models.TextField(blank=True, null=False, default='')
     language = models.CharField(
         max_length=20,
         choices=CodingLanguage.choices,
@@ -145,6 +145,7 @@ class Solution(models.Model):
         blank=True,
         null=True
     )
+    testcase_results = models.JSONField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

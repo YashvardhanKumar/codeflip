@@ -41,6 +41,18 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
 
+    @action(detail=False, methods=['patch'])
+    def update_language(self, request):
+        """Update user's default programming language"""
+        language = request.data.get('default_lang')
+        if not language:
+            return Response({'error': 'default_lang is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        user = request.user
+        user.default_lang = language
+        user.save()
+        return Response({'message': 'Default language updated successfully', 'default_lang': user.default_lang})
+
     @action(detail=False, methods=['put', 'patch'])
     def update_profile(self, request):
         """Update current user's profile"""
