@@ -1,18 +1,17 @@
 // components/Sidebar.tsx
 import useSWR from 'swr';
 import FilterAccordion from './filter-accordion';
-import { BASE_URL } from '@/lib/constants';
-import { Tag } from '@/lib/models';
+import { PaginatedResponse, Tag } from '@/lib/models';
 import { Skeleton } from './ui/skeleton';
 import { motion } from 'framer-motion';
 import { useAuth } from './auth-provider';
 import { Button } from './ui/button';
 import Link from 'next/link';
+import { apiFetcher } from '@/lib/utils';
 
 export default function Sidebar() {
   const { user } = useAuth();
-  const fetcher = (url: string) => fetch(url).then((r) => r.json())
-  const { data: tags, isLoading } = useSWR(`${BASE_URL}/api/tags/`, fetcher)
+  const { data: tags, isLoading } = useSWR<PaginatedResponse<Tag>>("tags/", apiFetcher)
 
   const container = {
     hidden: { opacity: 0 },

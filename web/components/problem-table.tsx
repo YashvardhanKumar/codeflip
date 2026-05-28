@@ -1,16 +1,14 @@
 import Link from 'next/link';
 import Pagination from './pagination';
 import useSWR from 'swr';
-import { BASE_URL } from '@/lib/constants';
 import { Skeleton } from './ui/skeleton';
-import { Problem } from '@/lib/models';
+import { PaginatedResponse, Problem } from '@/lib/models';
 import { motion } from 'framer-motion';
+import { apiFetcher } from '@/lib/utils';
 
-
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
 export default function ProblemTable() {
-    const { data, error, isLoading } = useSWR(`${BASE_URL}/api/problems/`, fetcher)
+    const { data, error, isLoading } = useSWR<PaginatedResponse<Problem>>("problems/", apiFetcher)
 
     if (isLoading) return <ProblemTableSkeleton />;
 

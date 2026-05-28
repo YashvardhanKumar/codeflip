@@ -43,7 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = useCallback(async () => {
     try {
-      const response = await apiClient.get("/auth/users/me/");
+      const response = await apiClient.get("auth/users/me/");
       setUser(response.data);
       localStorage.setItem("user", JSON.stringify(response.data));
     } catch (error: any) {
@@ -70,7 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       // Verify token/refresh user data in background
-      apiClient.get("/auth/users/me/")
+      apiClient.get("auth/users/me/")
         .then(res => {
           setUser(res.data);
           localStorage.setItem("user", JSON.stringify(res.data));

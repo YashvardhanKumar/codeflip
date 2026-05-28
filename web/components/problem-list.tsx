@@ -1,5 +1,4 @@
 import useSWR from "swr";
-import { BASE_URL } from "@/lib/constants";
 import * as React from "react"
 import {
     flexRender,
@@ -13,7 +12,7 @@ import {
     type SortingState,
     type VisibilityState,
 } from "@tanstack/react-table"
-import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react"
+import { ArrowUpDown } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -26,6 +25,8 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "./ui/badge";
 import {Loader} from "./loader";
+import { apiFetcher } from "@/lib/utils";
+import { PaginatedResponse } from "@/lib/models";
 
 export type Payment = {
     id: string
@@ -65,10 +66,8 @@ export const columns: ColumnDef<Payment>[] = [
         cell: ({ row }) => <Badge className={`${row.getValue("difficulty") === "EASY" ? "bg-green-500" : row.getValue("difficulty") === "MEDIUM" ? "bg-yellow-500" : "bg-red-500"}`}>{row.getValue("difficulty")}</Badge>,
     },
 ]
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
-
 export function DataTable() {
-    const { data, error, isLoading } = useSWR(`${BASE_URL}/api/problems/`, fetcher)
+    const { data, error, isLoading } = useSWR<PaginatedResponse<Payment>>("problems/", apiFetcher)
 
     console.log(data);
 
@@ -82,7 +81,7 @@ export function DataTable() {
     const [rowSelection, setRowSelection] = React.useState({})
 
     const table = useReactTable({
-        data: data?.results,
+        data: data?.results ?? [],
         columns,
         onSortingChange: setSorting,
         onColumnFiltersChange: setColumnFilters,

@@ -1,22 +1,5 @@
 "use client"
 
-// import { useState, useEffect, cache, Suspense, use } from "react"
-// import { PanelLeftClose, PanelLeft } from "lucide-react"
-// import { GetServerSideProps } from "next"
-// import axios from "axios"
-// import { BASE_URL } from "@/lib/constants"
-// import useSWR from 'swr'
-// import { DataTable } from "@/components/problem-list"
-
-// export default function Home() {
-
-//   return (
-//     <div>
-//       <DataTable />
-//     </div>
-//   )
-// }
-
 import Header from '@/components/header';
 import Sidebar from '@/components/sidebar';
 import DailyChallenge from '@/components/daily-challenge';

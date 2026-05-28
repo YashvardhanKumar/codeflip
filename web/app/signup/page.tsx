@@ -31,7 +31,7 @@ export default function SignupPage() {
     }
     setIsLoading(true);
     try {
-      const response = await apiClient.post("/auth/register/", formData);
+      const response = await apiClient.post("auth/register/", formData);
       login(response.data.token, response.data.user);
     } catch (error: any) {
       const errors = error.response?.data;

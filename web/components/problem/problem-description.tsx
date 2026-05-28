@@ -6,15 +6,15 @@ import TabButton from '@/components/tab-button';
 import DifficultyBadge from '@/components/difficulty-badge';
 import CodeBlock from '@/components/code-block';
 import { ResizablePanel } from '../ui/resizable';
-import { Problem, Solution, Status } from '@/lib/models';
+import { PaginatedResponse, Problem, Solution, Status } from '@/lib/models';
 import Script from 'next/script';
 import { useAuth } from '@/components/auth-provider';
 import useSWR from 'swr';
-import { BASE_URL } from '@/lib/constants';
 import { Loader } from '@/components/loader';
 import { format } from 'date-fns';
 import { CheckCircle2, XCircle, Clock, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
+import { apiFetcher } from '@/lib/utils';
 
 declare global {
   interface Window {
@@ -170,15 +170,9 @@ function DescriptionContent({ problem }: Props) {
 }
 
 function SubmissionsTab({ problemId, authenticated }: { problemId: number, authenticated: boolean }) {
-  const fetcher = (url: string) => fetch(url, {
-    headers: {
-      'Authorization': `Token ${localStorage.getItem('token')}`
-    }
-  }).then((r) => r.json());
-
-  const { data, error, isLoading } = useSWR(
-    authenticated ? `${BASE_URL}/api/solutions/?problem_id=${problemId}` : null,
-    fetcher
+  const { data, error, isLoading } = useSWR<PaginatedResponse<Solution> | Solution[]>(
+    authenticated ? `solutions/?problem_id=${problemId}` : null,
+    apiFetcher
   );
 
   if (!authenticated) {

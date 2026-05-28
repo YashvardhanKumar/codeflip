@@ -10,11 +10,10 @@ import {
 } from "../ui/resizable";
 import { Language, LanguageCodes, Problem, User } from "@/lib/models";
 import { useEffect, useState, useRef } from "react";
-import apiClient from "@/lib/utils";
+import apiClient, { apiFetch } from "@/lib/utils";
 import { ImperativePanelHandle } from "react-resizable-panels";
 import { toast } from "sonner";
 import { mutate } from "swr";
-import { BASE_URL } from "@/lib/constants";
 import Link from "next/link";
 import { Button } from "../ui/button";
 
@@ -41,7 +40,7 @@ export default function CodeEditor({ problem, user }: Props) {
   // Update default language in backend whenever it changes
   useEffect(() => {
     if (user && language !== user.default_lang) {
-      apiClient.patch("/auth/users/update_language/", { default_lang: language })
+      apiClient.patch("auth/users/update_language/", { default_lang: language })
         .catch(err => console.error("Failed to update default language", err));
     }
   }, [language, user]);
@@ -104,12 +103,11 @@ export default function CodeEditor({ problem, user }: Props) {
     }
 
     try {
-      const response = await fetch(`${BASE_URL}/engine/submit-stream/?mode=run`, {
+      const response = await apiFetch("engine/submit-stream/?mode=run", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           problem_id: problem.id,
-          source_code: code, // Send raw code, backend will wrap it
+          source_code: code,
           language: language,
           language_id: LanguageCodes[language],
         })
@@ -180,15 +178,11 @@ export default function CodeEditor({ problem, user }: Props) {
     }
 
     try {
-      const response = await fetch(`${BASE_URL}/engine/submit-stream/?mode=submit`, {
+      const response = await apiFetch("engine/submit-stream/?mode=submit", {
         method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": `Token ${token}`
-        },
         body: JSON.stringify({
           problem_id: problem.id,
-          source_code: code, // Send raw code, backend will wrap it
+          source_code: code,
           language: language,
           language_id: LanguageCodes[language],
         })
@@ -231,7 +225,7 @@ export default function CodeEditor({ problem, user }: Props) {
                 toast.error(`Solution failed: ${payload.total_status}`);
               }
               setIsLoading(false);
-              mutate(`${BASE_URL}/api/solutions/?problem_id=${problem.id}`);
+              mutate(`solutions/?problem_id=${problem.id}`);
             } else if (payload.status === "error") {
               setError(payload.message);
               setIsLoading(false);

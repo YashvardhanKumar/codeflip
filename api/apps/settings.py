@@ -26,12 +26,11 @@ SECRET_KEY = 'django-insecure-46(va-p7hta=k=8d1s=2t1h2w=7ky#6)t1ondc8m9dyap-03*)
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', 'api.localhost', '127.0.0.1', 'ngrok-free.app']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'ngrok-free.app']
 
 CSRF_TRUSTED_ORIGINS = [
     'https://*.ngrok-free.app',
     'http://localhost',
-    'http://api.localhost',
 ]
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'
@@ -268,8 +267,7 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'This is the API documentation for the Coderacer application.',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
-    'SWAGGER_UI_DIST': 'SIDECAR',  # shorthand to use the sidecar instead
+    'SWAGGER_UI_DIST': 'SIDECAR',
     'SWAGGER_UI_FAVICON_HREF': 'SIDECAR',
     'REDOC_DIST': 'SIDECAR',
-    # OTHER SETTINGS
 }

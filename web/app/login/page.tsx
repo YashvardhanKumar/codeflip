@@ -21,7 +21,7 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await apiClient.post("/auth/login/", formData);
+      const response = await apiClient.post("auth/login/", formData);
       login(response.data.token, response.data.user);
     } catch (error: any) {
       toast.error(error.response?.data?.error || "Login failed. Please check your credentials.");
