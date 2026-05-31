@@ -174,6 +174,7 @@ export interface Solution {
   id: number;
   user: User;
   problem: number;
+  testcase_results: any
   code: string;
   language: Language;
   language_display: string;

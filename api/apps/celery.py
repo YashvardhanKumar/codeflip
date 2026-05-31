@@ -4,7 +4,7 @@ from celery import Celery
 # Set the default Django settings module for the 'celery' program.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'apps.settings')
 
-app = Celery('coderacer')
+app = Celery('codeflip')
 
 # Using a string here means the worker doesn't have to serialize
 # the configuration object to child processes.

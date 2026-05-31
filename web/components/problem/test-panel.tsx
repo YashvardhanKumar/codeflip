@@ -1,5 +1,7 @@
-// components/problem/TestPanel.tsx
 "use client";
+
+import { Skeleton } from "../ui/skeleton";
+// components/problem/TestPanel.tsx
 
 import { Language, Problem, TestcaseList, User } from "@/lib/models";
 import { useEffect, useState } from "react";
@@ -104,7 +106,7 @@ export default function TestPanel({
       </div>
 
       {/* Panel Content */}
-      <div className="flex-1 overflow-hidden px-4 pb-4 flex flex-col">
+      <div className="flex-1 overflow-hidden px-4 flex flex-col">
         {activeTab === "testcase" && (
           <div key="testcase-tab" className="animate-in fade-in duration-200 flex-1 overflow-y-auto min-h-0 py-2 pr-1">
             <div className="flex gap-2 mb-4 mt-2">
@@ -156,9 +158,23 @@ export default function TestPanel({
             className="text-gray-400 text-sm animate-in fade-in duration-200 flex-1 overflow-y-auto min-h-0 py-2 pr-1"
           >
             {isLoading ? (
-              <div className="flex items-center gap-2 py-4">
-                <div className="animate-spin size-4 border-2 border-primary border-t-transparent rounded-full"></div>
-                <span>compiling code...</span>
+              <div className="space-y-4 py-4 animate-in fade-in duration-300">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold uppercase tracking-widest opacity-70 animate-pulse">compiling code...</span>
+                </div>
+                <div className="space-y-3">
+                  <Skeleton className="h-5 w-32 rounded" />
+                  <div className="flex gap-2">
+                    <Skeleton className="h-8 w-20 rounded-md" />
+                    <Skeleton className="h-8 w-20 rounded-md" />
+                    <Skeleton className="h-8 w-20 rounded-md" />
+                  </div>
+                  <div className="space-y-2 mt-4">
+                    <Skeleton className="h-4 w-full rounded" />
+                    <Skeleton className="h-4 w-full rounded" />
+                    <Skeleton className="h-4 w-2/3 rounded" />
+                  </div>
+                </div>
               </div>
             ) : error ? (
               <div className="py-4">
@@ -208,8 +224,8 @@ export default function TestPanel({
         {activeTab === "submission" && (
           <div className="text-gray-400 text-sm animate-in fade-in slide-in-from-bottom-2 duration-300 flex-1 flex flex-col min-h-0 py-2">
             {submitData ? (
-              <div className="flex divide-x relative space-x-3 flex-1 min-h-0 h-full">
-                <div className="overflow-y-auto h-full space-y-3 pr-3 shrink-0">
+              <div className="flex divide-x relative space-x-3 flex-1 min-h-0">
+                <div className={`overflow-y-auto gap-3 pr-3 ${isLoading ? 'flex flex-wrap' : 'grid grid-cols-1 shrink-0'}`}>
                     {submitData.map((res, index) => (
                       <button
                         key={index}
@@ -223,12 +239,19 @@ export default function TestPanel({
                       </button>
                     ))}
                   </div>
-                <div className="flex-1 overflow-y-auto h-full pl-3 pr-1">
-                  <TestResultDetail
-                    result={submitData[activeCase]}
-                    testcase={sampleTestcases[activeCase]}
-                  />
-                </div>
+                {!isLoading && <div className="flex-1 overflow-y-auto h-full pl-3 pr-1">
+                  {!isLoading ? (
+                    <TestResultDetail
+                      result={submitData[activeCase]}
+                      testcase={sampleTestcases[activeCase]}
+                    />
+                  ) : (
+                    <div className="h-full flex flex-col items-center justify-center gap-4 text-gray-500">
+                       <div className="animate-spin size-8 border-4 border-primary border-t-transparent rounded-full"></div>
+                       <p className="text-xs font-bold uppercase tracking-widest">Processing Submission...</p>
+                    </div>
+                  )}
+                </div>}
               </div>
             ) : (
               <div className="py-20 flex flex-col items-center justify-center gap-4 text-gray-600">

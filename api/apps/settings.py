@@ -26,12 +26,12 @@ SECRET_KEY = 'django-insecure-46(va-p7hta=k=8d1s=2t1h2w=7ky#6)t1ondc8m9dyap-03*)
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'ngrok-free.app']
+# settings.py
+ALLOWED_HOSTS = ['.ngrok-free.app', 'localhost', '127.0.0.1', 'api']
 
-CSRF_TRUSTED_ORIGINS = [
-    'https://*.ngrok-free.app',
-    'http://localhost',
-]
+# If you use Django's CSRF protection, also add:
+CSRF_TRUSTED_ORIGINS = ['https://*.ngrok-free.app']
+
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 
@@ -263,8 +263,8 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'Coderacer API',
-    'DESCRIPTION': 'This is the API documentation for the Coderacer application.',
+    'TITLE': 'CodeFlip API',
+    'DESCRIPTION': 'This is the API documentation for the CodeFlip application.',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
     'SWAGGER_UI_DIST': 'SIDECAR',

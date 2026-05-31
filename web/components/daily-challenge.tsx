@@ -23,10 +23,22 @@ export default function DailyChallenge() {
 
   if (isLoading) {
     return (
-      <div className="h-full rounded-xl border border-slate-200 dark:border-surface-border bg-white dark:bg-surface-dark p-4">
-        <Skeleton className="h-3 w-28 mb-4" />
-        <Skeleton className="h-6 w-48 mb-6" />
-        <Skeleton className="h-8 w-full" />
+      <div className="h-full rounded-xl border border-slate-200 dark:border-surface-border bg-white dark:bg-surface-dark p-4 flex flex-col justify-between gap-3">
+        <div>
+          <div className="flex justify-between items-start mb-2">
+            <Skeleton className="h-3 w-28 rounded" />
+            <Skeleton className="h-5 w-16 rounded-full" />
+          </div>
+          <Skeleton className="h-6 w-full rounded-lg mb-1" />
+        </div>
+        <div className="flex items-center justify-between mt-1">
+          <div className="flex -space-x-2">
+            <Skeleton className="w-6 h-6 rounded-full border-2 border-white dark:border-surface-dark" />
+            <Skeleton className="w-6 h-6 rounded-full border-2 border-white dark:border-surface-dark" />
+            <Skeleton className="w-6 h-6 rounded-full border-2 border-white dark:border-surface-dark" />
+          </div>
+          <Skeleton className="h-4 w-20 rounded" />
+        </div>
       </div>
     );
   }

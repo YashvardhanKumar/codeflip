@@ -106,7 +106,7 @@ export default function SignupPage() {
             <div className="space-y-2">
               <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Create your account</h1>
               <p className="text-slate-500 dark:text-slate-400">
-                Enter your details to get started with CodeRacer
+                Enter your details to get started with CodeFlip
               </p>
             </div>
 
@@ -205,7 +205,7 @@ export default function SignupPage() {
         </div>
 
         <div className="p-8 text-center text-xs text-slate-400">
-          © 2026 CodeRacer Platform. All rights reserved.
+          © 2026 CodeFlip Platform. All rights reserved.
         </div>
       </div>
     </div>

@@ -16,6 +16,12 @@ import { toast } from "sonner";
 import { mutate } from "swr";
 import Link from "next/link";
 import { Button } from "../ui/button";
+import SubmissionResult from "./submission-result";
+import { AnimatePresence } from "framer-motion";
+import { useMemo } from "react";
+import { PaginatedResponse, Solution, Status } from "@/lib/models";
+import { apiFetcher } from "@/lib/utils";
+import useSWR from 'swr';
 
 interface Props {
   problem: Problem;
@@ -27,11 +33,22 @@ export default function CodeEditor({ problem, user }: Props) {
   const [code, setCode] = useState<string | null>(null);
   const [runData, setRunData] = useState<any[] | null>(null);
   const [submitData, setSubmitData] = useState<any[] | null>(null);
+  const [finalSubmission, setFinalSubmission] = useState<Solution | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("testcase");
   const [activeCase, setActiveCase] = useState(0);
   const [isTestPanelCollapsed, setIsTestPanelCollapsed] = useState(false);
+  
+  const { data: submissionsData } = useSWR<PaginatedResponse<Solution> | Solution[]>(
+    user ? `solutions/?problem_id=${problem.id}` : null,
+    apiFetcher
+  );
+
+  const history = useMemo(() => {
+    const subs = Array.isArray(submissionsData) ? submissionsData : submissionsData?.results || [];
+    return subs.filter(s => s.status === Status.SUCCESS && s.testcase_results);
+  }, [submissionsData]);
   
   const testPanelRef = useRef<ImperativePanelHandle>(null);
 
@@ -216,6 +233,20 @@ export default function CodeEditor({ problem, user }: Props) {
               currentResults[res.index] = res;
               setSubmitData([...currentResults]);
             } else if (payload.status === "complete") {
+              const finalSub: Solution = {
+                id: payload.solution_id || 0,
+                user: user!,
+                problem: problem.id,
+                code: code ?? "",
+                language: language,
+                language_display: payload.language_display || language,
+                status: payload.total_status,
+                status_display: payload.total_status,
+                testcase_results: currentResults,
+                created_at: new Date().toISOString()
+              };
+              setFinalSubmission(finalSub);
+
               if (payload.total_status === "Accepted") {
                 toast.success("All test cases passed!");
               } else if (payload.compile_output) {
@@ -245,6 +276,17 @@ export default function CodeEditor({ problem, user }: Props) {
   return (
     <ResizablePanel defaultSize={50} minSize={20} className="h-full flex flex-col">
       <div className="h-full flex flex-col bg-[#1e1e1e] relative overflow-hidden">
+        <AnimatePresence>
+          {finalSubmission && (
+            <SubmissionResult 
+              solution={finalSubmission}
+              onClose={() => setFinalSubmission(null)}
+              testcases={problem.testcases}
+              history={history}
+            />
+          )}
+        </AnimatePresence>
+        
         <ResizablePanelGroup
           direction="vertical"
           className="flex-1"

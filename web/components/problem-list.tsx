@@ -24,7 +24,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Badge } from "./ui/badge";
-import {Loader} from "./loader";
+import { Loader, TableSkeleton } from "./loader";
 import { apiFetcher } from "@/lib/utils";
 import { PaginatedResponse } from "@/lib/models";
 
@@ -99,7 +99,7 @@ export function DataTable() {
         },
     })
 
-    if (isLoading) return <Loader />;
+    if (isLoading) return <TableSkeleton />;
     
     if (error) return <div>Error: {error.message}</div>
 

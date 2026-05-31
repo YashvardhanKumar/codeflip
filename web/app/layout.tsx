@@ -6,8 +6,8 @@
 // const inter = Inter({ subsets: ['latin'] });
 
 // export const metadata: Metadata = {
-//   title: 'Problem List - Coderacer Clone',
-//   description: 'A Coderacer clone built with Next.js',
+//   title: 'Problem List - CodeFlip Clone',
+//   description: 'A CodeFlip clone built with Next.js',
 // };
 
 // export default function RootLayout({
@@ -42,7 +42,7 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-jetbrains' });
 
 export const metadata: Metadata = {
-  title: 'CodeRacer - Master Your Coding Skills',
+  title: 'CodeFlip - Master Your Coding Skills',
   description: 'A competitive coding platform for developers.',
 };
 

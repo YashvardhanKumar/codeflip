@@ -1,6 +1,6 @@
 # Web Frontend (Next.js)
 
-This directory contains the Next.js frontend for CodeRacer.
+This directory contains the Next.js frontend for CodeFlip.
 
 ## Tech Stack
 - **Framework**: Next.js 16 (App Router)

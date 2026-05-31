@@ -5,7 +5,7 @@ FROM oven/bun:1-alpine
 # Install libc6-compat for compatibility with some native binaries (like Next.js SWC)
 RUN apk add --no-cache libc6-compat
 
-WORKDIR /home/coderacer/web
+WORKDIR /home/codeflip/web
 
 # Copy package files
 COPY package.json bun.lock ./

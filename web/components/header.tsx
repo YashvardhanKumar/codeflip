@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Skeleton } from './ui/skeleton';
 import IconButton from '@/components/icon-button';
 import { cn } from '@/lib/utils';
 
@@ -21,7 +22,11 @@ interface HeaderProps {
 }
 
 export function UserMenu() {
-  const { user, logout } = useAuth();
+  const { user, loading, logout } = useAuth();
+
+  if (loading) {
+    return <Skeleton className="size-8 rounded-full" />;
+  }
 
   if (!user) {
     return (
