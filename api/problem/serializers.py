@@ -236,7 +236,7 @@ class DiscussListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Discuss
         fields = [
-            'id', 'title', 'author', 'problem_id', 'tags', 'created_at', 
+            'id', 'title', 'body', 'author', 'problem_id', 'tags', 'created_at', 
             'views', 'upvote_count', 'downvote_count', 'comment_count', 'is_editorial'
         ]
         read_only_fields = ['id', 'author', 'created_at', 'views', 'is_editorial']

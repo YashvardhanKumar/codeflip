@@ -94,6 +94,7 @@ export default function WriteSolutionPage() {
   const [showAISuccess, setShowAISuccess] = useState(false);
   const [aiCooldown, setAiCooldown] = useState(0);
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const editorRef = useRef<any>(null);
 
   const DRAFT_KEY = `coderacer_solution_draft_${id}`;
@@ -129,6 +130,7 @@ export default function WriteSolutionPage() {
         if (savedTitle) setTitle(savedTitle);
         if (savedBody) setBody(savedBody);
         if (savedTags) setSelectedTags(savedTags);
+        setLastSaved(new Date());
       } catch (e) {
         console.error("Failed to load draft:", e);
       }
@@ -136,11 +138,27 @@ export default function WriteSolutionPage() {
     setIsDraftLoaded(true);
   }, [DRAFT_KEY]);
 
+  const saveDraft = (
+    currentTitle: string,
+    currentBody: string,
+    currentTags: number[],
+  ) => {
+    const draft = JSON.stringify({
+      title: currentTitle,
+      body: currentBody,
+      selectedTags: currentTags,
+    });
+    localStorage.setItem(DRAFT_KEY, draft);
+    setLastSaved(new Date());
+  };
+
   // Save draft to localStorage whenever content changes (only after initial load)
   useEffect(() => {
     if (isDraftLoaded) {
-      const draft = JSON.stringify({ title, body, selectedTags });
-      localStorage.setItem(DRAFT_KEY, draft);
+      const timer = setTimeout(() => {
+        saveDraft(title, body, selectedTags);
+      }, 1000);
+      return () => clearTimeout(timer);
     }
   }, [title, body, selectedTags, DRAFT_KEY, isDraftLoaded]);
 
@@ -241,7 +259,7 @@ export default function WriteSolutionPage() {
         const data = await response.json();
         const newTitle = data.title || title;
         const newBody = data.explanation || body;
-        
+
         setTitle(newTitle);
         setBody(newBody);
 
@@ -252,6 +270,7 @@ export default function WriteSolutionPage() {
           selectedTags,
         });
         localStorage.setItem(DRAFT_KEY, draft);
+        setLastSaved(new Date());
 
         setShowAISuccess(true);
         setAiCooldown(60); // 1 minute cooldown
@@ -456,18 +475,39 @@ export default function WriteSolutionPage() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
-            <Button
-              className="bg-primary hover:bg-primary/90 text-white font-bold gap-2 px-6"
-              onClick={handlePost}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <Send size={16} />
+
+            {/* Draft Status */}
+            <div className="flex items-center gap-4 shrink-0">
+              {lastSaved && (
+                <span className="text-[10px] text-gray-500 font-medium italic animate-in fade-in duration-300">
+                  Draft saved{" "}
+                  {lastSaved.toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
               )}
-              Post Solution
-            </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 text-xs text-gray-400 hover:text-white border border-surface-border"
+                onClick={() => saveDraft(title, body, selectedTags)}
+              >
+                Save Draft
+              </Button>
+              <Button
+                className="bg-primary hover:bg-primary/90 text-white font-bold gap-2 px-6 h-9"
+                onClick={handlePost}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Send size={16} />
+                )}
+                Post Solution
+              </Button>
+            </div>
           </div>
 
           <div className="flex items-center justify-between gap-4">
@@ -662,7 +702,7 @@ export default function WriteSolutionPage() {
                       <div className="flex items-center justify-center w-5 h-5">
                         <CustomAnimatedSparkles isThinking={isGeneratingAI} />
                       </div>
-                      <div className="w-[64px] text-left">
+                      <div className="text-left">
                         <span
                           className={`text-sm leading-tight transition-all duration-200 ${isGeneratingAI ? "text-primary" : "group-hover:bg-linear-to-r group-hover:from-[#3b82f6] group-hover:via-purple-500 group-hover:to-pink-500 group-hover:bg-clip-text text-white group-hover:text-transparent "}`}
                         >
@@ -751,7 +791,7 @@ export default function WriteSolutionPage() {
               className="flex flex-col"
             >
               <div className="flex-1 bg-background-dark p-6 overflow-y-auto">
-                <div className="max-w-none prose prose-invert prose-sm prose-headings:text-white prose-p:text-gray-300 prose-code:text-primary prose-code:before:content-none prose-code:after:content-none">
+                <div className="prose prose-invert max-w-none prose-sm prose-code:before:content-none prose-code:after:content-none border-t border-surface-border pt-6">
                   {body ? (
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm, remarkMath]}

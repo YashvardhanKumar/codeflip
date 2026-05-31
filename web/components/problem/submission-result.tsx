@@ -221,7 +221,7 @@ export default function SubmissionResult({ solution, onClose, history = [], test
         )}
 
         {/* Code Section */}
-        <div className="space-y-4 prose prose-invert">
+        <div className="space-y-4 prose prose-invert max-w-none prose-sm">
           <div className="flex items-center justify-between">
             <h4 className="text-sm font-bold text-white flex items-center gap-2">
               <span className="material-symbols-outlined text-lg">code</span>

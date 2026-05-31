@@ -34,7 +34,7 @@ export default function SolutionsTab({ problem, onViewSolution }: Props) {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const { data, error, isLoading } = useSWR<any>(
-    `discussions/?problem_id=${problem.id}&is_editorial=false`,
+    `discussions/?problem_id=${problem.id}`,
     apiFetcher
   );
 

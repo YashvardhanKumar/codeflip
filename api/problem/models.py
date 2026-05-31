@@ -214,6 +214,24 @@ class Discuss(models.Model):
         verbose_name_plural = 'Discussions'
         ordering = ['-created_at']
 
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if self.is_editorial:
+            # Check for existing editorial for this problem
+            existing_editorial = Discuss.objects.filter(
+                problem=self.problem, 
+                is_editorial=True
+            ).exclude(id=self.id).first()
+            if existing_editorial:
+                raise ValidationError(
+                    f"{existing_editorial.id} discussion is marked as editorial, "
+                    f"make is_editorial false to make this editorial"
+                )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.title
 

@@ -26,7 +26,9 @@ export default function EditorialTab({ problem }: Props) {
     async function fetchEditorial() {
       setIsLoading(true);
       try {
-        const response = await apiFetch(`discussions/?problem_id=${problem.id}&is_editorial=true`);
+        const response = await apiFetch(
+          `discussions/?problem_id=${problem.id}&is_editorial=true`,
+        );
         const data = await response.json();
         // data might be a paginated response or a list
         const results = Array.isArray(data) ? data : data.results || [];
@@ -74,8 +76,12 @@ export default function EditorialTab({ problem }: Props) {
   if (!editorial) {
     return (
       <div className="py-20 flex flex-col items-center justify-center gap-4 text-gray-500">
-        <span className="material-symbols-outlined text-4xl opacity-20">auto_stories</span>
-        <p className="text-sm font-bold uppercase tracking-widest opacity-50">No editorial available for this problem yet.</p>
+        <span className="material-symbols-outlined text-4xl opacity-20">
+          auto_stories
+        </span>
+        <p className="text-sm font-bold uppercase tracking-widest opacity-50">
+          No editorial available for this problem yet.
+        </p>
       </div>
     );
   }
@@ -83,7 +89,9 @@ export default function EditorialTab({ problem }: Props) {
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-20">
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold text-white tracking-tight">{editorial.title}</h1>
+        <h1 className="text-2xl font-bold text-white tracking-tight">
+          {editorial.title}
+        </h1>
         <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500 font-medium">
           <div className="flex items-center gap-1.5">
             <UserIcon size={14} className="text-primary" />
@@ -91,7 +99,9 @@ export default function EditorialTab({ problem }: Props) {
           </div>
           <div className="flex items-center gap-1.5">
             <Calendar size={14} />
-            <span>{formatInUserTimezone(editorial.created_at, 'MMM d, yyyy')}</span>
+            <span>
+              {formatInUserTimezone(editorial.created_at, "MMM d, yyyy")}
+            </span>
           </div>
           <div className="flex items-center gap-1.5">
             <Eye size={14} />
@@ -99,9 +109,9 @@ export default function EditorialTab({ problem }: Props) {
           </div>
         </div>
       </div>
-      <div className="prose prose-invert max-w-none prose-sm prose-headings:text-white prose-p:text-gray-300 prose-code:text-primary prose-code:before:content-none prose-code:after:content-none border-t border-surface-border pt-6">
-        <ReactMarkdown 
-          remarkPlugins={[remarkGfm, remarkMath]} 
+      <div className="prose prose-invert max-w-none prose-sm prose-code:before:content-none prose-code:after:content-none border-t border-surface-border pt-6">
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm, remarkMath]}
           rehypePlugins={[rehypeRaw, rehypeMathjax]}
           components={{
             pre: ({ children }) => <>{children}</>,

@@ -256,22 +256,9 @@
 <!-- Custom Top Navbar -->
 <div class="sub-header">
     <div class="left-links">
-        <div class="logo-container">
-            <div class="flip-box">
-                <div class="flip-box-inner">
-                    <div class="flip-box-front">
-                        <i class="fas fa-code"></i>
-                    </div>
-                    <div class="flip-box-back">
-                        <i class="fas fa-terminal"></i>
-                    </div>
-                </div>
-            </div>
-            <span class="logo-text">CodeFlip</span>
-        </div>
         <button class="toggle-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
         <a href="http://localhost" target="_blank"><i class="fas fa-home"></i> Home Page (localhost)</a>
-        <a href="http://localhost/admin" target="_blank"><i class="fas fa-cog"></i> Django Admin (localhost/admin)</a>
+        <a href="http://localhost/api/admin" target="_blank"><i class="fas fa-cog"></i> Django Admin (localhost/admin)</a>
     </div>
     <div class="user-tools">
         Logged in as: <b>{{ user.username }}</b> ({{ user.email }})
@@ -323,32 +310,6 @@
 
     <div id="main-content-area">
         {% if messages %}
-        <ul class="rootops-messages">
-            {% for message in messages %}
-            <li class="{{ message.tags }}">
-                {% if message.tags == 'success' %}<i class="fas fa-check-circle"></i>{% endif %}
-                {% if message.tags == 'error' %}<i class="fas fa-exclamation-triangle"></i>{% endif %}
-                {% if message.tags == 'info' %}<i class="fas fa-info-circle"></i>{% endif %}
-                {% if message.tags == 'warning' %}<i class="fas fa-exclamation-circle"></i>{% endif %}
-                <span>{{ message }}</span>
-                <i class="fas fa-times close-msg" onclick="this.parentElement.style.display='none'"></i>
-            </li>
-            {% endfor %}
-        </ul>
-        {% endif %}
-        
-        {% block rootops_content %}{% endblock %}
-    </div>
-</div>
-
-<script>
-    function toggleSidebar() {
-        const sidebar = document.getElementById('sidebar');
-        sidebar.classList.toggle('collapsed');
-    }
-</script>
-{% endblock %}
-ges %}
         <ul class="rootops-messages">
             {% for message in messages %}
             <li class="{{ message.tags }}">
