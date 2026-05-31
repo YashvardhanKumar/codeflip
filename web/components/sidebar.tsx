@@ -184,8 +184,8 @@ export default function Sidebar({
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.5 }}
-        className="rounded-xl bg-linear-to-br from-primary/20 to-transparent p-4 border border-primary/20"
-      >
+        className="rounded-xl bg-gradient-to-br from-primary/20 to-transparent p-4 border border-primary/20"
+        Broadway
         <div className="flex items-start gap-3">
           <span className="material-symbols-outlined text-primary">business_center</span>
           <div>

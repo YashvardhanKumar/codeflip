@@ -5,6 +5,7 @@ import { Solution, Status, TestcaseList, LanguageDisplayNames } from "@/lib/mode
 import { CheckCircle2, XCircle, Copy, Check, X, Clock, Zap, Database } from "lucide-react";
 import { formatInUserTimezone } from "@/lib/utils";
 import TestResultDetail from "./test-result-detail";
+import CodeBlock from "@/components/code-block";
 import { 
   LineChart, 
   Line, 
@@ -220,30 +221,14 @@ export default function SubmissionResult({ solution, onClose, history = [], test
         )}
 
         {/* Code Section */}
-        <div className="space-y-4">
+        <div className="space-y-4 prose prose-invert">
           <div className="flex items-center justify-between">
             <h4 className="text-sm font-bold text-white flex items-center gap-2">
               <span className="material-symbols-outlined text-lg">code</span>
               Submitted Code
             </h4>
-            <div className="flex items-center gap-4">
-              <span className="text-xs font-mono text-gray-500 bg-surface-border px-2 py-1 rounded">
-                {solution.language_display}
-              </span>
-              <button 
-                onClick={copyCode}
-                className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors bg-surface-dark px-3 py-1.5 rounded-lg border border-surface-border"
-              >
-                {copied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
-                {copied ? 'Copied!' : 'Copy'}
-              </button>
-            </div>
           </div>
-          <div className="bg-surface-dark rounded-xl border border-surface-border p-4 font-mono text-sm overflow-x-auto">
-            <pre className="text-gray-300">
-              <code>{solution.code}</code>
-            </pre>
-          </div>
+          <CodeBlock code={solution.code} language={solution.language_display || solution.language} />
         </div>
       </div>
     </motion.div>

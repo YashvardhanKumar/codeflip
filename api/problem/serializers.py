@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import (
     Problem, Codeblock, Testcase, Solution, 
-    Tags, ProblemTags, Discuss, DiscussTags, AnswerStatus
+    Tags, ProblemTags, Discuss, DiscussTags, AnswerStatus, Comment
 )
 from user.models import User, CodingLanguage
 
@@ -185,15 +185,70 @@ class SolutionSubmitSerializer(serializers.Serializer):
         return value
 
 
+class CommentSerializer(serializers.ModelSerializer):
+    author = UserSerializer(read_only=True)
+    replies = serializers.SerializerMethodField()
+    upvote_count = serializers.SerializerMethodField()
+    downvote_count = serializers.SerializerMethodField()
+    has_upvoted = serializers.SerializerMethodField()
+    has_downvoted = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Comment
+        fields = [
+            'id', 'author', 'discuss', 'body', 'parent', 'replies', 
+            'upvote_count', 'downvote_count', 'has_upvoted', 'has_downvoted', 'created_at'
+        ]
+        read_only_fields = ['id', 'author', 'created_at']
+
+    def get_replies(self, obj):
+        if obj.replies.exists():
+            return CommentSerializer(obj.replies.all(), many=True, context=self.context).data
+        return []
+
+    def get_upvote_count(self, obj):
+        return obj.upvotes.count()
+
+    def get_downvote_count(self, obj):
+        return obj.downvotes.count()
+
+    def get_has_upvoted(self, obj):
+        user = self.context.get('request').user
+        if user.is_authenticated:
+            return obj.upvotes.filter(id=user.id).exists()
+        return False
+
+    def get_has_downvoted(self, obj):
+        user = self.context.get('request').user
+        if user.is_authenticated:
+            return obj.downvotes.filter(id=user.id).exists()
+        return False
+
+
 class DiscussListSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
     tags = TagsSerializer(many=True, read_only=True)
     problem_id = serializers.IntegerField(read_only=True, source='problem.id')
+    upvote_count = serializers.SerializerMethodField()
+    downvote_count = serializers.SerializerMethodField()
+    comment_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Discuss
-        fields = ['id', 'title', 'author', 'problem_id', 'tags', 'created_at']
-        read_only_fields = ['id', 'author', 'created_at']
+        fields = [
+            'id', 'title', 'author', 'problem_id', 'tags', 'created_at', 
+            'views', 'upvote_count', 'downvote_count', 'comment_count', 'is_editorial'
+        ]
+        read_only_fields = ['id', 'author', 'created_at', 'views', 'is_editorial']
+
+    def get_upvote_count(self, obj):
+        return obj.upvotes.count()
+
+    def get_downvote_count(self, obj):
+        return obj.downvotes.count()
+
+    def get_comment_count(self, obj):
+        return obj.comments.count()
 
 
 class DiscussDetailSerializer(serializers.ModelSerializer):
@@ -205,19 +260,56 @@ class DiscussDetailSerializer(serializers.ModelSerializer):
         write_only=True,
         required=False
     )
+    comments = serializers.SerializerMethodField()
+    upvote_count = serializers.SerializerMethodField()
+    downvote_count = serializers.SerializerMethodField()
+    has_upvoted = serializers.SerializerMethodField()
+    has_downvoted = serializers.SerializerMethodField()
 
     class Meta:
         model = Discuss
         fields = [
             'id', 'title', 'body', 'author', 'user', 
-            'problem', 'tags', 'tag_ids', 'created_at'
+            'problem', 'tags', 'tag_ids', 'created_at',
+            'views', 'upvote_count', 'downvote_count', 
+            'has_upvoted', 'has_downvoted', 'is_editorial', 'comments'
         ]
-        read_only_fields = ['id', 'author', 'user', 'created_at']
+        read_only_fields = ['id', 'author', 'user', 'created_at', 'views', 'is_editorial']
+
+    def get_comments(self, obj):
+        # Only return top-level comments (parent=None)
+        comments = obj.comments.filter(parent=None)
+        return CommentSerializer(comments, many=True, context=self.context).data
+
+    def get_upvote_count(self, obj):
+        return obj.upvotes.count()
+
+    def get_downvote_count(self, obj):
+        return obj.downvotes.count()
+
+    def get_has_upvoted(self, obj):
+        user = self.context.get('request').user
+        if user.is_authenticated:
+            return obj.upvotes.filter(id=user.id).exists()
+        return False
+
+    def get_has_downvoted(self, obj):
+        user = self.context.get('request').user
+        if user.is_authenticated:
+            return obj.downvotes.filter(id=user.id).exists()
+        return False
 
     def create(self, validated_data):
         tag_ids = validated_data.pop('tag_ids', [])
-        validated_data['author'] = self.context['request'].user
-        validated_data['user'] = self.context['request'].user
+        request = self.context.get('request')
+        validated_data['author'] = request.user
+        validated_data['user'] = request.user
+        
+        # Admin can set is_editorial
+        is_editorial = request.data.get('is_editorial', False)
+        if is_editorial and request.user.is_staff:
+            validated_data['is_editorial'] = True
+            
         discuss = Discuss.objects.create(**validated_data)
         if tag_ids:
             discuss.tags.set(tag_ids)

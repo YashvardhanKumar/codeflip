@@ -186,7 +186,7 @@ class Discuss(models.Model):
         related_name='discussions'
     )
     title = models.CharField(max_length=255)
-    body = RichTextField(blank=True, null=False, help_text='Content of the post')
+    body = models.TextField(blank=True, null=False, help_text='Content of the post (Markdown supported)')
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, 
         on_delete=models.CASCADE, 
@@ -194,6 +194,18 @@ class Discuss(models.Model):
         help_text='User associated with this discussion'
     )
     tags = models.ManyToManyField(Tags, through='DiscussTags', related_name='discussions')
+    views = models.PositiveIntegerField(default=0)
+    is_editorial = models.BooleanField(default=False)
+    upvotes = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, 
+        related_name='upvoted_discussions', 
+        blank=True
+    )
+    downvotes = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, 
+        related_name='downvoted_discussions', 
+        blank=True
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -218,3 +230,45 @@ class DiscussTags(models.Model):
 
     def __str__(self):
         return f"{self.discuss} - {self.tag}"
+
+
+class Comment(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='comments_authored'
+    )
+    discuss = models.ForeignKey(
+        Discuss,
+        on_delete=models.CASCADE,
+        related_name='comments'
+    )
+    body = models.TextField()
+    parent = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='replies'
+    )
+    upvotes = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        related_name='upvoted_comments',
+        blank=True
+    )
+    downvotes = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        related_name='downvoted_comments',
+        blank=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'comment'
+        verbose_name = 'Comment'
+        verbose_name_plural = 'Comments'
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"Comment by {self.author.username} on {self.discuss.title}"

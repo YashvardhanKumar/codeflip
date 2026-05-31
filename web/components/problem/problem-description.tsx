@@ -6,7 +6,7 @@ import TabButton from '@/components/tab-button';
 import DifficultyBadge from '@/components/difficulty-badge';
 import CodeBlock from '@/components/code-block';
 import { ResizablePanel } from '../ui/resizable';
-import { PaginatedResponse, Problem, Solution, Status } from '@/lib/models';
+import { Discuss, PaginatedResponse, Problem, Solution, Status } from '@/lib/models';
 import Script from 'next/script';
 import { useAuth } from '@/components/auth-provider';
 import useSWR from 'swr';
@@ -17,6 +17,9 @@ import { apiFetcher, formatInUserTimezone } from '@/lib/utils';
 import SubmissionResult from './submission-result';
 import { AnimatePresence } from 'framer-motion';
 import { apiFetch } from '@/lib/utils';
+import EditorialTab from './editorial-tab';
+import SolutionsTab from './solutions-tab';
+import SolutionDetail from './solution-detail';
 
 declare global {
   interface Window {
@@ -39,6 +42,7 @@ export default function ProblemDescription({ problem }: Props) {
   const [activeTab, setActiveTab] = useState('description');
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<number | null>(null);
   const [selectedSubmission, setSelectedSubmission] = useState<Solution | null>(null);
+  const [viewingSolution, setViewingSolution] = useState<Discuss | null>(null);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const { user } = useAuth();
 
@@ -84,6 +88,13 @@ export default function ProblemDescription({ problem }: Props) {
             history={history}
           />
         )}
+        {viewingSolution && (
+          <SolutionDetail 
+            solution={viewingSolution}
+            onClose={() => setViewingSolution(null)}
+            currentUser={user}
+          />
+        )}
       </AnimatePresence>
       
       {isDetailLoading && (
@@ -127,8 +138,13 @@ export default function ProblemDescription({ problem }: Props) {
       {/* Content Scroll Area */}
       <div className="flex-1 overflow-y-auto p-5 pb-10">
         {activeTab === 'description' && <DescriptionContent problem={problem} />}
-        {activeTab === 'editorial' && <div className="text-gray-400">Editorial content...</div>}
-        {activeTab === 'solutions' && <div className="text-gray-400">Solutions content...</div>}
+        {activeTab === 'editorial' && <EditorialTab problem={problem} />}
+        {activeTab === 'solutions' && (
+          <SolutionsTab 
+            problem={problem} 
+            onViewSolution={(sol) => setViewingSolution(sol)} 
+          />
+        )}
         {activeTab === 'submissions' && (
           <SubmissionsTab 
             problemId={problem.id} 

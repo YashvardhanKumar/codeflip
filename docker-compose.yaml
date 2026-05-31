@@ -34,7 +34,7 @@ services:
       - cdb
       - redis
     volumes:
-      - ./api:/home/coderacer/api/
+      - ./api:/home/codeflip/api/
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - app-network
@@ -50,7 +50,7 @@ services:
       - cdb
       - redis
     volumes:
-      - ./api:/home/coderacer/api/
+      - ./api:/home/codeflip/api/
     networks:
       - app-network
 
@@ -66,8 +66,8 @@ services:
     tty: true
     command: bun dev
     volumes:
-      - ./web:/home/coderacer/web/
-      - /home/coderacer/web/node_modules/
+      - ./web:/home/codeflip/web/
+      - /home/codeflip/web/node_modules/
     networks:
       - app-network
 

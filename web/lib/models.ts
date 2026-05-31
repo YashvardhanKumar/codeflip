@@ -94,6 +94,7 @@ export enum DataType {
 
 export interface User {
   id: number;
+  is_staff: boolean;
   username: string;
   email?: string;
   name?: string | null;
@@ -194,13 +195,35 @@ export interface SolutionList {
   created_at: string;
 }
 
-export interface Discussion {
+export interface Discuss {
   id: number;
   title: string;
-  body?: string;
+  body: string;
   author: User;
   problem: number;
   tags: Tag[];
+  views: number;
+  is_editorial: boolean;
+  upvote_count: number;
+  downvote_count: number;
+  comment_count: number;
+  has_upvoted?: boolean;
+  has_downvoted?: boolean;
+  comments?: Comment[];
+  created_at: string;
+}
+
+export interface Comment {
+  id: number;
+  author: User;
+  discuss: number;
+  body: string;
+  parent: number | null;
+  replies: Comment[];
+  upvote_count: number;
+  downvote_count: number;
+  has_upvoted?: boolean;
+  has_downvoted?: boolean;
   created_at: string;
 }
 

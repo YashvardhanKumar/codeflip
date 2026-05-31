@@ -2,17 +2,18 @@ from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly, AllowAny
-from django.db.models import Count, Q
+from rest_framework.exceptions import PermissionDenied
+from django.db.models import Count, Q, F
 from .models import (
     Problem, Codeblock, Testcase, Solution, 
-    Tags, Discuss, AnswerStatus
+    Tags, Discuss, AnswerStatus, Comment
 )
 from .serializers import (
     ProblemListSerializer, ProblemDetailSerializer,
     CodeblockSerializer, TestcaseSerializer,
     SolutionListSerializer, SolutionDetailSerializer, SolutionSubmitSerializer,
     TagsSerializer, DiscussListSerializer, DiscussDetailSerializer,
-    ProblemStatisticsSerializer
+    ProblemStatisticsSerializer, CommentSerializer
 )
 from engine.services import submit_to_judge0
 
@@ -361,11 +362,11 @@ class TagsViewSet(viewsets.ModelViewSet):
 
 
 class DiscussViewSet(viewsets.ModelViewSet):
-    queryset = Discuss.objects.select_related('author', 'problem', 'user').prefetch_related('tags').all()
+    queryset = Discuss.objects.select_related('author', 'problem', 'user').prefetch_related('tags', 'comments', 'upvotes', 'downvotes').all()
     permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['title', 'body']
-    ordering_fields = ['created_at']
+    search_fields = ['title', 'body', 'tags__tags']
+    ordering_fields = ['created_at', 'views']
     ordering = ['-created_at']
 
     def get_serializer_class(self):
@@ -373,26 +374,137 @@ class DiscussViewSet(viewsets.ModelViewSet):
             return DiscussListSerializer
         return DiscussDetailSerializer
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        
+        # Filter by problem_id if provided
+        problem_id = self.request.query_params.get('problem_id', None)
+        if problem_id:
+            queryset = queryset.filter(problem_id=problem_id)
+            
+        # Filter by is_editorial if provided
+        is_editorial = self.request.query_params.get('is_editorial', None)
+        if is_editorial is not None:
+            queryset = queryset.filter(is_editorial=(is_editorial.lower() == 'true'))
+
+        # Filter by tags if provided
+        tags = self.request.query_params.get('tags', None)
+        if tags:
+            tag_list = [t.strip() for t in tags.split(',') if t.strip()]
+            queryset = queryset.filter(tags__tags__in=tag_list).distinct()
+            
+        return queryset
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        # Increment views
+        Discuss.objects.filter(pk=instance.pk).update(views=F('views') + 1)
+        return super().retrieve(request, *args, **kwargs)
+
+    def create(self, request, *args, **kwargs):
+        # Only allow posting if user has at least one accepted solution for this problem
+        # unless they are staff
+        if not request.user.is_staff:
+            problem_id = request.data.get('problem')
+            if not problem_id:
+                return Response({'error': 'problem_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            has_accepted = Solution.objects.filter(
+                user=request.user, 
+                problem_id=problem_id, 
+                status=AnswerStatus.ACCEPTED
+            ).exists()
+            
+            if not has_accepted:
+                return Response(
+                    {'error': 'You must have at least one Accepted submission for this problem to post a solution.'}, 
+                    status=status.HTTP_403_FORBIDDEN
+                )
+        
+        return super().create(request, *args, **kwargs)
+
     def perform_create(self, serializer):
         serializer.save(author=self.request.user, user=self.request.user)
 
     def perform_update(self, serializer):
         # Only author can update
         if serializer.instance.author != self.request.user:
-            return Response(
-                {'error': 'You can only edit your own discussions'}, 
-                status=status.HTTP_403_FORBIDDEN
-            )
+            raise PermissionDenied('You can only edit your own discussions')
         serializer.save()
 
     def perform_destroy(self, instance):
         # Only author can delete
         if instance.author != self.request.user and not self.request.user.is_staff:
-            return Response(
-                {'error': 'You can only delete your own discussions'}, 
-                status=status.HTTP_403_FORBIDDEN
-            )
+            raise PermissionDenied('You can only delete your own discussions')
         instance.delete()
+
+    @action(detail=True, methods=['post'])
+    def upvote(self, request, pk=None):
+        discuss = self.get_object()
+        user = request.user
+        if discuss.upvotes.filter(id=user.id).exists():
+            discuss.upvotes.remove(user)
+            return Response({'status': 'upvote removed'})
+        else:
+            discuss.upvotes.add(user)
+            discuss.downvotes.remove(user) # Remove downvote if exists
+            return Response({'status': 'upvoted'})
+
+    @action(detail=True, methods=['post'])
+    def downvote(self, request, pk=None):
+        discuss = self.get_object()
+        user = request.user
+        if discuss.downvotes.filter(id=user.id).exists():
+            discuss.downvotes.remove(user)
+            return Response({'status': 'downvote removed'})
+        else:
+            discuss.downvotes.add(user)
+            discuss.upvotes.remove(user) # Remove upvote if exists
+            return Response({'status': 'downvoted'})
+
+    @action(detail=True, methods=['post'])
+    def add_comment(self, request, pk=None):
+        discuss = self.get_object()
+        parent_id = request.data.get('parent_id')
+        body = request.data.get('body')
+        
+        if not body:
+            return Response({'error': 'body is required'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        comment = Comment.objects.create(
+            author=request.user,
+            discuss=discuss,
+            body=body,
+            parent_id=parent_id
+        )
+        
+        serializer = CommentSerializer(comment, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['post'], url_path='comment/(?P<comment_pk>[^/.]+)/vote')
+    def vote_comment(self, request, comment_pk=None):
+        try:
+            comment = Comment.objects.get(pk=comment_pk)
+        except Comment.DoesNotExist:
+            return Response({'error': 'Comment not found'}, status=status.HTTP_404_NOT_FOUND)
+            
+        vote_type = request.data.get('type') # 'up' or 'down'
+        user = request.user
+        
+        if vote_type == 'up':
+            if comment.upvotes.filter(id=user.id).exists():
+                comment.upvotes.remove(user)
+            else:
+                comment.upvotes.add(user)
+                comment.downvotes.remove(user)
+        elif vote_type == 'down':
+            if comment.downvotes.filter(id=user.id).exists():
+                comment.downvotes.remove(user)
+            else:
+                comment.downvotes.add(user)
+                comment.upvotes.remove(user)
+        
+        return Response({'status': 'voted'})
 
     @action(detail=False, methods=['get'])
     def my_discussions(self, request):
