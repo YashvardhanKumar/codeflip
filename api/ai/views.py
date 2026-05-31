@@ -22,11 +22,17 @@ class TaskStatusView(APIView):
         except TaskLog.DoesNotExist:
             return Response({"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
 
+from rest_framework.throttling import UserRateThrottle
+
+class AIExplanationThrottle(UserRateThrottle):
+    scope = 'ai_generation'
+
 class GenerateExplanationView(APIView):
     """
     Generates a solution explanation using AI.
     """
     permission_classes = [IsAuthenticated]
+    throttle_classes = [AIExplanationThrottle]
 
     def post(self, request):
         problem_description = request.data.get('problem_description', '')
@@ -53,17 +59,22 @@ class GenerateExplanationView(APIView):
         
         Task:
         1. Review the code and the problem description.
-        2. Fill in the 'Intuition', 'Approach', and 'Complexity' sections of my draft.
-        3. Make the explanation clear, professional, and insightful.
-        4. Return ONLY the updated markdown content. Do not include any meta-commentary.
-        5. Preserve the structure of my draft.
+        2. Come up with a concise, professional title for this solution (e.g., "O(N) Dynamic Programming with Space Optimization").
+        3. Fill in the 'Intuition', 'Approach', and 'Complexity' sections of my draft.
+        4. Make the explanation clear, professional, and insightful.
+        5. Return the result ONLY as a valid JSON object with two keys: "title" and "explanation".
+        6. In the "explanation" field, preserve the markdown structure of my draft.
         """
 
         try:
-            explanation, provider = AIService.generate_with_fallback(prompt)
+            raw_content, provider = AIService.generate_with_fallback(prompt)
+            clean_content = AIService.clean_json_string(raw_content)
+            data = json.loads(clean_content)
+            
             return Response({
-                "explanation": explanation,
+                "title": data.get('title', ''),
+                "explanation": data.get('explanation', ''),
                 "provider": provider
             })
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"error": f"AI generation failed: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
