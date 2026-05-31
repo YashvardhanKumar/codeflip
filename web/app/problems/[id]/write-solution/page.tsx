@@ -240,8 +240,7 @@ export default function WriteSolutionPage() {
             </Button>
           </div>
           <div className="flex items-center justify-between gap-4">
-             <div className="flex items-center gap-2 overflow-x-auto pb-1 flex-1">
-          Broadway
+             <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar flex-1">
                 <span className="text-xs font-bold text-gray-500 uppercase tracking-widest shrink-0">Tags:</span>
                 {problem?.tags?.map(tag => (
                   <Badge 
@@ -278,7 +277,7 @@ export default function WriteSolutionPage() {
             <ResizablePanel defaultSize={50} minSize={20} className="flex flex-col">
               <div className="flex-1 flex flex-col bg-[#1e1e1e]">
                 {/* User Provided Toolbar */}
-                <div className="flex h-10 items-center gap-2 shrink-0 px-4 border-b border-surface-border bg-surface-dark/50 overflow-x-auto">
+                <div className="flex h-10 items-center gap-2 shrink-0 px-4 border-b border-surface-border bg-surface-dark/50 overflow-x-auto no-scrollbar">
                   <button onClick={() => insertMarkdown("# ", "")} title="Heading" className="rounded font-medium items-center whitespace-nowrap focus:outline-none inline-flex hover:bg-white/5 text-gray-400 h-6 w-6 justify-center p-0">
                     <LuHeading1 size={18} />
                   </button>

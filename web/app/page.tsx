@@ -77,7 +77,7 @@ export default function LandingPage() {
               <Zap size={14} />
               <span>The ultimate coding race begins</span>
             </motion.div>
-<motion.h1 variants={itemVariants} className="text-5xl md:text-7xl font-bold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-b from-slate-900 to-slate-600 dark:from-white dark:to-slate-400">
+<motion.h1 variants={itemVariants} className="text-5xl md:text-7xl font-bold tracking-tight mb-6 bg-clip-text text-transparent bg-linear-to-b from-slate-900 to-slate-600 dark:from-white dark:to-slate-400">
 
               Master Your Code, <br /> 
               <span className="text-primary">Outpace the Rest.</span>
