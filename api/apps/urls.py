@@ -33,6 +33,7 @@ urlpatterns = [
     # App-specific APIs
     path('api/auth/', include('user.urls')),
     path('api/engine/', include('engine.urls')),
+    path('api/ai/', include('ai.urls')),
     path('api/', include('problem.urls')),
     
     # Documentation & Schema

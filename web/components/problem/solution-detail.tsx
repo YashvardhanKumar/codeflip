@@ -159,8 +159,10 @@ export default function SolutionDetail({ solution: initialSolution, onClose, cur
             </div>
           </div>
 
-          <div className="prose prose-invert max-w-none prose-sm prose-headings:text-white prose-p:text-gray-300 prose-code:text-primary bg-surface-dark/30 p-6 rounded-2xl border border-surface-border">
+          {/* Content */}
+          <div className="prose prose-invert max-w-none prose-sm prose-headings:text-white prose-p:text-gray-300 prose-code:text-primary prose-code:before:content-none prose-code:after:content-none bg-surface-dark/30 p-6 rounded-2xl border border-surface-border">
             <ReactMarkdown 
+
               remarkPlugins={[remarkGfm, remarkMath]}
               rehypePlugins={[rehypeRaw, rehypeMathjax]}
               components={{

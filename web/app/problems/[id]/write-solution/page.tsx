@@ -2,12 +2,11 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Problem, Tag, User, Solution } from "@/lib/models";
+import { Problem } from "@/lib/models";
 import { apiFetch, apiFetcher } from "@/lib/utils";
 import useSWR from "swr";
 import { useAuth } from "@/components/auth-provider";
 import Header from "@/components/header";
-import Editor from "@monaco-editor/react";
 import { 
   ResizableHandle, 
   ResizablePanel, 
@@ -31,7 +30,8 @@ import {
   Eye, 
   Code as CodeIcon,
   ChevronLeft,
-  Loader2
+  Loader2,
+  Sparkles
 } from "lucide-react";
 import { 
   LuHeading1, 
@@ -48,6 +48,7 @@ import {
   LuSigma 
 } from "react-icons/lu";
 import PageTransition from "@/components/page-transition";
+import { Editor } from "@monaco-editor/react";
 
 export default function WriteSolutionPage() {
   const { id } = useParams();
@@ -62,7 +63,10 @@ export default function WriteSolutionPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPreviewOnly, setIsPreviewOnly] = useState(false);
   const [isEditorOnly, setIsEditorOnly] = useState(false);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const editorRef = useRef<any>(null);
+  
+  const DRAFT_KEY = `coderacer_solution_draft_${id}`;
 
   const DEFAULT_TEMPLATE = `# Intuition
 <!-- Describe your first thoughts on how to solve this problem. -->
@@ -85,6 +89,29 @@ export default function WriteSolutionPage() {
     user ? `solutions/?problem_id=${id}&status=Accepted` : null,
     apiFetcher
   );
+
+  // Load draft from localStorage on mount
+  useEffect(() => {
+    const savedDraft = localStorage.getItem(DRAFT_KEY);
+    if (savedDraft) {
+      try {
+        const { title: savedTitle, body: savedBody, selectedTags: savedTags } = JSON.parse(savedDraft);
+        if (savedTitle) setTitle(savedTitle);
+        if (savedBody) setBody(savedBody);
+        if (savedTags) setSelectedTags(savedTags);
+      } catch (e) {
+        console.error("Failed to load draft:", e);
+      }
+    }
+  }, [DRAFT_KEY]);
+
+  // Save draft to localStorage whenever content changes
+  useEffect(() => {
+    if (title || (body && body !== DEFAULT_TEMPLATE) || selectedTags.length > 0) {
+      const draft = JSON.stringify({ title, body, selectedTags });
+      localStorage.setItem(DRAFT_KEY, draft);
+    }
+  }, [title, body, selectedTags, DRAFT_KEY, DEFAULT_TEMPLATE]);
 
   useEffect(() => {
     async function autofillCode() {
@@ -152,6 +179,39 @@ export default function WriteSolutionPage() {
     );
   }
 
+  const handleGenerateAI = async () => {
+    if (!problem || isGeneratingAI) return;
+    
+    setIsGeneratingAI(true);
+    try {
+      // Find the code from the current body
+      const codeMatch = body.match(/```(?:\w+)?\s*\[\]\n([\s\S]*?)\n```/);
+      const codeToUse = codeMatch ? codeMatch[1] : "";
+
+      const response = await apiFetch("ai/generate-explanation/", {
+        method: "POST",
+        body: JSON.stringify({
+          problem_description: problem.problem_description,
+          current_text: body,
+          code: codeToUse
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setBody(data.explanation);
+        toast.success(`Generated using ${data.provider}`);
+      } else {
+        const error = await response.json();
+        toast.error(error.error || "Failed to generate AI explanation");
+      }
+    } catch (err) {
+      toast.error("An error occurred while generating.");
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
   const handlePost = async () => {
     if (!title.trim() || !body.trim()) {
       toast.error("Please provide both a title and solution content.");
@@ -170,11 +230,12 @@ export default function WriteSolutionPage() {
           is_editorial: isEditorial
         })
       });
+if (response.ok) {
+  localStorage.removeItem(DRAFT_KEY);
+  toast.success("Solution posted successfully!");
+  router.push(`/problems/${id}`);
+} else {
 
-      if (response.ok) {
-        toast.success("Solution posted successfully!");
-        router.push(`/problems/${id}`);
-      } else {
         const error = await response.json();
         toast.error(error.error || "Failed to post solution");
       }
@@ -239,6 +300,7 @@ export default function WriteSolutionPage() {
               Post Solution
             </Button>
           </div>
+          
           <div className="flex items-center justify-between gap-4">
              <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar flex-1">
                 <span className="text-xs font-bold text-gray-500 uppercase tracking-widest shrink-0">Tags:</span>
@@ -313,28 +375,40 @@ export default function WriteSolutionPage() {
                   <button onClick={() => insertMarkdown("> ", "")} title="Blockquote" className="rounded font-medium items-center whitespace-nowrap focus:outline-none inline-flex hover:bg-white/5 text-gray-400 h-6 w-6 justify-center p-0">
                     <LuQuote size={18} />
                   </button>
-                  <div className="h-3 border-l border-surface-border mx-1"></div>
                   <button onClick={() => insertMarkdown("$", "$")} title="Math (LaTeX)" className="rounded font-medium items-center whitespace-nowrap focus:outline-none inline-flex hover:bg-white/5 text-gray-400 h-6 w-6 justify-center p-0">
                     <LuSigma size={18} />
                   </button>
+                  <div className="h-3 border-l border-surface-border mx-1"></div>
+                  
+                  {/* AI Generate Button */}
+                  <button 
+                    onClick={handleGenerateAI} 
+                    title="Generate explanation using AI" 
+                    disabled={isGeneratingAI}
+                    className={`rounded font-medium items-center whitespace-nowrap focus:outline-none inline-flex h-7 px-2 gap-1.5 transition-all
+                      ${isGeneratingAI ? 'bg-primary/20 text-primary animate-pulse cursor-not-allowed' : 'bg-primary/10 text-primary hover:bg-primary/20'}`}
+                  >
+                    {isGeneratingAI ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                    <span className="text-[10px] font-bold uppercase tracking-wider">AI Explain</span>
+                  </button>
+
+                  <div className="h-3 border-l border-surface-border mx-1"></div>
                   <div className="flex-1" />
                   <div className="flex gap-1">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className={`h-7 w-7 ${isEditorOnly ? 'text-primary bg-primary/10' : 'text-gray-500'}`}
+                    <button 
+                      className={`h-7 w-7 flex items-center justify-center rounded hover:bg-white/5 ${isEditorOnly ? 'text-primary bg-primary/10' : 'text-gray-500'}`}
                       onClick={() => { setIsEditorOnly(!isEditorOnly); setIsPreviewOnly(false); }}
+                      title="Editor Only"
                     >
                       <Minimize2 size={14} />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className={`h-7 w-7 ${isPreviewOnly ? 'text-primary bg-primary/10' : 'text-gray-500'}`}
+                    </button>
+                    <button 
+                      className={`h-7 w-7 flex items-center justify-center rounded hover:bg-white/5 ${isPreviewOnly ? 'text-primary bg-primary/10' : 'text-gray-500'}`}
                       onClick={() => { setIsPreviewOnly(!isPreviewOnly); setIsEditorOnly(false); }}
+                      title="Preview Only"
                     >
                       <Eye size={14} />
-                    </Button>
+                    </button>
                   </div>
                 </div>
 
@@ -342,7 +416,7 @@ export default function WriteSolutionPage() {
                   <Editor
                     height="100%"
                     language="markdown"
-                    value={body}
+                  value={body}
                     theme="vs-dark"
                     onChange={(value) => setBody(value ?? "")}
                     onMount={handleEditorDidMount}
@@ -356,7 +430,7 @@ export default function WriteSolutionPage() {
                       automaticLayout: true,
                       wordWrap: "on",
                     }}
-                  />
+                />
                 </div>
               </div>
             </ResizablePanel>
@@ -368,7 +442,7 @@ export default function WriteSolutionPage() {
           {!isEditorOnly && (
             <ResizablePanel defaultSize={50} minSize={20} className="flex flex-col">
               <div className="flex-1 bg-background-dark p-6 overflow-y-auto">
-                <div className="max-w-none prose prose-invert prose-sm">
+                <div className="max-w-none prose prose-invert prose-sm prose-headings:text-white prose-p:text-gray-300 prose-code:text-primary prose-code:before:content-none prose-code:after:content-none">
                   {body ? (
                     <ReactMarkdown 
                       remarkPlugins={[remarkGfm, remarkMath]} 

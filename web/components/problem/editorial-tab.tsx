@@ -99,8 +99,7 @@ export default function EditorialTab({ problem }: Props) {
           </div>
         </div>
       </div>
-
-      <div className="prose prose-invert max-w-none prose-sm prose-headings:text-white prose-p:text-gray-300 prose-code:text-primary border-t border-surface-border pt-6">
+      <div className="prose prose-invert max-w-none prose-sm prose-headings:text-white prose-p:text-gray-300 prose-code:text-primary prose-code:before:content-none prose-code:after:content-none border-t border-surface-border pt-6">
         <ReactMarkdown 
           remarkPlugins={[remarkGfm, remarkMath]} 
           rehypePlugins={[rehypeRaw, rehypeMathjax]}
