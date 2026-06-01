@@ -110,5 +110,5 @@ jobs:
           script: |
             cd coderacer-web
             git pull origin master
-            docker compose -f docker-compose.prod.yaml down
-            docker compose -f docker-compose.prod.yaml up -d --build
+            docker compose -f docker-compose.prod.yaml build
+            docker compose -f docker-compose.prod.yaml up -d
