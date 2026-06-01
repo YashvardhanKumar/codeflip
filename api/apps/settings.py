@@ -21,13 +21,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-46(va-p7hta=k=8d1s=2t1h2w=7ky#6)t1ondc8m9dyap-03*)"
+SECRET_KEY = os.environ.get(
+    "SECRET_KEY", "django-insecure-46(va-p7hta=k=8d1s=2t1h2w=7ky#6)t1ondc8m9dyap-03*)"
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DEBUG", "True") == "True"
 
 # settings.py
-ALLOWED_HOSTS = [".ngrok-free.app", "localhost", "127.0.0.1", "api", "testserver"]
+allowed_hosts_env = os.environ.get(
+    "ALLOWED_HOSTS", ".ngrok-free.app,localhost,127.0.0.1,api,testserver"
+)
+ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_env.split(",") if host.strip()]
 
 # If you use Django's CSRF protection, also add:
 CSRF_TRUSTED_ORIGINS = ["https://*.ngrok-free.app"]

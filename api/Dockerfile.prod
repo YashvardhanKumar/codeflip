@@ -1,0 +1,25 @@
+FROM python:3.13-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpq-dev \
+    netcat-traditional \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+WORKDIR /home/codeflip/api
+
+COPY . .
+
+RUN uv pip install --system -r requirements.txt
+
+# Ensure entrypoint is executable
+RUN chmod +x /home/codeflip/api/entrypoint.prod.sh
+
+EXPOSE 8000
+
+ENTRYPOINT ["/home/codeflip/api/entrypoint.prod.sh"]
