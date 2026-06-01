@@ -6,7 +6,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import rehypeRaw from 'rehype-raw'
-import rehypeMathjax from 'rehype-mathjax'
+import rehypeMathjax from 'rehype-mathjax/svg'
 import Link from 'next/link'
 import CodeBlock from '../code-block'
 import {

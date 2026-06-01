@@ -1,12 +1,15 @@
 import os
 import json
-from google import genai
-from openai import OpenAI
 
 
 class AIService:
     @staticmethod
     def generate_with_gemini(prompt, model_name="gemini-2.0-flash"):
+        try:
+            from google import genai
+        except ImportError:
+            import google.genai as genai
+
         api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
         if not api_key:
             raise Exception("Gemini API Key not found.")
@@ -17,6 +20,8 @@ class AIService:
 
     @staticmethod
     def generate_with_openai(prompt, model_name="gpt-4o-mini"):
+        from openai import OpenAI
+
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
             raise Exception("OPENAI_API_KEY not found.")
