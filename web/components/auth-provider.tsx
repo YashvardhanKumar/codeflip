@@ -30,33 +30,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
 
   const logout = useCallback(() => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setToken(null);
-    setUser(null);
-    toast.success("Logged out successfully");
-    router.push("/");
-  }, [router]);
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    setToken(null)
+    setUser(null)
+    toast.success('Logged out successfully')
+    router.push('/')
+  }, [router])
 
-  const login = useCallback((newToken: string, newUser: User) => {
-    localStorage.setItem("token", newToken);
-    localStorage.setItem("user", JSON.stringify(newUser));
-    setToken(newToken);
-    setUser(newUser);
-    toast.success(`Welcome back, ${newUser.name || newUser.username}!`);
-    router.push("/problems");
-  }, [router]);
+  const login = useCallback(
+    (newToken: string, newUser: User) => {
+      localStorage.setItem('token', newToken)
+      localStorage.setItem('user', JSON.stringify(newUser))
+      setToken(newToken)
+      setUser(newUser)
+      toast.success(`Welcome back, ${newUser.name || newUser.username}!`)
+      router.push('/problems')
+    },
+    [router]
+  )
 
   const refreshUser = useCallback(async () => {
     try {
-      const response = await apiClient.get("auth/users/me/");
-      setUser(response.data);
-      localStorage.setItem("user", JSON.stringify(response.data));
+      const response = await apiClient.get('auth/users/me/')
+      setUser(response.data)
+      localStorage.setItem('user', JSON.stringify(response.data))
     } catch (error: any) {
-      console.error("Failed to refresh user", error);
+      console.error('Failed to refresh user', error)
       // Only logout on definitive auth failure
       if (error.response?.status === 401 || error.response?.status === 403) {
-        logout();
+        logout()
       }
     }
   }, [logout])
@@ -66,26 +69,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const storedUser = localStorage.getItem('user')
 
     if (storedToken && storedUser) {
-      setToken(storedToken);
+      setToken(storedToken)
       try {
-        setUser(JSON.parse(storedUser));
+        setUser(JSON.parse(storedUser))
       } catch (e) {
-        console.error("Failed to parse stored user", e);
-        logout();
-        return;
+        console.error('Failed to parse stored user', e)
+        logout()
+        return
       }
-      
+
       // Verify token/refresh user data in background
-      apiClient.get("auth/users/me/")
-        .then(res => {
-          setUser(res.data);
-          localStorage.setItem("user", JSON.stringify(res.data));
+      apiClient
+        .get('auth/users/me/')
+        .then((res) => {
+          setUser(res.data)
+          localStorage.setItem('user', JSON.stringify(res.data))
         })
         .catch((err) => {
-          console.error("Hydration auth check failed", err);
+          console.error('Hydration auth check failed', err)
           // Only clear session if it's an authentication error
           if (err.response?.status === 401 || err.response?.status === 403) {
-            logout();
+            logout()
           }
         })
         .finally(() => {

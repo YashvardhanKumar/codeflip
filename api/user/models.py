@@ -14,8 +14,12 @@ class User(AbstractUser):
     id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=255, blank=True, null=True)
     # username and email are inherited from AbstractUser
-    hash = models.CharField(max_length=255, blank=True, null=True, help_text="Additional hash field")
-    profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
+    hash = models.CharField(
+        max_length=255, blank=True, null=True, help_text="Additional hash field"
+    )
+    profile_picture = models.ImageField(
+        upload_to="profile_pictures/", blank=True, null=True
+    )
     default_lang = models.CharField(
         max_length=20,
         choices=CodingLanguage.choices,

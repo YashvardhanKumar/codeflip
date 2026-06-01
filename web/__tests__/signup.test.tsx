@@ -126,10 +126,13 @@ describe('SignupPage', () => {
 
     await waitFor(() => {
       expect(apiClient.post).toHaveBeenCalledWith(
-        '/auth/register/',
+        'auth/register/',
         expect.objectContaining({
           username: 'testuser',
           email: 'test@example.com',
+          name: 'Test User',
+          password: 'password123',
+          password2: 'password123',
         })
       )
       expect(mockLogin).toHaveBeenCalledWith('fake-token', userData)

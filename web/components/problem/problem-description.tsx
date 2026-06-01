@@ -1,25 +1,31 @@
 // components/problem/ProblemDescription.tsx
 'use client'
 
-import { useState, useEffect, useMemo } from 'react';
-import TabButton from '@/components/tab-button';
-import DifficultyBadge from '@/components/difficulty-badge';
-import CodeBlock from '@/components/code-block';
-import { ResizablePanel } from '../ui/resizable';
-import { Discuss, PaginatedResponse, Problem, Solution, Status } from '@/lib/models';
-import Script from 'next/script';
-import { useAuth } from '@/components/auth-provider';
-import useSWR from 'swr';
-import { SubmissionSkeleton } from '@/components/loader';
-import { CheckCircle2, XCircle, Clock, AlertCircle } from 'lucide-react';
-import Link from 'next/link';
-import { apiFetcher, formatInUserTimezone } from '@/lib/utils';
-import SubmissionResult from './submission-result';
-import { AnimatePresence } from 'framer-motion';
-import { apiFetch } from '@/lib/utils';
-import EditorialTab from './editorial-tab';
-import SolutionsTab from './solutions-tab';
-import SolutionDetail from './solution-detail';
+import { useState, useEffect, useMemo } from 'react'
+import TabButton from '@/components/tab-button'
+import DifficultyBadge from '@/components/difficulty-badge'
+import CodeBlock from '@/components/code-block'
+import { ResizablePanel } from '../ui/resizable'
+import {
+  Discuss,
+  PaginatedResponse,
+  Problem,
+  Solution,
+  Status,
+} from '@/lib/models'
+import Script from 'next/script'
+import { useAuth } from '@/components/auth-provider'
+import useSWR from 'swr'
+import { SubmissionSkeleton } from '@/components/loader'
+import { CheckCircle2, XCircle, Clock, AlertCircle } from 'lucide-react'
+import Link from 'next/link'
+import { apiFetcher, formatInUserTimezone } from '@/lib/utils'
+import SubmissionResult from './submission-result'
+import { AnimatePresence } from 'framer-motion'
+import { apiFetch } from '@/lib/utils'
+import EditorialTab from './editorial-tab'
+import SolutionsTab from './solutions-tab'
+import SolutionDetail from './solution-detail'
 
 declare global {
   interface Window {
@@ -39,23 +45,28 @@ interface Props {
 }
 
 export default function ProblemDescription({ problem }: Props) {
-  const [activeTab, setActiveTab] = useState('description');
-  const [selectedSubmissionId, setSelectedSubmissionId] = useState<number | null>(null);
-  const [selectedSubmission, setSelectedSubmission] = useState<Solution | null>(null);
-  const [viewingSolution, setViewingSolution] = useState<Discuss | null>(null);
-  const [isDetailLoading, setIsDetailLoading] = useState(false);
-  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState('description')
+  const [selectedSubmissionId, setSelectedSubmissionId] = useState<
+    number | null
+  >(null)
+  const [selectedSubmission, setSelectedSubmission] = useState<Solution | null>(
+    null
+  )
+  const [viewingSolution, setViewingSolution] = useState<Discuss | null>(null)
+  const [isDetailLoading, setIsDetailLoading] = useState(false)
+  const { user } = useAuth()
 
-  const { data: submissionsData } = useSWR<PaginatedResponse<Solution> | Solution[]>(
-    user ? `solutions/?problem_id=${problem.id}` : null,
-    apiFetcher
-  );
+  const { data: submissionsData } = useSWR<
+    PaginatedResponse<Solution> | Solution[]
+  >(user ? `solutions/?problem_id=${problem.id}` : null, apiFetcher)
 
   const history = useMemo(() => {
-    const subs = Array.isArray(submissionsData) ? submissionsData : submissionsData?.results || [];
+    const subs = Array.isArray(submissionsData)
+      ? submissionsData
+      : submissionsData?.results || []
     // Only include submissions that have results for graphing
-    return subs.filter(s => s.status === Status.SUCCESS && s.testcase_results);
-  }, [submissionsData]);
+    return subs.filter((s) => s.status === Status.SUCCESS && s.testcase_results)
+  }, [submissionsData])
 
   useEffect(() => {
     if (window.MathJax && window.MathJax.typesetPromise) {
@@ -64,24 +75,27 @@ export default function ProblemDescription({ problem }: Props) {
   }, [problem, activeTab])
 
   const handleViewSubmission = async (id: number) => {
-    setSelectedSubmissionId(id);
-    setIsDetailLoading(true);
+    setSelectedSubmissionId(id)
+    setIsDetailLoading(true)
     try {
-      const data = await apiFetch(`solutions/${id}/`);
-      const json = await data.json();
-      setSelectedSubmission(json);
+      const data = await apiFetch(`solutions/${id}/`)
+      const json = await data.json()
+      setSelectedSubmission(json)
     } catch (error) {
-      console.error("Error fetching submission details:", error);
+      console.error('Error fetching submission details:', error)
     } finally {
-      setIsDetailLoading(false);
+      setIsDetailLoading(false)
     }
-  };
+  }
 
   return (
-    <ResizablePanel defaultSize={50} className="flex flex-col border-r border-surface-border bg-background-dark overflow-hidden relative">
+    <ResizablePanel
+      defaultSize={50}
+      className="flex flex-col border-r border-surface-border bg-background-dark overflow-hidden relative"
+    >
       <AnimatePresence>
         {selectedSubmission && (
-          <SubmissionResult 
+          <SubmissionResult
             solution={selectedSubmission}
             onClose={() => setSelectedSubmission(null)}
             testcases={problem.testcases}
@@ -89,14 +103,14 @@ export default function ProblemDescription({ problem }: Props) {
           />
         )}
         {viewingSolution && (
-          <SolutionDetail 
+          <SolutionDetail
             solution={viewingSolution}
             onClose={() => setViewingSolution(null)}
             currentUser={user}
           />
         )}
       </AnimatePresence>
-      
+
       {isDetailLoading && (
         <div className="absolute inset-0 bg-background-dark/50 z-[60] flex items-center justify-center">
           <div className="animate-spin size-8 border-4 border-primary border-t-transparent rounded-full"></div>
@@ -137,18 +151,20 @@ export default function ProblemDescription({ problem }: Props) {
 
       {/* Content Scroll Area */}
       <div className="flex-1 overflow-y-auto p-5 pb-10">
-        {activeTab === 'description' && <DescriptionContent problem={problem} />}
+        {activeTab === 'description' && (
+          <DescriptionContent problem={problem} />
+        )}
         {activeTab === 'editorial' && <EditorialTab problem={problem} />}
         {activeTab === 'solutions' && (
-          <SolutionsTab 
-            problem={problem} 
-            onViewSolution={(sol) => setViewingSolution(sol)} 
+          <SolutionsTab
+            problem={problem}
+            onViewSolution={(sol) => setViewingSolution(sol)}
           />
         )}
         {activeTab === 'submissions' && (
-          <SubmissionsTab 
-            problemId={problem.id} 
-            authenticated={!!user} 
+          <SubmissionsTab
+            problemId={problem.id}
+            authenticated={!!user}
             onViewDetail={handleViewSubmission}
           />
         )}
@@ -267,19 +283,18 @@ function DescriptionContent({ problem }: Props) {
   )
 }
 
-function SubmissionsTab({ 
-  problemId, 
-  authenticated, 
-  onViewDetail 
-}: { 
-  problemId: number, 
-  authenticated: boolean,
+function SubmissionsTab({
+  problemId,
+  authenticated,
+  onViewDetail,
+}: {
+  problemId: number
+  authenticated: boolean
   onViewDetail: (id: number) => void
 }) {
-  const { data, error, isLoading } = useSWR<PaginatedResponse<Solution> | Solution[]>(
-    authenticated ? `solutions/?problem_id=${problemId}` : null,
-    apiFetcher
-  );
+  const { data, error, isLoading } = useSWR<
+    PaginatedResponse<Solution> | Solution[]
+  >(authenticated ? `solutions/?problem_id=${problemId}` : null, apiFetcher)
 
   if (!authenticated) {
     return (
@@ -303,14 +318,20 @@ function SubmissionsTab({
     )
   }
 
-  if (isLoading) return <div className="py-4"><SubmissionSkeleton /></div>;
-  
-  if (error || !data) return (
-    <div className="py-10 text-red-500 flex items-center gap-2">
-      <AlertCircle size={20} />
-      <span>Failed to load submissions</span>
-    </div>
-  );
+  if (isLoading)
+    return (
+      <div className="py-4">
+        <SubmissionSkeleton />
+      </div>
+    )
+
+  if (error || !data)
+    return (
+      <div className="py-10 text-red-500 flex items-center gap-2">
+        <AlertCircle size={20} />
+        <span>Failed to load submissions</span>
+      </div>
+    )
 
   if (error || !data)
     return (
@@ -349,8 +370,8 @@ function SubmissionsTab({
           </thead>
           <tbody className="divide-y divide-surface-border bg-background-dark">
             {submissions.map((sub) => (
-              <tr 
-                key={sub.id} 
+              <tr
+                key={sub.id}
                 className="hover:bg-white/5 transition-colors group cursor-pointer"
                 onClick={() => onViewDetail(sub.id)}
               >

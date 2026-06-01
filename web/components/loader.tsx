@@ -1,13 +1,18 @@
-import { Skeleton } from "./ui/skeleton";
-import { cn } from "@/lib/utils";
+import { Skeleton } from './ui/skeleton'
+import { cn } from '@/lib/utils'
 
 interface LoaderProps {
-  className?: string;
+  className?: string
 }
 
 export function Loader({ className }: LoaderProps) {
   return (
-    <div className={cn("w-full h-full min-h-[100px] flex flex-col gap-6 p-6", className)}>
+    <div
+      className={cn(
+        'w-full h-full min-h-[100px] flex flex-col gap-6 p-6',
+        className
+      )}
+    >
       <div className="space-y-4">
         <Skeleton className="h-10 w-3/4 rounded-lg" />
         <div className="flex gap-2">
@@ -27,16 +32,20 @@ export function Loader({ className }: LoaderProps) {
   )
 }
 
-export function LoaderSmall({ size = 'md', className }: { size?: 'sm' | 'md' | 'lg', className?: string }) {
+export function LoaderSmall({
+  size = 'md',
+  className,
+}: {
+  size?: 'sm' | 'md' | 'lg'
+  className?: string
+}) {
   const sizes = {
     sm: 'h-4 w-24',
     md: 'h-5 w-32',
-    lg: 'h-6 w-48'
-  };
+    lg: 'h-6 w-48',
+  }
 
-  return (
-    <Skeleton className={cn(sizes[size], "rounded-md", className)} />
-  );
+  return <Skeleton className={cn(sizes[size], 'rounded-md', className)} />
 }
 
 export function SubmissionSkeleton() {
@@ -51,7 +60,10 @@ export function SubmissionSkeleton() {
         </div>
         <div className="divide-y divide-surface-border bg-background-dark">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="px-4 py-4 flex items-center justify-between gap-4">
+            <div
+              key={i}
+              className="px-4 py-4 flex items-center justify-between gap-4"
+            >
               <div className="flex items-center gap-2">
                 <Skeleton className="size-4 rounded-full" />
                 <Skeleton className="h-4 w-24" />
@@ -63,7 +75,7 @@ export function SubmissionSkeleton() {
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 export function DescriptionSkeleton() {
@@ -96,7 +108,7 @@ export function DescriptionSkeleton() {
         <Skeleton className="h-4 w-24 rounded" />
       </div>
     </div>
-  );
+  )
 }
 
 export function EditorSkeleton() {
@@ -114,7 +126,12 @@ export function EditorSkeleton() {
           {[...Array(15)].map((_, i) => (
             <div key={i} className="flex gap-4">
               <Skeleton className="h-4 w-8 rounded" />
-              <Skeleton className={cn("h-4 rounded", i % 3 === 0 ? 'w-1/2' : i % 2 === 0 ? 'w-3/4' : 'w-2/3')} />
+              <Skeleton
+                className={cn(
+                  'h-4 rounded',
+                  i % 3 === 0 ? 'w-1/2' : i % 2 === 0 ? 'w-3/4' : 'w-2/3'
+                )}
+              />
             </div>
           ))}
         </div>
@@ -137,7 +154,7 @@ export function EditorSkeleton() {
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 export function TableSkeleton() {

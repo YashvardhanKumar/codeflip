@@ -92,7 +92,7 @@ describe('LoginPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /Sign In to Race/i }))
 
     await waitFor(() => {
-      expect(apiClient.post).toHaveBeenCalledWith('/auth/login/', {
+      expect(apiClient.post).toHaveBeenCalledWith('auth/login/', {
         username: 'testuser',
         password: 'password123',
       })

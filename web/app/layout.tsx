@@ -62,7 +62,9 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
           rel="stylesheet"
         />
-        <style dangerouslySetInnerHTML={{ __html: `
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
           mjx-container {
             display: inline-block !important;
             margin: 0 0.15em !important;
@@ -81,7 +83,9 @@ export default function RootLayout({
           mjx-container[display="true"] svg {
             display: inline-block !important;
           }
-        ` }} />
+        `,
+          }}
+        />
       </head>
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} font-display antialiased selection:bg-primary/30 bg-background-light dark:bg-background-dark text-slate-900 dark:text-white`}

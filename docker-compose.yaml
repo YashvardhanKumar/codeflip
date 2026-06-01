@@ -105,7 +105,7 @@ services:
       NGROK_AUTHTOKEN: 3EB4T8u4Y5lznXgMSXTI9Tia5di_2KH2m3shLDEP3ja8szUJ5
     depends_on:
       - nginx
-  
+
 
 volumes:
   pg_data:

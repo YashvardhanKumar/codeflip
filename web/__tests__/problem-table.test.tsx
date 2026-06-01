@@ -74,14 +74,13 @@ jest.mock('framer-motion', () => {
 })
 
 describe('ProblemTable', () => {
-  it('renders loading state', () => {
-    ;(useSWR as jest.Mock).mockReturnValue({
-      data: undefined,
-      error: undefined,
-      isLoading: true,
-    })
+  const defaultProps = {
+    page: 1,
+    onPageChange: jest.fn(),
+  }
 
-    render(<ProblemTable />)
+  it('renders loading state', () => {
+    render(<ProblemTable {...defaultProps} isLoading={true} />)
     // Should show skeletons or a loader
     const skeletons = screen.getAllByRole('row')
     // 1 header + 10 skeleton rows (as per ProblemTableSkeleton)
@@ -89,24 +88,24 @@ describe('ProblemTable', () => {
   })
 
   it('renders error state', () => {
-    ;(useSWR as jest.Mock).mockReturnValue({
-      data: undefined,
-      error: { message: 'Failed to fetch' },
-      isLoading: false,
-    })
-
-    render(<ProblemTable />)
+    render(
+      <ProblemTable
+        {...defaultProps}
+        isLoading={false}
+        error={new Error('Failed to fetch')}
+      />
+    )
     expect(screen.getByText(/Error: Failed to fetch/i)).toBeInTheDocument()
   })
 
   it('renders a list of problems', () => {
-    ;(useSWR as jest.Mock).mockReturnValue({
-      data: mockProblems,
-      error: undefined,
-      isLoading: false,
-    })
-
-    render(<ProblemTable />)
+    render(
+      <ProblemTable
+        {...defaultProps}
+        isLoading={false}
+        data={mockProblems as any}
+      />
+    )
 
     expect(screen.getByText(/Two Sum/i)).toBeInTheDocument()
     expect(screen.getByText(/Longest Substring/i)).toBeInTheDocument()

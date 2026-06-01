@@ -1,7 +1,15 @@
 from rest_framework import serializers
 from .models import (
-    Problem, Codeblock, Testcase, Solution, 
-    Tags, ProblemTags, Discuss, DiscussTags, AnswerStatus, Comment
+    Problem,
+    Codeblock,
+    Testcase,
+    Solution,
+    Tags,
+    ProblemTags,
+    Discuss,
+    DiscussTags,
+    AnswerStatus,
+    Comment,
 )
 from user.models import User, CodingLanguage
 
@@ -11,14 +19,23 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'name', 'default_lang', 'profile_picture', 'profile_picture_url', 'date_joined']
-        read_only_fields = ['id', 'date_joined']
+        fields = [
+            "id",
+            "username",
+            "email",
+            "name",
+            "default_lang",
+            "profile_picture",
+            "profile_picture_url",
+            "date_joined",
+        ]
+        read_only_fields = ["id", "date_joined"]
 
     def get_profile_picture_url(self, obj):
         if not obj.profile_picture:
             return None
 
-        request = self.context.get('request')
+        request = self.context.get("request")
         url = obj.profile_picture.url
         if request:
             return request.build_absolute_uri(url)
@@ -191,8 +208,18 @@ class SolutionListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Solution
-        fields = ['id', 'user', 'problem_id', 'language', 'language_display', 'status', 'status_display', 'testcase_results', 'created_at']
-        read_only_fields = ['id', 'user', 'status', 'created_at', 'testcase_results']
+        fields = [
+            "id",
+            "user",
+            "problem_id",
+            "language",
+            "language_display",
+            "status",
+            "status_display",
+            "testcase_results",
+            "created_at",
+        ]
+        read_only_fields = ["id", "user", "status", "created_at", "testcase_results"]
 
 
 class SolutionDetailSerializer(serializers.ModelSerializer):
@@ -204,8 +231,19 @@ class SolutionDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Solution
-        fields = ['id', 'user', 'problem', 'code', 'language', 'language_display', 'status', 'status_display', 'testcase_results', 'created_at']
-        read_only_fields = ['id', 'user', 'status', 'created_at', 'testcase_results']
+        fields = [
+            "id",
+            "user",
+            "problem",
+            "code",
+            "language",
+            "language_display",
+            "status",
+            "status_display",
+            "testcase_results",
+            "created_at",
+        ]
+        read_only_fields = ["id", "user", "status", "created_at", "testcase_results"]
 
     def create(self, validated_data):
         validated_data["user"] = self.context["request"].user
@@ -241,14 +279,25 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = [
-            'id', 'author', 'discuss', 'body', 'parent', 'replies', 
-            'upvote_count', 'downvote_count', 'has_upvoted', 'has_downvoted', 'created_at'
+            "id",
+            "author",
+            "discuss",
+            "body",
+            "parent",
+            "replies",
+            "upvote_count",
+            "downvote_count",
+            "has_upvoted",
+            "has_downvoted",
+            "created_at",
         ]
-        read_only_fields = ['id', 'author', 'created_at']
+        read_only_fields = ["id", "author", "created_at"]
 
     def get_replies(self, obj):
         if obj.replies.exists():
-            return CommentSerializer(obj.replies.all(), many=True, context=self.context).data
+            return CommentSerializer(
+                obj.replies.all(), many=True, context=self.context
+            ).data
         return []
 
     def get_upvote_count(self, obj):
@@ -258,13 +307,13 @@ class CommentSerializer(serializers.ModelSerializer):
         return obj.downvotes.count()
 
     def get_has_upvoted(self, obj):
-        user = self.context.get('request').user
+        user = self.context.get("request").user
         if user.is_authenticated:
             return obj.upvotes.filter(id=user.id).exists()
         return False
 
     def get_has_downvoted(self, obj):
-        user = self.context.get('request').user
+        user = self.context.get("request").user
         if user.is_authenticated:
             return obj.downvotes.filter(id=user.id).exists()
         return False
@@ -273,7 +322,7 @@ class CommentSerializer(serializers.ModelSerializer):
 class DiscussListSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
     tags = TagsSerializer(many=True, read_only=True)
-    problem_id = serializers.IntegerField(read_only=True, source='problem.id')
+    problem_id = serializers.IntegerField(read_only=True, source="problem.id")
     upvote_count = serializers.SerializerMethodField()
     downvote_count = serializers.SerializerMethodField()
     comment_count = serializers.SerializerMethodField()
@@ -281,10 +330,20 @@ class DiscussListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Discuss
         fields = [
-            'id', 'title', 'body', 'author', 'problem_id', 'tags', 'created_at', 
-            'views', 'upvote_count', 'downvote_count', 'comment_count', 'is_editorial'
+            "id",
+            "title",
+            "body",
+            "author",
+            "problem_id",
+            "tags",
+            "created_at",
+            "views",
+            "upvote_count",
+            "downvote_count",
+            "comment_count",
+            "is_editorial",
         ]
-        read_only_fields = ['id', 'author', 'created_at', 'views', 'is_editorial']
+        read_only_fields = ["id", "author", "created_at", "views", "is_editorial"]
 
     def get_upvote_count(self, obj):
         return obj.upvotes.count()
@@ -312,12 +371,31 @@ class DiscussDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Discuss
         fields = [
-            'id', 'title', 'body', 'author', 'user', 
-            'problem', 'tags', 'tag_ids', 'created_at',
-            'views', 'upvote_count', 'downvote_count', 
-            'has_upvoted', 'has_downvoted', 'is_editorial', 'comments'
+            "id",
+            "title",
+            "body",
+            "author",
+            "user",
+            "problem",
+            "tags",
+            "tag_ids",
+            "created_at",
+            "views",
+            "upvote_count",
+            "downvote_count",
+            "has_upvoted",
+            "has_downvoted",
+            "is_editorial",
+            "comments",
         ]
-        read_only_fields = ['id', 'author', 'user', 'created_at', 'views', 'is_editorial']
+        read_only_fields = [
+            "id",
+            "author",
+            "user",
+            "created_at",
+            "views",
+            "is_editorial",
+        ]
 
     def get_comments(self, obj):
         # Only return top-level comments (parent=None)
@@ -331,28 +409,28 @@ class DiscussDetailSerializer(serializers.ModelSerializer):
         return obj.downvotes.count()
 
     def get_has_upvoted(self, obj):
-        user = self.context.get('request').user
+        user = self.context.get("request").user
         if user.is_authenticated:
             return obj.upvotes.filter(id=user.id).exists()
         return False
 
     def get_has_downvoted(self, obj):
-        user = self.context.get('request').user
+        user = self.context.get("request").user
         if user.is_authenticated:
             return obj.downvotes.filter(id=user.id).exists()
         return False
 
     def create(self, validated_data):
-        tag_ids = validated_data.pop('tag_ids', [])
-        request = self.context.get('request')
-        validated_data['author'] = request.user
-        validated_data['user'] = request.user
-        
+        tag_ids = validated_data.pop("tag_ids", [])
+        request = self.context.get("request")
+        validated_data["author"] = request.user
+        validated_data["user"] = request.user
+
         # Admin can set is_editorial
-        is_editorial = request.data.get('is_editorial', False)
+        is_editorial = request.data.get("is_editorial", False)
         if is_editorial and request.user.is_staff:
-            validated_data['is_editorial'] = True
-            
+            validated_data["is_editorial"] = True
+
         discuss = Discuss.objects.create(**validated_data)
         if tag_ids:
             discuss.tags.set(tag_ids)

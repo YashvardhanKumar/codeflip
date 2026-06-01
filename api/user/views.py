@@ -48,19 +48,27 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['patch'])
+    @action(detail=False, methods=["patch"])
     def update_language(self, request):
         """Update user's default programming language"""
-        language = request.data.get('default_lang')
+        language = request.data.get("default_lang")
         if not language:
-            return Response({'error': 'default_lang is required'}, status=status.HTTP_400_BAD_REQUEST)
-        
+            return Response(
+                {"error": "default_lang is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         user = request.user
         user.default_lang = language
         user.save()
-        return Response({'message': 'Default language updated successfully', 'default_lang': user.default_lang})
+        return Response(
+            {
+                "message": "Default language updated successfully",
+                "default_lang": user.default_lang,
+            }
+        )
 
-    @action(detail=False, methods=['put', 'patch'])
+    @action(detail=False, methods=["put", "patch"])
     def update_profile(self, request):
         """Update current user's profile"""
         serializer = self.get_serializer(
@@ -70,82 +78,93 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer.save()
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=["get"])
+    @action(detail=False, methods=["get"])
     def profile(self, request):
         """Get current user's profile, activity, and coding progress"""
         user = request.user
-        year_param = request.query_params.get('year')
-        
+        year_param = request.query_params.get("year")
+
         now = timezone.now()
         current_year = now.year
         join_year = user.date_joined.year
         available_years = list(range(join_year, current_year + 1))
-        
+
         try:
             target_year = int(year_param) if year_param else current_year
         except ValueError:
             target_year = current_year
-            
-        solutions = Solution.objects.filter(user=user).select_related('problem')
-        
+
+        solutions = Solution.objects.filter(user=user).select_related("problem")
+
         # Heatmap calculation for the specific year
         start_of_year = timezone.datetime(target_year, 1, 1).date()
         end_of_year = timezone.datetime(target_year, 12, 31).date()
-        
+
         # Clamp start date to join date if target year is join year
         actual_start = max(start_of_year, user.date_joined.date())
         # Clamp end date to today if target year is current year
         actual_end = min(end_of_year, timezone.localdate())
-        
+
         # Activity for the heatmap
         year_activity = {
-            item['day'].isoformat(): item['count']
-            for item in solutions.filter(created_at__date__gte=actual_start, created_at__date__lte=actual_end)
-            .annotate(day=TruncDate('created_at'))
-            .values('day')
-            .annotate(count=Count('id'))
-            .order_by('day')
+            item["day"].isoformat(): item["count"]
+            for item in solutions.filter(
+                created_at__date__gte=actual_start, created_at__date__lte=actual_end
+            )
+            .annotate(day=TruncDate("created_at"))
+            .values("day")
+            .annotate(count=Count("id"))
+            .order_by("day")
         }
-        
+
         heatmap = []
         curr = actual_start
         while curr <= actual_end:
             date_str = curr.isoformat()
-            heatmap.append({
-                'date': date_str,
-                'count': year_activity.get(date_str, 0)
-            })
+            heatmap.append({"date": date_str, "count": year_activity.get(date_str, 0)})
             curr += timedelta(days=1)
 
         # Stats and problem summaries
         solved_problem_ids = set(
             solutions.filter(status=AnswerStatus.ACCEPTED)
-            .values_list('problem_id', flat=True)
+            .values_list("problem_id", flat=True)
             .distinct()
         )
         attempted_problem_ids = set(
-            solutions.values_list('problem_id', flat=True).distinct()
+            solutions.values_list("problem_id", flat=True).distinct()
         )
         attempted_only_ids = attempted_problem_ids - solved_problem_ids
 
         solved_problems = self._latest_solution_per_problem(
-            solutions.filter(status=AnswerStatus.ACCEPTED, problem_id__in=solved_problem_ids)
+            solutions.filter(
+                status=AnswerStatus.ACCEPTED, problem_id__in=solved_problem_ids
+            )
         )
         attempted_problems = self._latest_solution_per_problem(
             solutions.filter(problem_id__in=attempted_only_ids)
         )
 
         difficulty_breakdown = {}
-        for difficulty in ['EASY', 'MEDIUM', 'HARD']:
-            total = solutions.filter(problem__difficulty=difficulty).values('problem_id').distinct().count()
-            solved = solutions.filter(
-                problem__difficulty=difficulty,
-                status=AnswerStatus.ACCEPTED,
-            ).values('problem_id').distinct().count()
+        for difficulty in ["EASY", "MEDIUM", "HARD"]:
+            total = (
+                solutions.filter(problem__difficulty=difficulty)
+                .values("problem_id")
+                .distinct()
+                .count()
+            )
+            solved = (
+                solutions.filter(
+                    problem__difficulty=difficulty,
+                    status=AnswerStatus.ACCEPTED,
+                )
+                .values("problem_id")
+                .distinct()
+                .count()
+            )
             difficulty_breakdown[difficulty] = {
-                'solved': solved,
-                'attempted': total,
+                "solved": solved,
+                "attempted": total,
             }
 
         status_breakdown = {}
@@ -156,60 +175,71 @@ class UserViewSet(viewsets.ModelViewSet):
         # Recent submissions for the side list
         recent_submissions = [
             {
-                'id': solution.id,
-                'problem_id': solution.problem_id,
-                'problem_name': solution.problem.name,
-                'difficulty': solution.problem.difficulty,
-                'language': solution.language,
-                'language_display': solution.get_language_display(),
-                'status': solution.status,
-                'status_display': solution.get_status_display(),
-                'created_at': solution.created_at,
+                "id": solution.id,
+                "problem_id": solution.problem_id,
+                "problem_name": solution.problem.name,
+                "difficulty": solution.problem.difficulty,
+                "language": solution.language,
+                "language_display": solution.get_language_display(),
+                "status": solution.status,
+                "status_display": solution.get_status_display(),
+                "created_at": solution.created_at,
             }
-            for solution in solutions.order_by('-created_at')[:12]
+            for solution in solutions.order_by("-created_at")[:12]
         ]
 
         def serialize_problem(solution):
             return {
-                'id': solution.problem_id,
-                'name': solution.problem.name,
-                'difficulty': solution.problem.difficulty,
-                'last_submitted_at': solution.created_at,
+                "id": solution.problem_id,
+                "name": solution.problem.name,
+                "difficulty": solution.problem.difficulty,
+                "last_submitted_at": solution.created_at,
             }
 
         # For streak calculation, we need full activity history
         full_activity = {
-            item['day'].isoformat(): item['count']
-            for item in solutions.annotate(day=TruncDate('created_at'))
-            .values('day')
-            .annotate(count=Count('id'))
+            item["day"].isoformat(): item["count"]
+            for item in solutions.annotate(day=TruncDate("created_at"))
+            .values("day")
+            .annotate(count=Count("id"))
         }
 
         total_submissions = solutions.count()
         successful = solutions.filter(status=AnswerStatus.ACCEPTED).count()
-        
+
         data = {
-            'user': UserSerializer(user, context={'request': request}).data,
-            'stats': {
-                'total_submissions': total_submissions,
-                'successful_submissions': successful,
-                'unique_problems_attempted': len(attempted_problem_ids),
-                'unique_problems_solved': len(solved_problem_ids),
-                'success_rate': round((successful / total_submissions * 100), 2) if total_submissions else 0,
-                'current_streak': self._calculate_streak(full_activity, timezone.localdate()),
-                'active_days': len(full_activity),
-                'difficulty_breakdown': difficulty_breakdown,
-                'status_breakdown': status_breakdown,
+            "user": UserSerializer(user, context={"request": request}).data,
+            "stats": {
+                "total_submissions": total_submissions,
+                "successful_submissions": successful,
+                "unique_problems_attempted": len(attempted_problem_ids),
+                "unique_problems_solved": len(solved_problem_ids),
+                "success_rate": (
+                    round((successful / total_submissions * 100), 2)
+                    if total_submissions
+                    else 0
+                ),
+                "current_streak": self._calculate_streak(
+                    full_activity, timezone.localdate()
+                ),
+                "active_days": len(full_activity),
+                "difficulty_breakdown": difficulty_breakdown,
+                "status_breakdown": status_breakdown,
             },
-            'heatmap': heatmap,
-            'recent_submissions': recent_submissions,
-            'solved_problems': [serialize_problem(solution) for solution in solved_problems[:20]],
-            'attempted_problems': [serialize_problem(solution) for solution in attempted_problems[:20]],
-            'available_years': available_years,
-            'selected_year': target_year,
+            "heatmap": heatmap,
+            "recent_submissions": recent_submissions,
+            "solved_problems": [
+                serialize_problem(solution) for solution in solved_problems[:20]
+            ],
+            "attempted_problems": [
+                serialize_problem(solution) for solution in attempted_problems[:20]
+            ],
+            "available_years": available_years,
+            "selected_year": target_year,
         }
 
         return Response(data)
+
     def change_password(self, request):
         """Change user password"""
         user = request.user
@@ -278,7 +308,7 @@ class UserViewSet(viewsets.ModelViewSet):
     def _latest_solution_per_problem(self, queryset):
         seen = set()
         results = []
-        for solution in queryset.order_by('-created_at'):
+        for solution in queryset.order_by("-created_at"):
             if solution.problem_id in seen:
                 continue
             seen.add(solution.problem_id)

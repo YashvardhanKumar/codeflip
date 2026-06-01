@@ -93,15 +93,15 @@ export enum DataType {
 // ============================================================================
 
 export interface User {
-  id: number;
-  is_staff: boolean;
-  username: string;
-  email?: string;
-  name?: string | null;
-  default_lang?: Language;
-  profile_picture?: string | null;
-  profile_picture_url?: string | null;
-  date_joined: string;
+  id: number
+  is_staff: boolean
+  username: string
+  email?: string
+  name?: string | null
+  default_lang?: Language
+  profile_picture?: string | null
+  profile_picture_url?: string | null
+  date_joined: string
 }
 
 export interface UserRegistration {
@@ -172,16 +172,16 @@ export interface ProblemList {
 }
 
 export interface Solution {
-  id: number;
-  user: User;
-  problem: number;
+  id: number
+  user: User
+  problem: number
   testcase_results: any
-  code: string;
-  language: Language;
-  language_display: string;
-  status: Status | string | null;
-  status_display: string;
-  created_at: string;
+  code: string
+  language: Language
+  language_display: string
+  status: Status | string | null
+  status_display: string
+  created_at: string
 }
 
 export interface SolutionList {
@@ -196,35 +196,35 @@ export interface SolutionList {
 }
 
 export interface Discuss {
-  id: number;
-  title: string;
-  body: string;
-  author: User;
-  problem: number;
-  tags: Tag[];
-  views: number;
-  is_editorial: boolean;
-  upvote_count: number;
-  downvote_count: number;
-  comment_count: number;
-  has_upvoted?: boolean;
-  has_downvoted?: boolean;
-  comments?: Comment[];
-  created_at: string;
+  id: number
+  title: string
+  body: string
+  author: User
+  problem: number
+  tags: Tag[]
+  views: number
+  is_editorial: boolean
+  upvote_count: number
+  downvote_count: number
+  comment_count: number
+  has_upvoted?: boolean
+  has_downvoted?: boolean
+  comments?: Comment[]
+  created_at: string
 }
 
 export interface Comment {
-  id: number;
-  author: User;
-  discuss: number;
-  body: string;
-  parent: number | null;
-  replies: Comment[];
-  upvote_count: number;
-  downvote_count: number;
-  has_upvoted?: boolean;
-  has_downvoted?: boolean;
-  created_at: string;
+  id: number
+  author: User
+  discuss: number
+  body: string
+  parent: number | null
+  replies: Comment[]
+  upvote_count: number
+  downvote_count: number
+  has_upvoted?: boolean
+  has_downvoted?: boolean
+  created_at: string
 }
 
 export interface PaginatedResponse<T> {
@@ -264,51 +264,54 @@ export interface ProblemUpdateRequest {
 }
 
 export interface ProfileProblemSummary {
-  id: number;
-  name: string;
-  difficulty: Difficulty;
-  last_submitted_at: string;
+  id: number
+  name: string
+  difficulty: Difficulty
+  last_submitted_at: string
 }
 
 export interface ProfileSubmission {
-  id: number;
-  problem_id: number;
-  problem_name: string;
-  difficulty: Difficulty;
-  language: Language;
-  language_display: string;
-  status: Status | string | null;
-  status_display: string;
-  created_at: string;
+  id: number
+  problem_id: number
+  problem_name: string
+  difficulty: Difficulty
+  language: Language
+  language_display: string
+  status: Status | string | null
+  status_display: string
+  created_at: string
 }
 
 export interface HeatmapDay {
-  date: string;
-  count: number;
+  date: string
+  count: number
 }
 
 export interface ProfileStats {
-  total_submissions: number;
-  successful_submissions: number;
-  unique_problems_attempted: number;
-  unique_problems_solved: number;
-  success_rate: number;
-  current_streak: number;
-  active_days: number;
-  difficulty_breakdown: Record<Difficulty, {
-    solved: number;
-    attempted: number;
-  }>;
-  status_breakdown: Record<string, number>;
+  total_submissions: number
+  successful_submissions: number
+  unique_problems_attempted: number
+  unique_problems_solved: number
+  success_rate: number
+  current_streak: number
+  active_days: number
+  difficulty_breakdown: Record<
+    Difficulty,
+    {
+      solved: number
+      attempted: number
+    }
+  >
+  status_breakdown: Record<string, number>
 }
 
 export interface UserProfile {
-  user: User;
-  stats: ProfileStats;
-  heatmap: HeatmapDay[];
-  recent_submissions: ProfileSubmission[];
-  solved_problems: ProfileProblemSummary[];
-  attempted_problems: ProfileProblemSummary[];
-  available_years: number[];
-  selected_year: number;
+  user: User
+  stats: ProfileStats
+  heatmap: HeatmapDay[]
+  recent_submissions: ProfileSubmission[]
+  solved_problems: ProfileProblemSummary[]
+  attempted_problems: ProfileProblemSummary[]
+  available_years: number[]
+  selected_year: number
 }

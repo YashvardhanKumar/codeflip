@@ -113,8 +113,12 @@ docker exec -it api python manage.py createsuperuser
 ### Pre-commit Hooks
 We use `pre-commit` to ensure code quality.
 1. Install pre-commit: `pip install pre-commit`
-2. Install hooks: `pre-commit install --install-hooks -t pre-commit -t commit-msg`
-3. Run manually: `pre-commit run --all-files`
+2. Install hooks:
+```bash
+pre-commit install --install-hooks --hook-type pre-commit
+pre-commit install --install-hooks --hook-type commit-msg
+```
+3. Run manually: `pre-commit run --all-files
 
 #### Commit Message Rules
 We follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
