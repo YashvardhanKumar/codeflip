@@ -194,7 +194,7 @@
     <div class="card card-ai">
         <h1><i class="fas fa-robot"></i> AI Testcase Generator</h1>
         <p style="color: #aaa; margin-bottom: 25px;">Automatically generate test cases in background using Google Gemini AI.</p>
-        
+
         <form id="ai-generation-form">
             {% csrf_token %}
             {% for field in ai_form %}
@@ -203,7 +203,7 @@
                 {{ field }}
             </div>
             {% endfor %}
-            
+
             <div class="progress-container" id="ai-progress-container">
                 <div id="ai-progress-bar"></div>
             </div>
@@ -263,15 +263,15 @@
         const logBtn = document.getElementById('btn-show-logs');
         const progressContainer = document.getElementById('ai-progress-container');
         const terminal = document.getElementById('log-terminal');
-        
+
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-cog fa-spin"></i> Initializing Task...';
         progressContainer.style.display = 'block';
         logBtn.style.display = 'inline-block';
         terminal.innerHTML = '<div class="log-line">> Task requested. Waiting for worker...</div>';
-        
+
         const formData = new FormData(form);
-        
+
         try {
             const response = await fetch('{% url "generate_ai_async" %}', {
                 method: 'POST',
@@ -281,7 +281,7 @@
                 }
             });
             const data = await response.json();
-            
+
             if (data.task_id) {
                 pollTaskStatus(data.task_id);
             } else {
@@ -307,7 +307,7 @@
                 if (data.status === 'PROCESSING' || data.status === 'PENDING') {
                     btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Running (${data.progress}%)`;
                     progressBar.style.width = data.progress + '%';
-                    
+
                     // Update logs
                     if (data.logs && data.logs.length > lastLogCount) {
                         for (let i = lastLogCount; i < data.logs.length; i++) {

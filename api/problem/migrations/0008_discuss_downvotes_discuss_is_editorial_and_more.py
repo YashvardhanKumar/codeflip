@@ -8,53 +8,100 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('problem', '0007_alter_problem_options_solution_testcase_results_and_more'),
+        ("problem", "0007_alter_problem_options_solution_testcase_results_and_more"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='discuss',
-            name='downvotes',
-            field=models.ManyToManyField(blank=True, related_name='downvoted_discussions', to=settings.AUTH_USER_MODEL),
+            model_name="discuss",
+            name="downvotes",
+            field=models.ManyToManyField(
+                blank=True,
+                related_name="downvoted_discussions",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AddField(
-            model_name='discuss',
-            name='is_editorial',
+            model_name="discuss",
+            name="is_editorial",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='discuss',
-            name='upvotes',
-            field=models.ManyToManyField(blank=True, related_name='upvoted_discussions', to=settings.AUTH_USER_MODEL),
+            model_name="discuss",
+            name="upvotes",
+            field=models.ManyToManyField(
+                blank=True,
+                related_name="upvoted_discussions",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AddField(
-            model_name='discuss',
-            name='views',
+            model_name="discuss",
+            name="views",
             field=models.PositiveIntegerField(default=0),
         ),
         migrations.AlterField(
-            model_name='discuss',
-            name='body',
-            field=models.TextField(blank=True, help_text='Content of the post (Markdown supported)'),
+            model_name="discuss",
+            name="body",
+            field=models.TextField(
+                blank=True, help_text="Content of the post (Markdown supported)"
+            ),
         ),
         migrations.CreateModel(
-            name='Comment',
+            name="Comment",
             fields=[
-                ('id', models.BigAutoField(primary_key=True, serialize=False)),
-                ('body', models.TextField()),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('author', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='comments_authored', to=settings.AUTH_USER_MODEL)),
-                ('discuss', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='comments', to='problem.discuss')),
-                ('downvotes', models.ManyToManyField(blank=True, related_name='downvoted_comments', to=settings.AUTH_USER_MODEL)),
-                ('parent', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='replies', to='problem.comment')),
-                ('upvotes', models.ManyToManyField(blank=True, related_name='upvoted_comments', to=settings.AUTH_USER_MODEL)),
+                ("id", models.BigAutoField(primary_key=True, serialize=False)),
+                ("body", models.TextField()),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "author",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="comments_authored",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "discuss",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="comments",
+                        to="problem.discuss",
+                    ),
+                ),
+                (
+                    "downvotes",
+                    models.ManyToManyField(
+                        blank=True,
+                        related_name="downvoted_comments",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "parent",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="replies",
+                        to="problem.comment",
+                    ),
+                ),
+                (
+                    "upvotes",
+                    models.ManyToManyField(
+                        blank=True,
+                        related_name="upvoted_comments",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Comment',
-                'verbose_name_plural': 'Comments',
-                'db_table': 'comment',
-                'ordering': ['created_at'],
+                "verbose_name": "Comment",
+                "verbose_name_plural": "Comments",
+                "db_table": "comment",
+                "ordering": ["created_at"],
             },
         ),
     ]

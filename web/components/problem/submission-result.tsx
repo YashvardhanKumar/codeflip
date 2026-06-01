@@ -1,93 +1,130 @@
-"use client";
+'use client'
 
-import { useState, useMemo } from "react";
-import { Solution, Status, TestcaseList, LanguageDisplayNames } from "@/lib/models";
-import { CheckCircle2, XCircle, Copy, Check, X, Clock, Zap, Database } from "lucide-react";
-import { formatInUserTimezone } from "@/lib/utils";
-import TestResultDetail from "./test-result-detail";
-import CodeBlock from "@/components/code-block";
-import { 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import { useState, useMemo } from 'react'
+import {
+  Solution,
+  Status,
+  TestcaseList,
+  LanguageDisplayNames,
+} from '@/lib/models'
+import {
+  CheckCircle2,
+  XCircle,
+  Copy,
+  Check,
+  X,
+  Clock,
+  Zap,
+  Database,
+} from 'lucide-react'
+import { formatInUserTimezone } from '@/lib/utils'
+import TestResultDetail from './test-result-detail'
+import CodeBlock from '@/components/code-block'
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   AreaChart,
-  Area
-} from "recharts";
-import { motion, AnimatePresence } from "framer-motion";
+  Area,
+} from 'recharts'
+import { motion, AnimatePresence } from 'framer-motion'
 
 interface SubmissionResultProps {
-  solution: Solution | null;
-  onClose: () => void;
-  history?: Solution[];
-  testcases: TestcaseList[];
+  solution: Solution | null
+  onClose: () => void
+  history?: Solution[]
+  testcases: TestcaseList[]
 }
 
-export default function SubmissionResult({ solution, onClose, history = [], testcases }: SubmissionResultProps) {
-  const [copied, setCopied] = useState(false);
+export default function SubmissionResult({
+  solution,
+  onClose,
+  history = [],
+  testcases,
+}: SubmissionResultProps) {
+  const [copied, setCopied] = useState(false)
 
   const stats = useMemo(() => {
-    if (!solution || !solution.testcase_results) return null;
-    
-    const results = solution.testcase_results as any[];
-    const totalTime = results.reduce((acc, curr) => acc + (parseFloat(curr.time) || 0), 0);
-    const maxMemory = results.reduce((acc, curr) => Math.max(acc, (parseFloat(curr.memory) || 0)), 0);
-    
+    if (!solution || !solution.testcase_results) return null
+
+    const results = solution.testcase_results as any[]
+    const totalTime = results.reduce(
+      (acc, curr) => acc + (parseFloat(curr.time) || 0),
+      0
+    )
+    const maxMemory = results.reduce(
+      (acc, curr) => Math.max(acc, parseFloat(curr.memory) || 0),
+      0
+    )
+
     return {
       time: totalTime.toFixed(3),
       memory: (maxMemory / 1024).toFixed(2), // Assuming memory is in KB from Judge0
-    };
-  }, [solution]);
+    }
+  }, [solution])
 
   const chartData = useMemo(() => {
-    if (!history || history.length === 0) return [];
-    
+    if (!history || history.length === 0) return []
+
     return [...history].reverse().map((s, index) => {
-      const results = (s.testcase_results as any[]) || [];
-      const time = results.reduce((acc, curr) => acc + (parseFloat(curr.time) || 0), 0);
-      const memory = results.reduce((acc, curr) => Math.max(acc, (parseFloat(curr.memory) || 0)), 0) / 1024;
-      
+      const results = (s.testcase_results as any[]) || []
+      const time = results.reduce(
+        (acc, curr) => acc + (parseFloat(curr.time) || 0),
+        0
+      )
+      const memory =
+        results.reduce(
+          (acc, curr) => Math.max(acc, parseFloat(curr.memory) || 0),
+          0
+        ) / 1024
+
       return {
         name: index + 1,
         time: parseFloat(time.toFixed(3)),
         memory: parseFloat(memory.toFixed(2)),
         status: s.status,
-        id: s.id
-      };
-    });
-  }, [history]);
+        id: s.id,
+      }
+    })
+  }, [history])
 
   const firstFailedResult = useMemo(() => {
-    if (!solution || solution.status === Status.SUCCESS || !solution.testcase_results) return null;
-    
-    const results = solution.testcase_results as any[];
-    const failedIndex = results.findIndex(r => r.status?.id !== 3);
-    
-    if (failedIndex === -1) return null;
-    
+    if (
+      !solution ||
+      solution.status === Status.SUCCESS ||
+      !solution.testcase_results
+    )
+      return null
+
+    const results = solution.testcase_results as any[]
+    const failedIndex = results.findIndex((r) => r.status?.id !== 3)
+
+    if (failedIndex === -1) return null
+
     return {
       result: results[failedIndex],
       testcase: testcases[failedIndex],
-      index: failedIndex
-    };
-  }, [solution, testcases]);
+      index: failedIndex,
+    }
+  }, [solution, testcases])
 
   const copyCode = () => {
-    if (!solution?.code) return;
-    navigator.clipboard.writeText(solution.code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+    if (!solution?.code) return
+    navigator.clipboard.writeText(solution.code)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
-  if (!solution) return null;
+  if (!solution) return null
 
-  const isAccepted = solution.status === Status.SUCCESS;
+  const isAccepted = solution.status === Status.SUCCESS
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 20 }}
@@ -108,10 +145,11 @@ export default function SubmissionResult({ solution, onClose, history = [], test
             </div>
           )}
           <span className="text-gray-500 text-xs">
-            Submitted {formatInUserTimezone(solution.created_at, 'MMM d, yyyy HH:mm')}
+            Submitted{' '}
+            {formatInUserTimezone(solution.created_at, 'MMM d, yyyy HH:mm')}
           </span>
         </div>
-        <button 
+        <button
           onClick={onClose}
           className="text-gray-400 hover:text-white transition-colors p-1"
         >
@@ -130,8 +168,13 @@ export default function SubmissionResult({ solution, onClose, history = [], test
                   <Clock size={24} />
                 </div>
                 <div>
-                  <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">Runtime</p>
-                  <p className="text-2xl font-bold text-white">{stats?.time} <span className="text-sm font-normal text-gray-500">s</span></p>
+                  <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">
+                    Runtime
+                  </p>
+                  <p className="text-2xl font-bold text-white">
+                    {stats?.time}{' '}
+                    <span className="text-sm font-normal text-gray-500">s</span>
+                  </p>
                 </div>
               </div>
               <div className="bg-surface-dark p-4 rounded-xl border border-surface-border flex items-center gap-4">
@@ -139,8 +182,15 @@ export default function SubmissionResult({ solution, onClose, history = [], test
                   <Database size={24} />
                 </div>
                 <div>
-                  <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">Memory</p>
-                  <p className="text-2xl font-bold text-white">{stats?.memory} <span className="text-sm font-normal text-gray-500">MB</span></p>
+                  <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">
+                    Memory
+                  </p>
+                  <p className="text-2xl font-bold text-white">
+                    {stats?.memory}{' '}
+                    <span className="text-sm font-normal text-gray-500">
+                      MB
+                    </span>
+                  </p>
                 </div>
               </div>
             </div>
@@ -156,19 +206,59 @@ export default function SubmissionResult({ solution, onClose, history = [], test
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={chartData}>
                       <defs>
-                        <linearGradient id="colorTime" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor="#22c55e" stopOpacity={0}/>
+                        <linearGradient
+                          id="colorTime"
+                          x1="0"
+                          y1="0"
+                          x2="0"
+                          y2="1"
+                        >
+                          <stop
+                            offset="5%"
+                            stopColor="#22c55e"
+                            stopOpacity={0.3}
+                          />
+                          <stop
+                            offset="95%"
+                            stopColor="#22c55e"
+                            stopOpacity={0}
+                          />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-                      <XAxis dataKey="name" stroke="#666" fontSize={10} tickLine={false} axisLine={false} />
-                      <YAxis stroke="#666" fontSize={10} tickLine={false} axisLine={false} />
-                      <Tooltip 
-                        contentStyle={{ backgroundColor: '#1e1e1e', border: '1px solid #333', borderRadius: '8px' }}
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="#333"
+                        vertical={false}
+                      />
+                      <XAxis
+                        dataKey="name"
+                        stroke="#666"
+                        fontSize={10}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis
+                        stroke="#666"
+                        fontSize={10}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#1e1e1e',
+                          border: '1px solid #333',
+                          borderRadius: '8px',
+                        }}
                         itemStyle={{ color: '#22c55e' }}
                       />
-                      <Area type="monotone" dataKey="time" stroke="#22c55e" fillOpacity={1} fill="url(#colorTime)" strokeWidth={2} />
+                      <Area
+                        type="monotone"
+                        dataKey="time"
+                        stroke="#22c55e"
+                        fillOpacity={1}
+                        fill="url(#colorTime)"
+                        strokeWidth={2}
+                      />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
@@ -183,19 +273,59 @@ export default function SubmissionResult({ solution, onClose, history = [], test
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={chartData}>
                       <defs>
-                        <linearGradient id="colorMem" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                        <linearGradient
+                          id="colorMem"
+                          x1="0"
+                          y1="0"
+                          x2="0"
+                          y2="1"
+                        >
+                          <stop
+                            offset="5%"
+                            stopColor="#3b82f6"
+                            stopOpacity={0.3}
+                          />
+                          <stop
+                            offset="95%"
+                            stopColor="#3b82f6"
+                            stopOpacity={0}
+                          />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-                      <XAxis dataKey="name" stroke="#666" fontSize={10} tickLine={false} axisLine={false} />
-                      <YAxis stroke="#666" fontSize={10} tickLine={false} axisLine={false} />
-                      <Tooltip 
-                        contentStyle={{ backgroundColor: '#1e1e1e', border: '1px solid #333', borderRadius: '8px' }}
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="#333"
+                        vertical={false}
+                      />
+                      <XAxis
+                        dataKey="name"
+                        stroke="#666"
+                        fontSize={10}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis
+                        stroke="#666"
+                        fontSize={10}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#1e1e1e',
+                          border: '1px solid #333',
+                          borderRadius: '8px',
+                        }}
                         itemStyle={{ color: '#3b82f6' }}
                       />
-                      <Area type="monotone" dataKey="memory" stroke="#3b82f6" fillOpacity={1} fill="url(#colorMem)" strokeWidth={2} />
+                      <Area
+                        type="monotone"
+                        dataKey="memory"
+                        stroke="#3b82f6"
+                        fillOpacity={1}
+                        fill="url(#colorMem)"
+                        strokeWidth={2}
+                      />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
@@ -208,10 +338,11 @@ export default function SubmissionResult({ solution, onClose, history = [], test
             <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4">
               <h4 className="text-sm font-bold text-red-500 mb-4 flex items-center gap-2">
                 <AlertCircle size={18} />
-                Failed Test Case {firstFailedResult ? firstFailedResult.index + 1 : ''}
+                Failed Test Case{' '}
+                {firstFailedResult ? firstFailedResult.index + 1 : ''}
               </h4>
               {firstFailedResult && (
-                <TestResultDetail 
+                <TestResultDetail
                   result={firstFailedResult.result}
                   testcase={firstFailedResult.testcase}
                 />
@@ -228,11 +359,14 @@ export default function SubmissionResult({ solution, onClose, history = [], test
               Submitted Code
             </h4>
           </div>
-          <CodeBlock code={solution.code} language={solution.language_display || solution.language} />
+          <CodeBlock
+            code={solution.code}
+            language={solution.language_display || solution.language}
+          />
         </div>
       </div>
     </motion.div>
-  );
+  )
 }
 
 function AlertCircle(props: any) {
@@ -253,5 +387,5 @@ function AlertCircle(props: any) {
       <line x1="12" y1="8" x2="12" y2="12" />
       <line x1="12" y1="16" x2="12.01" y2="16" />
     </svg>
-  );
+  )
 }

@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Background Rect -->
+  <rect width="32" height="32" fill="#101622" rx="8"/>
+
+  <!-- Logo paths shifted to center (4px right, 4px down) -->
+  <g transform="translate(4, 4)">
+    <!-- Speed Trails Left -->
+    <path
+      d="M1 12H3"
+      stroke="#22d3ee"
+      stroke-width="2"
+      stroke-linecap="round"
+    />
+    <path
+      d="M3 8H5"
+      stroke="#2b6cee"
+      stroke-opacity="0.6"
+      stroke-width="2"
+      stroke-linecap="round"
+    />
+    <path
+      d="M2 16H4"
+      stroke="#2b6cee"
+      stroke-opacity="0.6"
+      stroke-width="2"
+      stroke-linecap="round"
+    />
+
+    <!-- Speed Trails Right -->
+    <path
+      d="M21 12H23"
+      stroke="#22d3ee"
+      stroke-width="2"
+      stroke-linecap="round"
+    />
+    <path
+      d="M19 16H21"
+      stroke="#2b6cee"
+      stroke-opacity="0.6"
+      stroke-width="2"
+      stroke-linecap="round"
+    />
+
+    <!-- Left Bracket < (Slanted Forward) -->
+    <path
+      d="M10 6L5 12L8 18"
+      stroke="#ffffff"
+      stroke-width="2.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+
+    <!-- Right Bracket > (Slanted Forward) -->
+    <path
+      d="M16 6L21 12L14 18"
+      stroke="#ffffff"
+      stroke-width="2.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+
+    <!-- Forward Slash / (Bold & Fast) -->
+    <path
+      d="M15 3L9 21"
+      stroke="#2b6cee"
+      stroke-width="3"
+      stroke-linecap="round"
+    />
+  </g>
+</svg>

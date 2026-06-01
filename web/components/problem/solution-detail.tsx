@@ -1,14 +1,14 @@
-"use client";
-import { useState, useEffect } from "react";
-import { Discuss, Comment, User } from "@/lib/models";
-import { apiFetch, formatInUserTimezone } from "@/lib/utils";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import remarkMath from "remark-math";
-import rehypeRaw from "rehype-raw";
-import rehypeMathjax from "rehype-mathjax";
-import Link from "next/link";
-import CodeBlock from "../code-block";
+'use client'
+import { useState, useEffect } from 'react'
+import { Discuss, Comment, User } from '@/lib/models'
+import { apiFetch, formatInUserTimezone } from '@/lib/utils'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import remarkMath from 'remark-math'
+import rehypeRaw from 'rehype-raw'
+import rehypeMathjax from 'rehype-mathjax/svg'
+import Link from 'next/link'
+import CodeBlock from '../code-block'
 import {
   X,
   ThumbsUp,
@@ -21,18 +21,18 @@ import {
   Send,
   Loader2,
   Eye,
-} from "lucide-react";
-import { Button } from "../ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { Badge } from "../ui/badge";
-import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "sonner";
-import { Input } from "../ui/input";
+} from 'lucide-react'
+import { Button } from '../ui/button'
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
+import { Badge } from '../ui/badge'
+import { motion, AnimatePresence } from 'framer-motion'
+import { toast } from 'sonner'
+import { Input } from '../ui/input'
 
 interface Props {
-  solution: Discuss;
-  onClose: () => void;
-  currentUser: User | null;
+  solution: Discuss
+  onClose: () => void
+  currentUser: User | null
 }
 
 export default function SolutionDetail({
@@ -40,99 +40,99 @@ export default function SolutionDetail({
   onClose,
   currentUser,
 }: Props) {
-  const [solution, setSolution] = useState<Discuss>(initialSolution);
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [isVoting, setIsVoting] = useState(false);
-  const [newComment, setNewComment] = useState("");
-  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
-  const [replyingTo, setReplyingTo] = useState<number | null>(null);
+  const [solution, setSolution] = useState<Discuss>(initialSolution)
+  const [comments, setComments] = useState<Comment[]>([])
+  const [isVoting, setIsVoting] = useState(false)
+  const [newComment, setNewComment] = useState('')
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false)
+  const [replyingTo, setReplyingTo] = useState<number | null>(null)
 
   useEffect(() => {
     // Fetch fresh detail with comments and views incremented
     async function fetchDetail() {
       try {
-        const response = await apiFetch(`discussions/${initialSolution.id}/`);
-        const data = await response.json();
-        setSolution(data);
-        if (data.comments) setComments(data.comments);
+        const response = await apiFetch(`discussions/${initialSolution.id}/`)
+        const data = await response.json()
+        setSolution(data)
+        if (data.comments) setComments(data.comments)
       } catch (err) {
-        console.error("Error fetching solution detail:", err);
+        console.error('Error fetching solution detail:', err)
       }
     }
-    fetchDetail();
-  }, [initialSolution.id]);
+    fetchDetail()
+  }, [initialSolution.id])
 
-  const handleVote = async (type: "up" | "down") => {
+  const handleVote = async (type: 'up' | 'down') => {
     if (!currentUser) {
-      toast.error("Please sign in to vote");
-      return;
+      toast.error('Please sign in to vote')
+      return
     }
-    setIsVoting(true);
+    setIsVoting(true)
     try {
       const response = await apiFetch(
         `discussions/${solution.id}/${type}vote/`,
         {
-          method: "POST",
-        },
-      );
+          method: 'POST',
+        }
+      )
       if (response.ok) {
         // Refresh detail to get new counts
-        const detailRes = await apiFetch(`discussions/${solution.id}/`);
-        const data = await detailRes.json();
-        setSolution(data);
+        const detailRes = await apiFetch(`discussions/${solution.id}/`)
+        const data = await detailRes.json()
+        setSolution(data)
       }
     } catch (err) {
-      toast.error("Failed to vote");
+      toast.error('Failed to vote')
     } finally {
-      setIsVoting(false);
+      setIsVoting(false)
     }
-  };
+  }
 
   const handleSubmitComment = async (parentId: number | null = null) => {
     if (!currentUser) {
-      toast.error("Please sign in to comment");
-      return;
+      toast.error('Please sign in to comment')
+      return
     }
     const body = parentId
       ? (document.getElementById(`reply-input-${parentId}`) as HTMLInputElement)
           ?.value
-      : newComment;
-    if (!body?.trim()) return;
+      : newComment
+    if (!body?.trim()) return
 
-    setIsSubmittingComment(true);
+    setIsSubmittingComment(true)
     try {
       const response = await apiFetch(
         `discussions/${solution.id}/add_comment/`,
         {
-          method: "POST",
+          method: 'POST',
           body: JSON.stringify({ body, parent_id: parentId }),
-        },
-      );
+        }
+      )
       if (response.ok) {
-        const commentData = await response.json();
+        const commentData = await response.json()
         if (parentId) {
           // Find parent and add to its replies
           setComments((prev) =>
             prev.map((c) => {
               if (c.id === parentId) {
-                return { ...c, replies: [...(c.replies || []), commentData] };
+                return { ...c, replies: [...(c.replies || []), commentData] }
               }
-              return c;
-            }),
-          );
-          setReplyingTo(null);
+              return c
+            })
+          )
+          setReplyingTo(null)
         } else {
-          setComments((prev) => [commentData, ...prev]);
-          setNewComment("");
+          setComments((prev) => [commentData, ...prev])
+          setNewComment('')
         }
-        toast.success("Comment added");
+        toast.success('Comment added')
       }
     } catch (err) {
-      toast.error("Failed to add comment");
+      toast.error('Failed to add comment')
     } finally {
-      setIsSubmittingComment(false);
+      setIsSubmittingComment(false)
     }
-  };
+  }
 
   return (
     <motion.div
@@ -180,8 +180,8 @@ export default function SolutionDetail({
                   {solution.author.username}
                 </h3>
                 <p className="text-xs text-gray-500">
-                  Posted on{" "}
-                  {formatInUserTimezone(solution.created_at, "MMMM d, yyyy")}
+                  Posted on{' '}
+                  {formatInUserTimezone(solution.created_at, 'MMMM d, yyyy')}
                 </p>
               </div>
             </div>
@@ -212,29 +212,29 @@ export default function SolutionDetail({
                 pre: ({ children }) => <>{children}</>,
 
                 code({ node, inline, className, children, ...props }: any) {
-                  const match = /language-(\w+)/.exec(className || "");
+                  const match = /language-(\w+)/.exec(className || '')
                   return !inline && match ? (
                     <CodeBlock
-                      code={String(children).replace(/\n$/, "")}
+                      code={String(children).replace(/\n$/, '')}
                       language={match[1]}
                     />
                   ) : (
                     <code className={className} {...props}>
                       {children}
                     </code>
-                  );
+                  )
                 },
                 p: ({ children }) => {
                   // Basic @mention highlighting (mock, clicking opens profile)
                   const content = Array.isArray(children)
                     ? children
-                    : [children];
+                    : [children]
                   return (
                     <p>
                       {content.map((child, i) => {
-                        if (typeof child === "string" && child.includes("@")) {
+                        if (typeof child === 'string' && child.includes('@')) {
                           return child.split(/(@\w+)/).map((part, j) =>
-                            part.startsWith("@") ? (
+                            part.startsWith('@') ? (
                               <Link
                                 key={j}
                                 href={`/profile/${part.slice(1)}`}
@@ -244,13 +244,13 @@ export default function SolutionDetail({
                               </Link>
                             ) : (
                               part
-                            ),
-                          );
+                            )
+                          )
                         }
-                        return child;
+                        return child
                       })}
                     </p>
-                  );
+                  )
                 },
               }}
             >
@@ -264,8 +264,8 @@ export default function SolutionDetail({
               <Button
                 variant="ghost"
                 size="sm"
-                className={`h-8 gap-2 ${solution.has_upvoted ? "text-primary bg-primary/10" : "text-gray-500"}`}
-                onClick={() => handleVote("up")}
+                className={`h-8 gap-2 ${solution.has_upvoted ? 'text-primary bg-primary/10' : 'text-gray-500'}`}
+                onClick={() => handleVote('up')}
                 disabled={isVoting}
               >
                 <ThumbsUp size={16} />
@@ -277,8 +277,8 @@ export default function SolutionDetail({
               <Button
                 variant="ghost"
                 size="sm"
-                className={`h-8 gap-2 ${solution.has_downvoted ? "text-red-500 bg-red-500/10" : "text-gray-500"}`}
-                onClick={() => handleVote("down")}
+                className={`h-8 gap-2 ${solution.has_downvoted ? 'text-red-500 bg-red-500/10' : 'text-gray-500'}`}
+                onClick={() => handleVote('down')}
                 disabled={isVoting}
               >
                 <ThumbsDown size={16} />
@@ -353,7 +353,7 @@ export default function SolutionDetail({
         </div>
       </div>
     </motion.div>
-  );
+  )
 }
 
 function CommentItem({
@@ -364,12 +364,12 @@ function CommentItem({
   onSubmitReply,
   isSubmitting,
 }: {
-  comment: Comment;
-  onReply: () => void;
-  isReplying: boolean;
-  onCancelReply: () => void;
-  onSubmitReply: () => void;
-  isSubmitting: boolean;
+  comment: Comment
+  onReply: () => void
+  isReplying: boolean
+  onCancelReply: () => void
+  onSubmitReply: () => void
+  isSubmitting: boolean
 }) {
   return (
     <div className="group space-y-4">
@@ -386,7 +386,7 @@ function CommentItem({
               {comment.author.username}
             </span>
             <span className="text-[10px] text-gray-600">
-              {formatInUserTimezone(comment.created_at, "MMM d, yyyy")}
+              {formatInUserTimezone(comment.created_at, 'MMM d, yyyy')}
             </span>
           </div>
           <p className="text-sm text-gray-300 leading-relaxed">
@@ -414,7 +414,7 @@ function CommentItem({
             {isReplying && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
+                animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
                 className="overflow-hidden pt-3"
               >
@@ -470,5 +470,5 @@ function CommentItem({
         </div>
       )}
     </div>
-  );
+  )
 }

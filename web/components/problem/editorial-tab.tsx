@@ -1,50 +1,50 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from "react";
-import { Discuss, Problem } from "@/lib/models";
-import { apiFetch } from "@/lib/utils";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import remarkMath from "remark-math";
-import rehypeRaw from "rehype-raw";
-import rehypeMathjax from "rehype-mathjax";
-import { Skeleton } from "../ui/skeleton";
-import { AlertCircle, User as UserIcon, Calendar, Eye } from "lucide-react";
-import { formatInUserTimezone } from "@/lib/utils";
-import CodeBlock from "../code-block";
+import { useState, useEffect } from 'react'
+import { Discuss, Problem } from '@/lib/models'
+import { apiFetch } from '@/lib/utils'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import remarkMath from 'remark-math'
+import rehypeRaw from 'rehype-raw'
+import rehypeMathjax from 'rehype-mathjax/svg'
+import { Skeleton } from '../ui/skeleton'
+import { AlertCircle, User as UserIcon, Calendar, Eye } from 'lucide-react'
+import { formatInUserTimezone } from '@/lib/utils'
+import CodeBlock from '../code-block'
 
 interface Props {
-  problem: Problem;
+  problem: Problem
 }
 
 export default function EditorialTab({ problem }: Props) {
-  const [editorial, setEditorial] = useState<Discuss | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [editorial, setEditorial] = useState<Discuss | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     async function fetchEditorial() {
-      setIsLoading(true);
+      setIsLoading(true)
       try {
         const response = await apiFetch(
-          `discussions/?problem_id=${problem.id}&is_editorial=true`,
-        );
-        const data = await response.json();
+          `discussions/?problem_id=${problem.id}&is_editorial=true`
+        )
+        const data = await response.json()
         // data might be a paginated response or a list
-        const results = Array.isArray(data) ? data : data.results || [];
+        const results = Array.isArray(data) ? data : data.results || []
         if (results.length > 0) {
-          setEditorial(results[0]);
+          setEditorial(results[0])
         }
       } catch (err) {
-        console.error("Error fetching editorial:", err);
-        setError("Failed to load editorial");
+        console.error('Error fetching editorial:', err)
+        setError('Failed to load editorial')
       } finally {
-        setIsLoading(false);
+        setIsLoading(false)
       }
     }
 
-    fetchEditorial();
-  }, [problem.id]);
+    fetchEditorial()
+  }, [problem.id])
 
   if (isLoading) {
     return (
@@ -61,7 +61,7 @@ export default function EditorialTab({ problem }: Props) {
           <Skeleton className="h-4 w-full rounded" />
         </div>
       </div>
-    );
+    )
   }
 
   if (error) {
@@ -70,7 +70,7 @@ export default function EditorialTab({ problem }: Props) {
         <AlertCircle size={20} />
         <span>{error}</span>
       </div>
-    );
+    )
   }
 
   if (!editorial) {
@@ -83,7 +83,7 @@ export default function EditorialTab({ problem }: Props) {
           No editorial available for this problem yet.
         </p>
       </div>
-    );
+    )
   }
 
   return (
@@ -100,7 +100,7 @@ export default function EditorialTab({ problem }: Props) {
           <div className="flex items-center gap-1.5">
             <Calendar size={14} />
             <span>
-              {formatInUserTimezone(editorial.created_at, "MMM d, yyyy")}
+              {formatInUserTimezone(editorial.created_at, 'MMM d, yyyy')}
             </span>
           </div>
           <div className="flex items-center gap-1.5">
@@ -116,17 +116,17 @@ export default function EditorialTab({ problem }: Props) {
           components={{
             pre: ({ children }) => <>{children}</>,
             code({ node, inline, className, children, ...props }: any) {
-              const match = /language-(\w+)/.exec(className || "");
+              const match = /language-(\w+)/.exec(className || '')
               return !inline && match ? (
                 <CodeBlock
-                  code={String(children).replace(/\n$/, "")}
+                  code={String(children).replace(/\n$/, '')}
                   language={match[1]}
                 />
               ) : (
                 <code className={className} {...props}>
                   {children}
                 </code>
-              );
+              )
             },
           }}
         >
@@ -134,5 +134,5 @@ export default function EditorialTab({ problem }: Props) {
         </ReactMarkdown>
       </div>
     </div>
-  );
+  )
 }

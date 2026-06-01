@@ -1,21 +1,27 @@
 from django.contrib import admin
 from .models import (
-    Problem, Codeblock, Testcase, Solution, 
-    Tags, ProblemTags, Discuss, DiscussTags
+    Problem,
+    Codeblock,
+    Testcase,
+    Solution,
+    Tags,
+    ProblemTags,
+    Discuss,
+    DiscussTags,
 )
 
 
 class CodeblockInline(admin.TabularInline):
     model = Codeblock
     extra = 1
-    fields = ('imports','block', 'runner_code', 'language')
+    fields = ("imports", "block", "runner_code", "language")
 
 
 class TestcaseInline(admin.TabularInline):
     model = Testcase
     extra = 1
-    readonly_fields = ('id', 'created_at')
-    fields = ('input', 'output', 'output_type', 'display_testcase', 'created_at')
+    readonly_fields = ("id", "created_at")
+    fields = ("input", "output", "output_type", "display_testcase", "created_at")
 
 
 class ProblemTagsInline(admin.TabularInline):
@@ -25,93 +31,111 @@ class ProblemTagsInline(admin.TabularInline):
 
 @admin.register(Problem)
 class ProblemAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'get_editorial_discussion', 'created_at')
-    list_filter = ('created_at',)
-    search_fields = ('id', 'name', 'problem_description')
-    readonly_fields = ('id', 'created_at', 'get_editorial_discussion')
+    list_display = ("id", "name", "get_editorial_discussion", "created_at")
+    list_filter = ("created_at",)
+    search_fields = ("id", "name", "problem_description")
+    readonly_fields = ("id", "created_at", "get_editorial_discussion")
     inlines = [CodeblockInline, TestcaseInline, ProblemTagsInline]
-    
+
     fieldsets = (
-        (None, {'fields': ('id', 'name', 'problem_description', 'get_editorial_discussion')}),
-        ('Metadata', {'fields': ('created_at',)}),
+        (
+            None,
+            {
+                "fields": (
+                    "id",
+                    "name",
+                    "problem_description",
+                    "get_editorial_discussion",
+                )
+            },
+        ),
+        ("Metadata", {"fields": ("created_at",)}),
     )
-    
+
     def get_editorial_discussion(self, obj):
         editorial = obj.discussions.filter(is_editorial=True).first()
         if editorial:
             from django.utils.html import format_html
             from django.urls import reverse
-            url = reverse('admin:problem_discuss_change', args=[editorial.id])
+
+            url = reverse("admin:problem_discuss_change", args=[editorial.id])
             return format_html('<a href="{}">Discussion #{}</a>', url, editorial.id)
         return "None"
-    get_editorial_discussion.short_description = 'Editorial Discussion'
+
+    get_editorial_discussion.short_description = "Editorial Discussion"
 
     def get_description_preview(self, obj):
-        return obj.problem_description[:100] + '...' if len(obj.problem_description) > 100 else obj.problem_description
-    get_description_preview.short_description = 'Description'
+        return (
+            obj.problem_description[:100] + "..."
+            if len(obj.problem_description) > 100
+            else obj.problem_description
+        )
+
+    get_description_preview.short_description = "Description"
 
 
 @admin.register(Codeblock)
 class CodeblockAdmin(admin.ModelAdmin):
-    list_display = ('id', 'problem', 'language', 'get_block_preview')
-    list_filter = ('problem', 'language')
-    search_fields = ('problem__id', 'imports', 'block', 'runner_code')
-    readonly_fields = ('id',)
-    raw_id_fields = ('problem',)
-    
+    list_display = ("id", "problem", "language", "get_block_preview")
+    list_filter = ("problem", "language")
+    search_fields = ("problem__id", "imports", "block", "runner_code")
+    readonly_fields = ("id",)
+    raw_id_fields = ("problem",)
+
     def get_block_preview(self, obj):
-        return obj.block[:100] + '...' if len(obj.block) > 100 else obj.block
-    get_block_preview.short_description = 'Code Block'
+        return obj.block[:100] + "..." if len(obj.block) > 100 else obj.block
+
+    get_block_preview.short_description = "Code Block"
 
 
 @admin.register(Testcase)
 class TestcaseAdmin(admin.ModelAdmin):
-    list_display = ('id', 'problem', 'created_at')
-    list_filter = ('created_at', 'problem')
-    search_fields = ('problem__id', 'input', 'output', 'display_testcase')
-    readonly_fields = ('id', 'created_at')
-    raw_id_fields = ('problem',)
-    
+    list_display = ("id", "problem", "created_at")
+    list_filter = ("created_at", "problem")
+    search_fields = ("problem__id", "input", "output", "display_testcase")
+    readonly_fields = ("id", "created_at")
+    raw_id_fields = ("problem",)
+
     fieldsets = (
-        (None, {'fields': ('id', 'problem', 'input', 'output', 'display_testcase')}),
-        ('Metadata', {'fields': ('created_at',)}),
+        (None, {"fields": ("id", "problem", "input", "output", "display_testcase")}),
+        ("Metadata", {"fields": ("created_at",)}),
     )
 
 
 @admin.register(Solution)
 class SolutionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'problem', 'language', 'status', 'created_at')
-    list_filter = ('status', 'language', 'created_at', 'problem')
-    search_fields = ('user__username', 'problem__id')
-    readonly_fields = ('id', 'created_at', 'status')
-    raw_id_fields = ('user', 'problem')
-    
+    list_display = ("id", "user", "problem", "language", "status", "created_at")
+    list_filter = ("status", "language", "created_at", "problem")
+    search_fields = ("user__username", "problem__id")
+    readonly_fields = ("id", "created_at", "status")
+    raw_id_fields = ("user", "problem")
+
     fieldsets = (
-        (None, {'fields': ('id', 'user', 'problem', 'code', 'language')}),
-        ('Status', {'fields': ('status',)}),
-        ('Metadata', {'fields': ('created_at',)}),
+        (None, {"fields": ("id", "user", "problem", "code", "language")}),
+        ("Status", {"fields": ("status",)}),
+        ("Metadata", {"fields": ("created_at",)}),
     )
-    
+
     def get_readonly_fields(self, request, obj=None):
         # Make status readonly only for existing objects (after submission)
         if obj:
             return self.readonly_fields
-        return ('id', 'created_at')
+        return ("id", "created_at")
 
 
 @admin.register(Tags)
 class TagsAdmin(admin.ModelAdmin):
-    list_display = ('id', 'tags')
-    search_fields = ('tags',)
-    readonly_fields = ('id',)
+    list_display = ("id", "tags")
+    search_fields = ("tags",)
+    readonly_fields = ("id",)
 
 
 @admin.register(ProblemTags)
 class ProblemTagsAdmin(admin.ModelAdmin):
-    list_display = ('problem', 'tag')
-    list_filter = ('tag',)
-    search_fields = ('problem__id', 'tag__tags')
-    raw_id_fields = ('problem', 'tag')
+    list_display = ("problem", "tag")
+    list_filter = ("tag",)
+    search_fields = ("problem__id", "tag__tags")
+    raw_id_fields = ("problem", "tag")
 
 
 class DiscussTagsInline(admin.TabularInline):
@@ -121,30 +145,30 @@ class DiscussTagsInline(admin.TabularInline):
 
 @admin.register(Discuss)
 class DiscussAdmin(admin.ModelAdmin):
-    list_display = ('id', 'title', 'author', 'problem', 'is_editorial', 'created_at')
-    list_filter = ('is_editorial', 'created_at', 'problem')
-    search_fields = ('title', 'body', 'author__username')
-    readonly_fields = ('id', 'created_at')
-    raw_id_fields = ('author', 'problem', 'user')
+    list_display = ("id", "title", "author", "problem", "is_editorial", "created_at")
+    list_filter = ("is_editorial", "created_at", "problem")
+    search_fields = ("title", "body", "author__username")
+    readonly_fields = ("id", "created_at")
+    raw_id_fields = ("author", "problem", "user")
     inlines = [DiscussTagsInline]
-    
+
     fieldsets = (
-        (None, {'fields': ('id', 'title', 'body', 'is_editorial')}),
-        ('Relations', {'fields': ('author', 'user', 'problem')}),
-        ('Metadata', {'fields': ('created_at',)}),
+        (None, {"fields": ("id", "title", "body", "is_editorial")}),
+        ("Relations", {"fields": ("author", "user", "problem")}),
+        ("Metadata", {"fields": ("created_at",)}),
     )
 
     def get_readonly_fields(self, request, obj=None):
         readonly = list(self.readonly_fields)
         if obj:
             if not request.user.is_staff and not request.user.is_superuser:
-                readonly.append('is_editorial')
+                readonly.append("is_editorial")
         return tuple(readonly)
 
 
 @admin.register(DiscussTags)
 class DiscussTagsAdmin(admin.ModelAdmin):
-    list_display = ('discuss', 'tag')
-    list_filter = ('tag',)
-    search_fields = ('discuss__title', 'tag__tags')
-    raw_id_fields = ('discuss', 'tag')
+    list_display = ("discuss", "tag")
+    list_filter = ("tag",)
+    search_fields = ("discuss__title", "tag__tags")
+    raw_id_fields = ("discuss", "tag")

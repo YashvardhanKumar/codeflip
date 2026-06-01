@@ -10,82 +10,128 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('problem', '0001_initial'),
+        ("problem", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='discuss',
-            name='author',
-            field=models.ForeignKey(db_column='author_id', on_delete=django.db.models.deletion.CASCADE, related_name='discussions_authored', to=settings.AUTH_USER_MODEL),
+            model_name="discuss",
+            name="author",
+            field=models.ForeignKey(
+                db_column="author_id",
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="discussions_authored",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AddField(
-            model_name='discuss',
-            name='user',
-            field=models.ForeignKey(help_text='User associated with this discussion', on_delete=django.db.models.deletion.CASCADE, related_name='discussions', to=settings.AUTH_USER_MODEL),
+            model_name="discuss",
+            name="user",
+            field=models.ForeignKey(
+                help_text="User associated with this discussion",
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="discussions",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AddField(
-            model_name='discusstags',
-            name='discuss',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='problem.discuss'),
+            model_name="discusstags",
+            name="discuss",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE, to="problem.discuss"
+            ),
         ),
         migrations.AddField(
-            model_name='discuss',
-            name='problem',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='discussions', to='problem.problem'),
+            model_name="discuss",
+            name="problem",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="discussions",
+                to="problem.problem",
+            ),
         ),
         migrations.AddField(
-            model_name='codeblock',
-            name='problem',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='codeblocks', to='problem.problem'),
+            model_name="codeblock",
+            name="problem",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="codeblocks",
+                to="problem.problem",
+            ),
         ),
         migrations.AddField(
-            model_name='problemtags',
-            name='problem',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='problem.problem'),
+            model_name="problemtags",
+            name="problem",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE, to="problem.problem"
+            ),
         ),
         migrations.AddField(
-            model_name='solution',
-            name='problem',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='solutions', to='problem.problem'),
+            model_name="solution",
+            name="problem",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="solutions",
+                to="problem.problem",
+            ),
         ),
         migrations.AddField(
-            model_name='solution',
-            name='user',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='solutions', to=settings.AUTH_USER_MODEL),
+            model_name="solution",
+            name="user",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="solutions",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AddField(
-            model_name='problemtags',
-            name='tag',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='problem.tags'),
+            model_name="problemtags",
+            name="tag",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE, to="problem.tags"
+            ),
         ),
         migrations.AddField(
-            model_name='problem',
-            name='tags',
-            field=models.ManyToManyField(related_name='problems', through='problem.ProblemTags', to='problem.tags'),
+            model_name="problem",
+            name="tags",
+            field=models.ManyToManyField(
+                related_name="problems",
+                through="problem.ProblemTags",
+                to="problem.tags",
+            ),
         ),
         migrations.AddField(
-            model_name='discusstags',
-            name='tag',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='problem.tags'),
+            model_name="discusstags",
+            name="tag",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE, to="problem.tags"
+            ),
         ),
         migrations.AddField(
-            model_name='discuss',
-            name='tags',
-            field=models.ManyToManyField(related_name='discussions', through='problem.DiscussTags', to='problem.tags'),
+            model_name="discuss",
+            name="tags",
+            field=models.ManyToManyField(
+                related_name="discussions",
+                through="problem.DiscussTags",
+                to="problem.tags",
+            ),
         ),
         migrations.AddField(
-            model_name='testcase',
-            name='problem',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='testcases', to='problem.problem'),
+            model_name="testcase",
+            name="problem",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="testcases",
+                to="problem.problem",
+            ),
         ),
         migrations.AlterUniqueTogether(
-            name='problemtags',
-            unique_together={('problem', 'tag')},
+            name="problemtags",
+            unique_together={("problem", "tag")},
         ),
         migrations.AlterUniqueTogether(
-            name='discusstags',
-            unique_together={('discuss', 'tag')},
+            name="discusstags",
+            unique_together={("discuss", "tag")},
         ),
     ]

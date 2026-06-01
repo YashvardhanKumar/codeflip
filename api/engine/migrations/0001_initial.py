@@ -7,24 +7,28 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='RunTask',
+            name="RunTask",
             fields=[
-                ('id', models.BigAutoField(primary_key=True, serialize=False)),
-                ('task_id', models.CharField(blank=True, max_length=255, null=True, unique=True)),
-                ('status', models.CharField(default='PENDING', max_length=50)),
-                ('result', models.JSONField(blank=True, null=True)),
-                ('error', models.TextField(blank=True, null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                ("id", models.BigAutoField(primary_key=True, serialize=False)),
+                (
+                    "task_id",
+                    models.CharField(
+                        blank=True, max_length=255, null=True, unique=True
+                    ),
+                ),
+                ("status", models.CharField(default="PENDING", max_length=50)),
+                ("result", models.JSONField(blank=True, null=True)),
+                ("error", models.TextField(blank=True, null=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'db_table': 'run_task',
-                'ordering': ['-created_at'],
+                "db_table": "run_task",
+                "ordering": ["-created_at"],
             },
         ),
     ]

@@ -1,7 +1,13 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  /* config options here */
-};
+  transpilePackages: [
+    'rehype-mathjax',
+    'remark-math',
+    'react-markdown',
+    'rehype-raw',
+    'remark-gfm',
+  ],
+}
 
-export default nextConfig;
+export default nextConfig

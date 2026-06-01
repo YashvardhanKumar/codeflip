@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('problem', '0008_discuss_downvotes_discuss_is_editorial_and_more'),
+        ("problem", "0008_discuss_downvotes_discuss_is_editorial_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='solution',
-            name='is_editorial',
+            model_name="solution",
+            name="is_editorial",
             field=models.BooleanField(default=False),
         ),
     ]

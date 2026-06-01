@@ -1,24 +1,24 @@
-"use client";
+'use client'
 
-import { Skeleton } from "../ui/skeleton";
+import { Skeleton } from '../ui/skeleton'
 // components/problem/TestPanel.tsx
 
-import { Language, Problem, TestcaseList, User } from "@/lib/models";
-import { useEffect, useState } from "react";
-import TestResultDetail from "./test-result-detail";
+import { Language, Problem, TestcaseList, User } from '@/lib/models'
+import { useEffect, useState } from 'react'
+import TestResultDetail from './test-result-detail'
 
 interface Props {
-  problem: Problem;
-  user: User | null;
-  language?: Language;
-  runData: any[] | null;
-  submitData: any[] | null;
-  isLoading: boolean;
-  error: string | null;
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
-  activeCase: number;
-  setActiveCase: (index: number) => void;
+  problem: Problem
+  user: User | null
+  language?: Language
+  runData: any[] | null
+  submitData: any[] | null
+  isLoading: boolean
+  error: string | null
+  activeTab: string
+  setActiveTab: (tab: string) => void
+  activeCase: number
+  setActiveCase: (index: number) => void
 }
 
 export default function TestPanel({
@@ -35,70 +35,70 @@ export default function TestPanel({
   setActiveCase,
 }: Props) {
   // Original Sample Testcases (Sample cases only)
-  const [sampleTestcases, setSampleTestcases] = useState<TestcaseList[]>([]);
+  const [sampleTestcases, setSampleTestcases] = useState<TestcaseList[]>([])
 
   useEffect(() => {
     setSampleTestcases(
-      problem.testcases.filter((e) => e.display_testcase == true),
-    );
-  }, [problem]);
+      problem.testcases.filter((e) => e.display_testcase == true)
+    )
+  }, [problem])
 
   const getTabStatusClasses = (index: number, isSubmit?: boolean) => {
-    const result = isSubmit ? submitData?.[index] : runData?.[index];
-    const isActive = activeCase === index;
+    const result = isSubmit ? submitData?.[index] : runData?.[index]
+    const isActive = activeCase === index
 
     if (result) {
-      const isAccepted = result.status?.id === 3;
+      const isAccepted = result.status?.id === 3
       if (result.status === null) {
         return isActive
-          ? "bg-gray-600/20 text-gray-500 border-gray-500/50"
-          : "bg-gray-400 text-gray-500 hover:bg-gray-600/10 border-transparent";
+          ? 'bg-gray-600/20 text-gray-500 border-gray-500/50'
+          : 'bg-gray-400 text-gray-500 hover:bg-gray-600/10 border-transparent'
       } else if (isAccepted) {
         return isActive
-          ? "bg-green-600/20 text-green-500 border-green-500/50"
-          : "text-green-500 hover:bg-green-600/10 border-transparent";
+          ? 'bg-green-600/20 text-green-500 border-green-500/50'
+          : 'text-green-500 hover:bg-green-600/10 border-transparent'
       } else {
         return isActive
-          ? "bg-red-600/20 text-red-500 border-red-500/50"
-          : "text-red-500 hover:bg-red-600/10 border-transparent";
+          ? 'bg-red-600/20 text-red-500 border-red-500/50'
+          : 'text-red-500 hover:bg-red-600/10 border-transparent'
       }
     }
 
     return isActive
-      ? "bg-surface-border text-white border-surface-border"
-      : "text-gray-400 hover:text-white hover:bg-surface-border border-transparent";
-  };
+      ? 'bg-surface-border text-white border-surface-border'
+      : 'text-gray-400 hover:text-white hover:bg-surface-border border-transparent'
+  }
 
   return (
     <div className="h-full border-t border-surface-border bg-surface-dark flex flex-col shrink-0">
       {/* Panel Header */}
       <div className="flex items-center px-4 py-2 gap-4 border-b border-surface-border bg-black/20">
         <button
-          onClick={() => setActiveTab("testcase")}
+          onClick={() => setActiveTab('testcase')}
           className={`flex items-center gap-2 text-xs font-bold border-b-2 pb-2 transition-all ${
-            activeTab === "testcase"
-              ? "text-white border-primary"
-              : "text-gray-500 hover:text-white border-transparent"
+            activeTab === 'testcase'
+              ? 'text-white border-primary'
+              : 'text-gray-500 hover:text-white border-transparent'
           }`}
         >
           Testcase
         </button>
         <button
-          onClick={() => setActiveTab("result")}
+          onClick={() => setActiveTab('result')}
           className={`flex items-center gap-2 text-xs font-bold border-b-2 pb-2 transition-all ${
-            activeTab === "result"
-              ? "text-white border-primary"
-              : "text-gray-500 hover:text-white border-transparent"
+            activeTab === 'result'
+              ? 'text-white border-primary'
+              : 'text-gray-500 hover:text-white border-transparent'
           }`}
         >
           Test Result
         </button>
         <button
-          onClick={() => setActiveTab("submission")}
+          onClick={() => setActiveTab('submission')}
           className={`flex items-center gap-2 text-xs font-bold border-b-2 pb-2 transition-all ${
-            activeTab === "submission"
-              ? "text-white border-primary"
-              : "text-gray-500 hover:text-white border-transparent"
+            activeTab === 'submission'
+              ? 'text-white border-primary'
+              : 'text-gray-500 hover:text-white border-transparent'
           }`}
         >
           Code Submission
@@ -107,8 +107,11 @@ export default function TestPanel({
 
       {/* Panel Content */}
       <div className="flex-1 overflow-hidden px-4 flex flex-col">
-        {activeTab === "testcase" && (
-          <div key="testcase-tab" className="animate-in fade-in duration-200 flex-1 overflow-y-auto min-h-0 py-2 pr-1">
+        {activeTab === 'testcase' && (
+          <div
+            key="testcase-tab"
+            className="animate-in fade-in duration-200 flex-1 overflow-y-auto min-h-0 py-2 pr-1"
+          >
             <div className="flex gap-2 mb-4 mt-2">
               {sampleTestcases.map((_, index) => (
                 <button
@@ -116,8 +119,8 @@ export default function TestPanel({
                   onClick={() => setActiveCase(index)}
                   className={`px-4 py-1.5 rounded-md text-xs font-medium transition-all active:scale-95 border ${
                     activeCase === index
-                      ? "bg-surface-border text-white border-surface-border"
-                      : "text-gray-400 hover:text-white hover:bg-surface-border border-transparent"
+                      ? 'bg-surface-border text-white border-surface-border'
+                      : 'text-gray-400 hover:text-white hover:bg-surface-border border-transparent'
                   }`}
                 >
                   Case {index + 1}
@@ -136,10 +139,10 @@ export default function TestPanel({
               {sampleTestcases &&
                 sampleTestcases
                   .at(activeCase)
-                  ?.input.replaceAll("\r\n", "\n")
-                  .split("\n")
+                  ?.input.replaceAll('\r\n', '\n')
+                  .split('\n')
                   .map((line, i) => {
-                    const [key, value] = line.split("=", 2);
+                    const [key, value] = line.split('=', 2)
                     return (
                       <div key={i}>
                         <p className="text-gray-400 mb-1">{key} = </p>
@@ -147,12 +150,12 @@ export default function TestPanel({
                           {value}
                         </div>
                       </div>
-                    );
+                    )
                   })}
             </div>
           </div>
         )}
-        {activeTab === "result" && (
+        {activeTab === 'result' && (
           <div
             key="result-tab"
             className="text-gray-400 text-sm animate-in fade-in duration-200 flex-1 overflow-y-auto min-h-0 py-2 pr-1"
@@ -160,7 +163,9 @@ export default function TestPanel({
             {isLoading ? (
               <div className="space-y-4 py-4 animate-in fade-in duration-300">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold uppercase tracking-widest opacity-70 animate-pulse">compiling code...</span>
+                  <span className="text-xs font-bold uppercase tracking-widest opacity-70 animate-pulse">
+                    compiling code...
+                  </span>
                 </div>
                 <div className="space-y-3">
                   <Skeleton className="h-5 w-32 rounded" />
@@ -194,7 +199,7 @@ export default function TestPanel({
                 className="space-y-3 pb-3 animate-in fade-in duration-200"
               >
                 <div
-                  className={`font-bold ${runData[activeCase]?.status?.id === 3 ? "text-green-500" : "text-red-500"}`}
+                  className={`font-bold ${runData[activeCase]?.status?.id === 3 ? 'text-green-500' : 'text-red-500'}`}
                 >
                   {runData[activeCase]?.status?.description}
                 </div>
@@ -221,37 +226,43 @@ export default function TestPanel({
           </div>
         )}
 
-        {activeTab === "submission" && (
+        {activeTab === 'submission' && (
           <div className="text-gray-400 text-sm animate-in fade-in slide-in-from-bottom-2 duration-300 flex-1 flex flex-col min-h-0 py-2">
             {submitData ? (
               <div className="flex divide-x relative space-x-3 flex-1 min-h-0">
-                <div className={`overflow-y-auto gap-3 pr-3 ${isLoading ? 'flex flex-wrap' : 'grid grid-cols-1 shrink-0'}`}>
-                    {submitData.map((res, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setActiveCase(index)}
-                        className={`px-3 py-1.5 rounded-md w-24 flex gap-1 text-xs font-medium transition-all active:scale-95 border ${submitData[index]?.status?.id === 1 ? "" : getTabStatusClasses(index, true)}`}
-                      >
-                        {submitData[index]?.status?.id === 1 && (
-                          <div className="animate-spin size-3 border border-primary border-t-transparent rounded-full"></div>
-                        )}
-                        <span>Case {index + 1}</span>
-                      </button>
-                    ))}
+                <div
+                  className={`overflow-y-auto gap-3 pr-3 ${isLoading ? 'flex flex-wrap' : 'grid grid-cols-1 shrink-0'}`}
+                >
+                  {submitData.map((res, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setActiveCase(index)}
+                      className={`px-3 py-1.5 rounded-md w-24 flex gap-1 text-xs font-medium transition-all active:scale-95 border ${submitData[index]?.status?.id === 1 ? '' : getTabStatusClasses(index, true)}`}
+                    >
+                      {submitData[index]?.status?.id === 1 && (
+                        <div className="animate-spin size-3 border border-primary border-t-transparent rounded-full"></div>
+                      )}
+                      <span>Case {index + 1}</span>
+                    </button>
+                  ))}
+                </div>
+                {!isLoading && (
+                  <div className="flex-1 overflow-y-auto h-full pl-3 pr-1">
+                    {!isLoading ? (
+                      <TestResultDetail
+                        result={submitData[activeCase]}
+                        testcase={sampleTestcases[activeCase]}
+                      />
+                    ) : (
+                      <div className="h-full flex flex-col items-center justify-center gap-4 text-gray-500">
+                        <div className="animate-spin size-8 border-4 border-primary border-t-transparent rounded-full"></div>
+                        <p className="text-xs font-bold uppercase tracking-widest">
+                          Processing Submission...
+                        </p>
+                      </div>
+                    )}
                   </div>
-                {!isLoading && <div className="flex-1 overflow-y-auto h-full pl-3 pr-1">
-                  {!isLoading ? (
-                    <TestResultDetail
-                      result={submitData[activeCase]}
-                      testcase={sampleTestcases[activeCase]}
-                    />
-                  ) : (
-                    <div className="h-full flex flex-col items-center justify-center gap-4 text-gray-500">
-                       <div className="animate-spin size-8 border-4 border-primary border-t-transparent rounded-full"></div>
-                       <p className="text-xs font-bold uppercase tracking-widest">Processing Submission...</p>
-                    </div>
-                  )}
-                </div>}
+                )}
               </div>
             ) : (
               <div className="py-20 flex flex-col items-center justify-center gap-4 text-gray-600">
@@ -267,5 +278,5 @@ export default function TestPanel({
         )}
       </div>
     </div>
-  );
+  )
 }

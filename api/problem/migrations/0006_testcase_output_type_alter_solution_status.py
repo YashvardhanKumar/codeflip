@@ -6,18 +6,44 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('problem', '0005_testcase_display_testcase'),
+        ("problem", "0005_testcase_display_testcase"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='testcase',
-            name='output_type',
-            field=models.CharField(choices=[('string', 'String'), ('integer', 'Integer')], default='integer', max_length=10, verbose_name='Output Data Type'),
+            model_name="testcase",
+            name="output_type",
+            field=models.CharField(
+                choices=[("string", "String"), ("integer", "Integer")],
+                default="integer",
+                max_length=10,
+                verbose_name="Output Data Type",
+            ),
         ),
         migrations.AlterField(
-            model_name='solution',
-            name='status',
-            field=models.CharField(blank=True, choices=[('In Queue', 'Queue'), ('Processing', 'Process'), ('Accepted', 'Ac'), ('Wrong Answer', 'Wa'), ('Time Limit Exceeded', 'Tle'), ('Compilation Error', 'Ce'), ('Runtime Error (SIGSEGV)', 'Sigsegv'), ('Runtime Error (SIGXFSZ)', 'Sigxfsz'), ('Runtime Error (SIGFPE)', 'Sigfpe'), ('Runtime Error (SIGABRT)', 'Sigabrt'), ('Runtime Error (NZEC)', 'Nzec'), ('Runtime Error (Other)', 'Other'), ('Internal Error', 'Boxerr'), ('Exec Format Error', 'Exeerr'), ('Invalid Testcase', 'Invtcl')], max_length=30, null=True),
+            model_name="solution",
+            name="status",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("In Queue", "Queue"),
+                    ("Processing", "Process"),
+                    ("Accepted", "Ac"),
+                    ("Wrong Answer", "Wa"),
+                    ("Time Limit Exceeded", "Tle"),
+                    ("Compilation Error", "Ce"),
+                    ("Runtime Error (SIGSEGV)", "Sigsegv"),
+                    ("Runtime Error (SIGXFSZ)", "Sigxfsz"),
+                    ("Runtime Error (SIGFPE)", "Sigfpe"),
+                    ("Runtime Error (SIGABRT)", "Sigabrt"),
+                    ("Runtime Error (NZEC)", "Nzec"),
+                    ("Runtime Error (Other)", "Other"),
+                    ("Internal Error", "Boxerr"),
+                    ("Exec Format Error", "Exeerr"),
+                    ("Invalid Testcase", "Invtcl"),
+                ],
+                max_length=30,
+                null=True,
+            ),
         ),
     ]

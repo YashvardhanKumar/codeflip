@@ -1,12 +1,17 @@
 // components/shared/TabButton.tsx
 interface TabButtonProps {
-  icon: string;
-  label: string;
-  active?: boolean;
-  onClick?: () => void;
+  icon: string
+  label: string
+  active?: boolean
+  onClick?: () => void
 }
 
-export default function TabButton({ icon, label, active = false, onClick }: TabButtonProps) {
+export default function TabButton({
+  icon,
+  label,
+  active = false,
+  onClick,
+}: TabButtonProps) {
   return (
     <button
       onClick={onClick}
@@ -16,10 +21,12 @@ export default function TabButton({ icon, label, active = false, onClick }: TabB
           : 'border-transparent text-gray-400 hover:text-gray-200 hover:bg-surface-border/50'
       }`}
     >
-      <span className={`material-symbols-outlined text-base ${active ? 'text-primary' : ''}`}>
+      <span
+        className={`material-symbols-outlined text-base ${active ? 'text-primary' : ''}`}
+      >
         {icon}
       </span>
       {label}
     </button>
-  );
+  )
 }

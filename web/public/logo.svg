@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+  <style>
+    .speed-cyan {
+      stroke: #22d3ee;
+    }
+    .speed-primary-muted {
+      stroke: #2b6cee;
+      stroke-opacity: 0.6;
+    }
+    .bracket {
+      stroke: #0f172a;
+    }
+    .slash {
+      stroke: #2b6cee;
+    }
+    @media (prefers-color-scheme: dark) {
+      .bracket {
+        stroke: #ffffff;
+      }
+    }
+  </style>
+
+  <!-- Speed Trails Left -->
+  <path
+    d="M1 12H3"
+    stroke-width="2"
+    stroke-linecap="round"
+    class="speed-cyan"
+  />
+  <path
+    d="M3 8H5"
+    stroke-width="2"
+    stroke-linecap="round"
+    class="speed-primary-muted"
+  />
+  <path
+    d="M2 16H4"
+    stroke-width="2"
+    stroke-linecap="round"
+    class="speed-primary-muted"
+  />
+
+  <!-- Speed Trails Right -->
+  <path
+    d="M21 12H23"
+    stroke-width="2"
+    stroke-linecap="round"
+    class="speed-cyan"
+  />
+  <path
+    d="M19 16H21"
+    stroke-width="2"
+    stroke-linecap="round"
+    class="speed-primary-muted"
+  />
+
+  <!-- Left Bracket < (Slanted Forward) -->
+  <path
+    d="M10 6L5 12L8 18"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    class="bracket"
+  />
+
+  <!-- Right Bracket > (Slanted Forward) -->
+  <path
+    d="M16 6L21 12L14 18"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    class="bracket"
+  />
+
+  <!-- Forward Slash / (Bold & Fast) -->
+  <path
+    d="M15 3L9 21"
+    stroke-width="3"
+    stroke-linecap="round"
+    class="slash"
+  />
+</svg>

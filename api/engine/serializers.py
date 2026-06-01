@@ -5,7 +5,7 @@ from rest_framework import serializers
 class SubmissionSerializer(serializers.Serializer):
     problem_id = serializers.IntegerField(required=False)
     source_code = serializers.CharField()
-    language = serializers.CharField(required=False) # Internal language choice string
+    language = serializers.CharField(required=False)  # Internal language choice string
     stdin = serializers.CharField(required=False, allow_blank=True)
     expected_output = serializers.CharField(required=False, allow_blank=True)
 

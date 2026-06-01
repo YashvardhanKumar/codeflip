@@ -27,12 +27,12 @@ class UserViewSet(viewsets.ModelViewSet):
     parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def get_permissions(self):
-        if self.action == 'create':
+        if self.action == "create":
             return [AllowAny()]
         return super().get_permissions()
 
     def get_serializer_class(self):
-        if self.action == 'create':
+        if self.action == "create":
             return UserRegistrationSerializer
         return UserSerializer
 
@@ -42,112 +42,129 @@ class UserViewSet(viewsets.ModelViewSet):
             return super().get_queryset()
         return User.objects.filter(id=self.request.user.id)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=["get"])
     def me(self, request):
         """Get current user's profile"""
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['patch'])
+    @action(detail=False, methods=["patch"])
     def update_language(self, request):
         """Update user's default programming language"""
-        language = request.data.get('default_lang')
+        language = request.data.get("default_lang")
         if not language:
-            return Response({'error': 'default_lang is required'}, status=status.HTTP_400_BAD_REQUEST)
-        
+            return Response(
+                {"error": "default_lang is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         user = request.user
         user.default_lang = language
         user.save()
-        return Response({'message': 'Default language updated successfully', 'default_lang': user.default_lang})
+        return Response(
+            {
+                "message": "Default language updated successfully",
+                "default_lang": user.default_lang,
+            }
+        )
 
-    @action(detail=False, methods=['put', 'patch'])
+    @action(detail=False, methods=["put", "patch"])
     def update_profile(self, request):
         """Update current user's profile"""
         serializer = self.get_serializer(
-            request.user, 
-            data=request.data, 
-            partial=request.method == 'PATCH'
+            request.user, data=request.data, partial=request.method == "PATCH"
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=["get"])
+    @action(detail=False, methods=["get"])
     def profile(self, request):
         """Get current user's profile, activity, and coding progress"""
         user = request.user
-        year_param = request.query_params.get('year')
-        
+        year_param = request.query_params.get("year")
+
         now = timezone.now()
         current_year = now.year
         join_year = user.date_joined.year
         available_years = list(range(join_year, current_year + 1))
-        
+
         try:
             target_year = int(year_param) if year_param else current_year
         except ValueError:
             target_year = current_year
-            
-        solutions = Solution.objects.filter(user=user).select_related('problem')
-        
+
+        solutions = Solution.objects.filter(user=user).select_related("problem")
+
         # Heatmap calculation for the specific year
         start_of_year = timezone.datetime(target_year, 1, 1).date()
         end_of_year = timezone.datetime(target_year, 12, 31).date()
-        
+
         # Clamp start date to join date if target year is join year
         actual_start = max(start_of_year, user.date_joined.date())
         # Clamp end date to today if target year is current year
         actual_end = min(end_of_year, timezone.localdate())
-        
+
         # Activity for the heatmap
         year_activity = {
-            item['day'].isoformat(): item['count']
-            for item in solutions.filter(created_at__date__gte=actual_start, created_at__date__lte=actual_end)
-            .annotate(day=TruncDate('created_at'))
-            .values('day')
-            .annotate(count=Count('id'))
-            .order_by('day')
+            item["day"].isoformat(): item["count"]
+            for item in solutions.filter(
+                created_at__date__gte=actual_start, created_at__date__lte=actual_end
+            )
+            .annotate(day=TruncDate("created_at"))
+            .values("day")
+            .annotate(count=Count("id"))
+            .order_by("day")
         }
-        
+
         heatmap = []
         curr = actual_start
         while curr <= actual_end:
             date_str = curr.isoformat()
-            heatmap.append({
-                'date': date_str,
-                'count': year_activity.get(date_str, 0)
-            })
+            heatmap.append({"date": date_str, "count": year_activity.get(date_str, 0)})
             curr += timedelta(days=1)
 
         # Stats and problem summaries
         solved_problem_ids = set(
             solutions.filter(status=AnswerStatus.ACCEPTED)
-            .values_list('problem_id', flat=True)
+            .values_list("problem_id", flat=True)
             .distinct()
         )
         attempted_problem_ids = set(
-            solutions.values_list('problem_id', flat=True).distinct()
+            solutions.values_list("problem_id", flat=True).distinct()
         )
         attempted_only_ids = attempted_problem_ids - solved_problem_ids
 
         solved_problems = self._latest_solution_per_problem(
-            solutions.filter(status=AnswerStatus.ACCEPTED, problem_id__in=solved_problem_ids)
+            solutions.filter(
+                status=AnswerStatus.ACCEPTED, problem_id__in=solved_problem_ids
+            )
         )
         attempted_problems = self._latest_solution_per_problem(
             solutions.filter(problem_id__in=attempted_only_ids)
         )
 
         difficulty_breakdown = {}
-        for difficulty in ['EASY', 'MEDIUM', 'HARD']:
-            total = solutions.filter(problem__difficulty=difficulty).values('problem_id').distinct().count()
-            solved = solutions.filter(
-                problem__difficulty=difficulty,
-                status=AnswerStatus.ACCEPTED,
-            ).values('problem_id').distinct().count()
+        for difficulty in ["EASY", "MEDIUM", "HARD"]:
+            total = (
+                solutions.filter(problem__difficulty=difficulty)
+                .values("problem_id")
+                .distinct()
+                .count()
+            )
+            solved = (
+                solutions.filter(
+                    problem__difficulty=difficulty,
+                    status=AnswerStatus.ACCEPTED,
+                )
+                .values("problem_id")
+                .distinct()
+                .count()
+            )
             difficulty_breakdown[difficulty] = {
-                'solved': solved,
-                'attempted': total,
+                "solved": solved,
+                "attempted": total,
             }
 
         status_breakdown = {}
@@ -158,111 +175,126 @@ class UserViewSet(viewsets.ModelViewSet):
         # Recent submissions for the side list
         recent_submissions = [
             {
-                'id': solution.id,
-                'problem_id': solution.problem_id,
-                'problem_name': solution.problem.name,
-                'difficulty': solution.problem.difficulty,
-                'language': solution.language,
-                'language_display': solution.get_language_display(),
-                'status': solution.status,
-                'status_display': solution.get_status_display(),
-                'created_at': solution.created_at,
+                "id": solution.id,
+                "problem_id": solution.problem_id,
+                "problem_name": solution.problem.name,
+                "difficulty": solution.problem.difficulty,
+                "language": solution.language,
+                "language_display": solution.get_language_display(),
+                "status": solution.status,
+                "status_display": solution.get_status_display(),
+                "created_at": solution.created_at,
             }
-            for solution in solutions.order_by('-created_at')[:12]
+            for solution in solutions.order_by("-created_at")[:12]
         ]
 
         def serialize_problem(solution):
             return {
-                'id': solution.problem_id,
-                'name': solution.problem.name,
-                'difficulty': solution.problem.difficulty,
-                'last_submitted_at': solution.created_at,
+                "id": solution.problem_id,
+                "name": solution.problem.name,
+                "difficulty": solution.problem.difficulty,
+                "last_submitted_at": solution.created_at,
             }
 
         # For streak calculation, we need full activity history
         full_activity = {
-            item['day'].isoformat(): item['count']
-            for item in solutions.annotate(day=TruncDate('created_at'))
-            .values('day')
-            .annotate(count=Count('id'))
+            item["day"].isoformat(): item["count"]
+            for item in solutions.annotate(day=TruncDate("created_at"))
+            .values("day")
+            .annotate(count=Count("id"))
         }
 
         total_submissions = solutions.count()
         successful = solutions.filter(status=AnswerStatus.ACCEPTED).count()
-        
+
         data = {
-            'user': UserSerializer(user, context={'request': request}).data,
-            'stats': {
-                'total_submissions': total_submissions,
-                'successful_submissions': successful,
-                'unique_problems_attempted': len(attempted_problem_ids),
-                'unique_problems_solved': len(solved_problem_ids),
-                'success_rate': round((successful / total_submissions * 100), 2) if total_submissions else 0,
-                'current_streak': self._calculate_streak(full_activity, timezone.localdate()),
-                'active_days': len(full_activity),
-                'difficulty_breakdown': difficulty_breakdown,
-                'status_breakdown': status_breakdown,
+            "user": UserSerializer(user, context={"request": request}).data,
+            "stats": {
+                "total_submissions": total_submissions,
+                "successful_submissions": successful,
+                "unique_problems_attempted": len(attempted_problem_ids),
+                "unique_problems_solved": len(solved_problem_ids),
+                "success_rate": (
+                    round((successful / total_submissions * 100), 2)
+                    if total_submissions
+                    else 0
+                ),
+                "current_streak": self._calculate_streak(
+                    full_activity, timezone.localdate()
+                ),
+                "active_days": len(full_activity),
+                "difficulty_breakdown": difficulty_breakdown,
+                "status_breakdown": status_breakdown,
             },
-            'heatmap': heatmap,
-            'recent_submissions': recent_submissions,
-            'solved_problems': [serialize_problem(solution) for solution in solved_problems[:20]],
-            'attempted_problems': [serialize_problem(solution) for solution in attempted_problems[:20]],
-            'available_years': available_years,
-            'selected_year': target_year,
+            "heatmap": heatmap,
+            "recent_submissions": recent_submissions,
+            "solved_problems": [
+                serialize_problem(solution) for solution in solved_problems[:20]
+            ],
+            "attempted_problems": [
+                serialize_problem(solution) for solution in attempted_problems[:20]
+            ],
+            "available_years": available_years,
+            "selected_year": target_year,
         }
 
         return Response(data)
+
     def change_password(self, request):
         """Change user password"""
         user = request.user
-        old_password = request.data.get('old_password')
-        new_password = request.data.get('new_password')
+        old_password = request.data.get("old_password")
+        new_password = request.data.get("new_password")
 
         if not old_password or not new_password:
             return Response(
-                {'error': 'Both old_password and new_password are required'},
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "Both old_password and new_password are required"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         if not user.check_password(old_password):
             return Response(
-                {'error': 'Old password is incorrect'},
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "Old password is incorrect"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         if len(new_password) < 8:
             return Response(
-                {'error': 'New password must be at least 8 characters'},
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "New password must be at least 8 characters"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         user.set_password(new_password)
         user.save()
-        return Response({'message': 'Password changed successfully'})
+        return Response({"message": "Password changed successfully"})
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=["get"])
     def stats(self, request):
         """Get user statistics"""
         user = request.user
         solutions = Solution.objects.filter(user=user)
-        
+
         total_submissions = solutions.count()
         successful = solutions.filter(status=AnswerStatus.ACCEPTED).count()
-        unique_problems = solutions.values('problem').distinct().count()
-        
+        unique_problems = solutions.values("problem").distinct().count()
+
         status_breakdown = {}
         for choice in AnswerStatus.choices:
             count = solutions.filter(status=choice[0]).count()
             status_breakdown[choice[1]] = count
-        
+
         data = {
-            'total_submissions': total_submissions,
-            'successful_submissions': successful,
-            'unique_problems_attempted': unique_problems,
-            'success_rate': round((successful / total_submissions * 100), 2) if total_submissions > 0 else 0,
-            'status_breakdown': status_breakdown
+            "total_submissions": total_submissions,
+            "successful_submissions": successful,
+            "unique_problems_attempted": unique_problems,
+            "success_rate": (
+                round((successful / total_submissions * 100), 2)
+                if total_submissions > 0
+                else 0
+            ),
+            "status_breakdown": status_breakdown,
         }
-        
+
         return Response(data)
 
     def _calculate_streak(self, activity_counts, today):
@@ -276,7 +308,7 @@ class UserViewSet(viewsets.ModelViewSet):
     def _latest_solution_per_problem(self, queryset):
         seen = set()
         results = []
-        for solution in queryset.order_by('-created_at'):
+        for solution in queryset.order_by("-created_at"):
             if solution.problem_id in seen:
                 continue
             seen.add(solution.problem_id)
@@ -286,57 +318,57 @@ class UserViewSet(viewsets.ModelViewSet):
 
 class CustomAuthToken(ObtainAuthToken):
     """Custom authentication endpoint that returns user data with token"""
-    
+
     def post(self, request, *args, **kwargs):
-        username = request.data.get('username')
-        password = request.data.get('password')
-        
+        username = request.data.get("username")
+        password = request.data.get("password")
+
         if not username or not password:
             return Response(
-                {'error': 'Please provide both username and password'},
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "Please provide both username and password"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
-        
+
         user = authenticate(username=username, password=password)
-        
+
         if not user:
             return Response(
-                {'error': 'Invalid credentials'},
-                status=status.HTTP_401_UNAUTHORIZED
+                {"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED
             )
-        
+
         token, created = Token.objects.get_or_create(user=user)
-        
-        return Response({
-            'token': token.key,
-            'user': UserSerializer(user).data
-        })
+
+        return Response({"token": token.key, "user": UserSerializer(user).data})
 
 
 class RegisterView(viewsets.ViewSet):
     """User registration endpoint"""
+
     permission_classes = [AllowAny]
-    
+
     def create(self, request):
         serializer = UserRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         token, created = Token.objects.get_or_create(user=user)
-        
-        return Response({
-            'token': token.key,
-            'user': UserSerializer(user).data
-        }, status=status.HTTP_201_CREATED)
+
+        return Response(
+            {"token": token.key, "user": UserSerializer(user).data},
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class LogoutView(viewsets.ViewSet):
     """User logout endpoint"""
+
     permission_classes = [IsAuthenticated]
-    
+
     def create(self, request):
         # Delete the user's token
         request.user.auth_token.delete()
-        return Response({'message': 'Successfully logged out'}, status=status.HTTP_200_OK)
+        return Response(
+            {"message": "Successfully logged out"}, status=status.HTTP_200_OK
+        )
 
 
 class SocialAuthSerializer(serializers.Serializer):
@@ -350,8 +382,8 @@ class SocialAuthView(APIView):
     def post(self, request):
         serializer = SocialAuthSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        provider = serializer.validated_data['provider']
-        access_token = serializer.validated_data['access_token']
+        provider = serializer.validated_data["provider"]
+        access_token = serializer.validated_data["access_token"]
 
         try:
             # This is a simplified version. In a real app, you'd use the PSA pipeline properly.
@@ -359,34 +391,33 @@ class SocialAuthView(APIView):
             user = self.get_user_from_social_token(provider, access_token)
             if user:
                 token, _ = Token.objects.get_or_create(user=user)
-                return Response({
-                    'token': token.key,
-                    'user': UserSerializer(user).data
-                })
-            return Response({'error': 'Authentication failed'}, status=status.HTTP_401_UNAUTHORIZED)
+                return Response({"token": token.key, "user": UserSerializer(user).data})
+            return Response(
+                {"error": "Authentication failed"}, status=status.HTTP_401_UNAUTHORIZED
+            )
         except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def get_user_from_social_token(self, provider, token):
         # Psuedo-implementation ofPSA token exchange
         # Since setting up full PSA for a single DRF endpoint is complex,
         # we'll use a more direct approach if possible or mock for now if necessary.
         # But let's try to do it right.
-        
+
         from django.contrib.auth import login
         from social_django.utils import load_backend, load_strategy
-        
+
         strategy = load_strategy(self.request)
         try:
             backend = load_backend(strategy, provider, redirect_uri=None)
         except MissingBackend:
-            raise serializers.ValidationError({'provider': 'Invalid provider'})
+            raise serializers.ValidationError({"provider": "Invalid provider"})
 
         try:
             user = backend.do_auth(token)
         except AuthTokenError as e:
-            raise serializers.ValidationError({'access_token': str(e)})
+            raise serializers.ValidationError({"access_token": str(e)})
         except AuthForbidden as e:
-            raise serializers.ValidationError({'access_token': 'Forbidden'})
-        
+            raise serializers.ValidationError({"access_token": "Forbidden"})
+
         return user

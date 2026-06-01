@@ -1,15 +1,18 @@
 from django.db import models
 from django.utils.timezone import now
 
+
 class RunTask(models.Model):
     id = models.BigAutoField(primary_key=True)
     task_id = models.CharField(max_length=255, unique=True, null=True, blank=True)
-    status = models.CharField(max_length=50, default='PENDING') # PENDING, PROCESSING, SUCCESS, ERROR
+    status = models.CharField(
+        max_length=50, default="PENDING"
+    )  # PENDING, PROCESSING, SUCCESS, ERROR
     result = models.JSONField(null=True, blank=True)
     error = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'run_task'
-        ordering = ['-created_at']
+        db_table = "run_task"
+        ordering = ["-created_at"]

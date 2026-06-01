@@ -1,183 +1,190 @@
-import useSWR from "swr";
-import * as React from "react"
+import useSWR from 'swr'
+import * as React from 'react'
 import {
-    flexRender,
-    getCoreRowModel,
-    getFilteredRowModel,
-    getPaginationRowModel,
-    getSortedRowModel,
-    useReactTable,
-    type ColumnDef,
-    type ColumnFiltersState,
-    type SortingState,
-    type VisibilityState,
-} from "@tanstack/react-table"
-import { ArrowUpDown } from "lucide-react"
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+  type ColumnDef,
+  type ColumnFiltersState,
+  type SortingState,
+  type VisibilityState,
+} from '@tanstack/react-table'
+import { ArrowUpDown } from 'lucide-react'
 
-import { Button } from "@/components/ui/button"
+import { Button } from '@/components/ui/button'
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
-import { Badge } from "./ui/badge";
-import { Loader, TableSkeleton } from "./loader";
-import { apiFetcher } from "@/lib/utils";
-import { PaginatedResponse } from "@/lib/models";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Badge } from './ui/badge'
+import { Loader, TableSkeleton } from './loader'
+import { apiFetcher } from '@/lib/utils'
+import { PaginatedResponse } from '@/lib/models'
 
-export type Payment = {
-    id: string
-    name: string
-    difficulty: string
+export type Problem = {
+  id: number
+  name: string
+  difficulty: string
 }
 
-export const columns: ColumnDef<Payment>[] = [
-    {
-        id: "id",
-        header: "ID",
-        cell: ({ row }) => (
-            <div className="text-right font-medium">{row.getValue("id")}</div>
-        ),
+export const columns: ColumnDef<Problem>[] = [
+  {
+    accessorKey: 'id',
+    header: 'ID',
+    cell: ({ row }) => <div className="font-medium">{row.getValue('id')}</div>,
+  },
+  {
+    accessorKey: 'name',
+    header: 'Problem',
+    cell: ({ row }) => <div className="capitalize">{row.getValue('name')}</div>,
+    enableResizing: true,
+  },
+  {
+    accessorKey: 'difficulty',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        >
+          Difficulty
+          <ArrowUpDown />
+        </Button>
+      )
     },
-    {
-        accessorKey: "name",
-        header: "Problem",
-        cell: ({ row }) => (
-            <div className="capitalize">{row.getValue("name")}</div>
-        ),
-        enableResizing: true,
+    cell: ({ row }) => {
+      const difficulty = row.getValue('difficulty') as string
+      const color =
+        difficulty === 'EASY'
+          ? 'bg-green-500'
+          : difficulty === 'MEDIUM'
+            ? 'bg-yellow-500'
+            : 'bg-red-500'
+
+      return <Badge className={color}>{difficulty}</Badge>
     },
-    {
-        accessorKey: "difficulty",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
-                    Difficulty
-                    <ArrowUpDown />
-                </Button>
-            )
-        },
-        cell: ({ row }) => <Badge className={`${row.getValue("difficulty") === "EASY" ? "bg-green-500" : row.getValue("difficulty") === "MEDIUM" ? "bg-yellow-500" : "bg-red-500"}`}>{row.getValue("difficulty")}</Badge>,
-    },
+  },
 ]
 export function DataTable() {
-    const { data, error, isLoading } = useSWR<PaginatedResponse<Payment>>("problems/", apiFetcher)
+  const { data, error, isLoading } = useSWR<PaginatedResponse<Problem>>(
+    'problems/',
+    apiFetcher
+  )
 
-    console.log(data);
+  const [sorting, setSorting] = React.useState<SortingState>([])
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  )
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({})
+  const [rowSelection, setRowSelection] = React.useState({})
 
+  const table = useReactTable({
+    data: data?.results ?? [],
+    columns,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    onColumnVisibilityChange: setColumnVisibility,
+    onRowSelectionChange: setRowSelection,
+    state: {
+      sorting,
+      columnFilters,
+      columnVisibility,
+      rowSelection,
+    },
+  })
 
-    const [sorting, setSorting] = React.useState<SortingState>([])
-    const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-        []
-    )
-    const [columnVisibility, setColumnVisibility] =
-        React.useState<VisibilityState>({})
-    const [rowSelection, setRowSelection] = React.useState({})
+  if (isLoading) return <TableSkeleton />
 
-    const table = useReactTable({
-        data: data?.results ?? [],
-        columns,
-        onSortingChange: setSorting,
-        onColumnFiltersChange: setColumnFilters,
-        getCoreRowModel: getCoreRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
-        getSortedRowModel: getSortedRowModel(),
-        getFilteredRowModel: getFilteredRowModel(),
-        onColumnVisibilityChange: setColumnVisibility,
-        onRowSelectionChange: setRowSelection,
-        state: {
-            sorting,
-            columnFilters,
-            columnVisibility,
-            rowSelection,
-        },
-    })
+  if (error) return <div>Error: {error.message}</div>
 
-    if (isLoading) return <TableSkeleton />;
-    
-    if (error) return <div>Error: {error.message}</div>
-
-    return (
-        <div className="w-full p-5">
-            <div className="overflow-hidden rounded-md border">
-                <Table>
-                        <TableHeader>
-                            {table.getHeaderGroups().map((headerGroup) => (
-                                <TableRow key={headerGroup.id}>
-                                    {headerGroup.headers.map((header) =>
-                                        <TableHead key={header.id}>
-                                            {header.isPlaceholder
-                                                ? null
-                                                : flexRender(
-                                                    header.column.columnDef.header,
-                                                    header.getContext()
-                                                )}
-                                        </TableHead>
-                                    )
-                                    }
-                                </TableRow>
-                            ))}
-                        </TableHeader>
-                        <TableBody>
-                            {table.getRowModel().rows?.length ? (
-                                table.getRowModel().rows.map((row) => (
-                                    <TableRow
-                                        key={row.id}
-                                        data-state={row.getIsSelected() && "selected"}
-                                    >
-                                        {row.getVisibleCells().map((cell) => (
-                                            <TableCell key={cell.id}>
-                                                {flexRender(
-                                                    cell.column.columnDef.cell,
-                                                    cell.getContext()
-                                                )}
-                                            </TableCell>
-                                        ))}
-                                    </TableRow>
-                                ))
-                            ) : (
-                                <TableRow>
-                                    <TableCell
-                                        colSpan={columns.length}
-                                        className="h-24 text-center"
-                                    >
-                                        No results.
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </div>
-            <div className="flex items-center justify-end space-x-2 py-4">
-                <div className="text-muted-foreground flex-1 text-sm">
-                    {table.getFilteredSelectedRowModel().rows.length} of{" "}
-                    {table.getFilteredRowModel().rows.length} row(s) selected.
-                </div>
-                <div className="space-x-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => table.previousPage()}
-                        disabled={!table.getCanPreviousPage()}
-                    >
-                        Previous
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => table.nextPage()}
-                        disabled={!table.getCanNextPage()}
-                    >
-                        Next
-                    </Button>
-                </div>
-            </div>
+  return (
+    <div>
+      <div className="w-full p-5">
+        <div className="overflow-hidden rounded-md border">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && 'selected'}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    No results.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </div>
-    )
+        <div className="flex items-center justify-end space-x-2 py-4">
+          <div className="text-muted-foreground flex-1 text-sm">
+            {table.getFilteredSelectedRowModel().rows.length} of{' '}
+            {table.getFilteredRowModel().rows.length} row(s) selected.
+          </div>
+          <div className="space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }

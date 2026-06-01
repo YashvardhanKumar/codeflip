@@ -1,25 +1,28 @@
 // components/DailyChallenge.tsx
-'use client';
+'use client'
 
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import useSWR from 'swr';
-import { PaginatedResponse, Problem } from '@/lib/models';
-import { apiFetcher } from '@/lib/utils';
-import { Skeleton } from './ui/skeleton';
+import Link from 'next/link'
+import { motion } from 'framer-motion'
+import useSWR from 'swr'
+import { PaginatedResponse, Problem } from '@/lib/models'
+import { apiFetcher } from '@/lib/utils'
+import { Skeleton } from './ui/skeleton'
 
 export default function DailyChallenge() {
   const { data, isLoading } = useSWR<PaginatedResponse<Problem>>(
     'problems/?ordering=id',
     apiFetcher
-  );
-  const problem = data?.results[0];
-  const userTimezone = typeof window !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'UTC';
+  )
+  const problem = data?.results[0]
+  const userTimezone =
+    typeof window !== 'undefined'
+      ? Intl.DateTimeFormat().resolvedOptions().timeZone
+      : 'UTC'
   const today = new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: 'numeric',
     timeZone: userTimezone,
-  }).format(new Date());
+  }).format(new Date())
 
   if (isLoading) {
     return (
@@ -40,7 +43,7 @@ export default function DailyChallenge() {
           <Skeleton className="h-4 w-20 rounded" />
         </div>
       </div>
-    );
+    )
   }
 
   if (!problem) {
@@ -48,7 +51,7 @@ export default function DailyChallenge() {
       <div className="h-full rounded-xl border border-slate-200 dark:border-surface-border bg-white dark:bg-surface-dark p-4 text-sm text-slate-500 dark:text-text-secondary">
         No daily challenge available.
       </div>
-    );
+    )
   }
 
   return (
@@ -63,7 +66,9 @@ export default function DailyChallenge() {
         className="relative block h-full overflow-hidden rounded-xl border border-slate-200 dark:border-surface-border bg-white dark:bg-surface-dark shadow-sm dark:shadow-lg group cursor-pointer hover:border-primary/50 transition-all hover:shadow-xl hover:shadow-primary/5"
       >
         <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-          <span className="material-symbols-outlined text-6xl">emoji_events</span>
+          <span className="material-symbols-outlined text-6xl">
+            emoji_events
+          </span>
         </div>
 
         <div className="p-4 flex flex-col h-full justify-between gap-3 relative z-10">
@@ -96,5 +101,5 @@ export default function DailyChallenge() {
         </div>
       </Link>
     </motion.div>
-  );
+  )
 }

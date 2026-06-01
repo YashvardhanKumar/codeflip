@@ -6,46 +6,75 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('problem', '0006_testcase_output_type_alter_solution_status'),
+        ("problem", "0006_testcase_output_type_alter_solution_status"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='problem',
-            options={'ordering': ['id'], 'verbose_name': 'Problem', 'verbose_name_plural': 'Problems'},
+            name="problem",
+            options={
+                "ordering": ["id"],
+                "verbose_name": "Problem",
+                "verbose_name_plural": "Problems",
+            },
         ),
         migrations.AddField(
-            model_name='solution',
-            name='testcase_results',
+            model_name="solution",
+            name="testcase_results",
             field=models.JSONField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='codeblock',
-            name='block',
-            field=models.TextField(blank=True, default=''),
+            model_name="codeblock",
+            name="block",
+            field=models.TextField(blank=True, default=""),
         ),
         migrations.AlterField(
-            model_name='codeblock',
-            name='imports',
-            field=models.TextField(blank=True, default=''),
+            model_name="codeblock",
+            name="imports",
+            field=models.TextField(blank=True, default=""),
         ),
         migrations.AlterField(
-            model_name='codeblock',
-            name='runner_code',
-            field=models.TextField(blank=True, default=''),
+            model_name="codeblock",
+            name="runner_code",
+            field=models.TextField(blank=True, default=""),
         ),
         migrations.AlterField(
-            model_name='problem',
-            name='difficulty',
-            field=models.CharField(choices=[('EASY', 'Easy'), ('MEDIUM', 'Medium'), ('HARD', 'Hard')], default='EASY', max_length=10),
+            model_name="problem",
+            name="difficulty",
+            field=models.CharField(
+                choices=[("EASY", "Easy"), ("MEDIUM", "Medium"), ("HARD", "Hard")],
+                default="EASY",
+                max_length=10,
+            ),
         ),
         migrations.AlterField(
-            model_name='solution',
-            name='status',
-            field=models.CharField(blank=True, choices=[('QUEUE', 'In Queue'), ('PROCESSING', 'Processing'), ('Accepted', 'Accepted'), ('Wrong Answer', 'Wrong Answer'), ('Time Limit Exceeded', 'Time Limit Exceeded'), ('Compilation Error', 'Compilation Error'), ('Runtime Error (SIGSEGV)', 'Runtime Error (SIGSEGV)'), ('Runtime Error (SIGXFSZ)', 'Runtime Error (SIGXFSZ)'), ('Runtime Error (SIGFPE)', 'Runtime Error (SIGFPE)'), ('Runtime Error (SIGABRT)', 'Runtime Error (SIGABRT)'), ('Runtime Error (NZEC)', 'Runtime Error (NZEC)'), ('Runtime Error (Other)', 'Runtime Error (Other)'), ('Internal Error', 'Internal Error'), ('Exec Format Error', 'Exec Format Error'), ('Invalid Testcase', 'Invalid Testcase')], max_length=30, null=True),
+            model_name="solution",
+            name="status",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("QUEUE", "In Queue"),
+                    ("PROCESSING", "Processing"),
+                    ("Accepted", "Accepted"),
+                    ("Wrong Answer", "Wrong Answer"),
+                    ("Time Limit Exceeded", "Time Limit Exceeded"),
+                    ("Compilation Error", "Compilation Error"),
+                    ("Runtime Error (SIGSEGV)", "Runtime Error (SIGSEGV)"),
+                    ("Runtime Error (SIGXFSZ)", "Runtime Error (SIGXFSZ)"),
+                    ("Runtime Error (SIGFPE)", "Runtime Error (SIGFPE)"),
+                    ("Runtime Error (SIGABRT)", "Runtime Error (SIGABRT)"),
+                    ("Runtime Error (NZEC)", "Runtime Error (NZEC)"),
+                    ("Runtime Error (Other)", "Runtime Error (Other)"),
+                    ("Internal Error", "Internal Error"),
+                    ("Exec Format Error", "Exec Format Error"),
+                    ("Invalid Testcase", "Invalid Testcase"),
+                ],
+                max_length=30,
+                null=True,
+            ),
         ),
         migrations.AlterUniqueTogether(
-            name='codeblock',
-            unique_together={('problem', 'language')},
+            name="codeblock",
+            unique_together={("problem", "language")},
         ),
     ]

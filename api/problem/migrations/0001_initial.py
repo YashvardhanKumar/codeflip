@@ -8,116 +8,192 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Codeblock',
+            name="Codeblock",
             fields=[
-                ('id', models.BigAutoField(primary_key=True, serialize=False)),
-                ('block', models.TextField()),
-                ('language', models.CharField(choices=[('CPP', 'C++'), ('JAVA', 'Java'), ('PYTHON', 'Python'), ('JAVASCRIPT', 'JavaScript'), ('TYPESCRIPT', 'TypeScript')], default='PYTHON', max_length=20, verbose_name='Programming Language')),
+                ("id", models.BigAutoField(primary_key=True, serialize=False)),
+                ("block", models.TextField()),
+                (
+                    "language",
+                    models.CharField(
+                        choices=[
+                            ("CPP", "C++"),
+                            ("JAVA", "Java"),
+                            ("PYTHON", "Python"),
+                            ("JAVASCRIPT", "JavaScript"),
+                            ("TYPESCRIPT", "TypeScript"),
+                        ],
+                        default="PYTHON",
+                        max_length=20,
+                        verbose_name="Programming Language",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Code Block',
-                'verbose_name_plural': 'Code Blocks',
-                'db_table': 'codeblock',
+                "verbose_name": "Code Block",
+                "verbose_name_plural": "Code Blocks",
+                "db_table": "codeblock",
             },
         ),
         migrations.CreateModel(
-            name='Discuss',
+            name="Discuss",
             fields=[
-                ('id', models.BigAutoField(primary_key=True, serialize=False)),
-                ('title', models.CharField(max_length=255)),
-                ('body', ckeditor.fields.RichTextField(blank=True, help_text='Content of the post')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ("id", models.BigAutoField(primary_key=True, serialize=False)),
+                ("title", models.CharField(max_length=255)),
+                (
+                    "body",
+                    ckeditor.fields.RichTextField(
+                        blank=True, help_text="Content of the post"
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
             ],
             options={
-                'verbose_name': 'Discussion',
-                'verbose_name_plural': 'Discussions',
-                'db_table': 'discuss',
-                'ordering': ['-created_at'],
+                "verbose_name": "Discussion",
+                "verbose_name_plural": "Discussions",
+                "db_table": "discuss",
+                "ordering": ["-created_at"],
             },
         ),
         migrations.CreateModel(
-            name='DiscussTags',
+            name="DiscussTags",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Discussion Tag',
-                'verbose_name_plural': 'Discussion Tags',
-                'db_table': 'discuss_tags',
+                "verbose_name": "Discussion Tag",
+                "verbose_name_plural": "Discussion Tags",
+                "db_table": "discuss_tags",
             },
         ),
         migrations.CreateModel(
-            name='Problem',
+            name="Problem",
             fields=[
-                ('id', models.BigAutoField(primary_key=True, serialize=False)),
-                ('problem_description', ckeditor.fields.RichTextField(blank=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('difficulty', models.CharField(choices=[('EASY', 'Easy'), ('MEDIUM', 'Medium'), ('HARD', 'Hard')], default='EASY', max_length=10, verbose_name='Difficulty Level')),
+                ("id", models.BigAutoField(primary_key=True, serialize=False)),
+                ("problem_description", ckeditor.fields.RichTextField(blank=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "difficulty",
+                    models.CharField(
+                        choices=[
+                            ("EASY", "Easy"),
+                            ("MEDIUM", "Medium"),
+                            ("HARD", "Hard"),
+                        ],
+                        default="EASY",
+                        max_length=10,
+                        verbose_name="Difficulty Level",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Problem',
-                'verbose_name_plural': 'Problems',
-                'db_table': 'problem',
-                'ordering': ['-created_at'],
+                "verbose_name": "Problem",
+                "verbose_name_plural": "Problems",
+                "db_table": "problem",
+                "ordering": ["-created_at"],
             },
         ),
         migrations.CreateModel(
-            name='ProblemTags',
+            name="ProblemTags",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Problem Tag',
-                'verbose_name_plural': 'Problem Tags',
-                'db_table': 'problem_tags',
+                "verbose_name": "Problem Tag",
+                "verbose_name_plural": "Problem Tags",
+                "db_table": "problem_tags",
             },
         ),
         migrations.CreateModel(
-            name='Solution',
+            name="Solution",
             fields=[
-                ('id', models.BigAutoField(primary_key=True, serialize=False)),
-                ('code', models.TextField()),
-                ('language', models.CharField(choices=[('CPP', 'C++'), ('JAVA', 'Java'), ('PYTHON', 'Python'), ('JAVASCRIPT', 'JavaScript'), ('TYPESCRIPT', 'TypeScript')], default='PYTHON', max_length=20, verbose_name='Programming Language')),
-                ('status', models.CharField(blank=True, choices=[('INVALID_TESTCASE', 'Invalid Testcase'), ('RUNTIME_ERROR', 'Runtime Error'), ('COMPILE_ERROR', 'Compile Error'), ('WRONG_ANSWER', 'Wrong Answer'), ('SUCCESS', 'Success'), ('TIME_LIMIT_EXCEEDED', 'Time Limit Exceeded'), ('MEMORY_LIMIT_EXCEEDED', 'Memory Limit Exceeded')], max_length=30, null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ("id", models.BigAutoField(primary_key=True, serialize=False)),
+                ("code", models.TextField()),
+                (
+                    "language",
+                    models.CharField(
+                        choices=[
+                            ("CPP", "C++"),
+                            ("JAVA", "Java"),
+                            ("PYTHON", "Python"),
+                            ("JAVASCRIPT", "JavaScript"),
+                            ("TYPESCRIPT", "TypeScript"),
+                        ],
+                        default="PYTHON",
+                        max_length=20,
+                        verbose_name="Programming Language",
+                    ),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("INVALID_TESTCASE", "Invalid Testcase"),
+                            ("RUNTIME_ERROR", "Runtime Error"),
+                            ("COMPILE_ERROR", "Compile Error"),
+                            ("WRONG_ANSWER", "Wrong Answer"),
+                            ("SUCCESS", "Success"),
+                            ("TIME_LIMIT_EXCEEDED", "Time Limit Exceeded"),
+                            ("MEMORY_LIMIT_EXCEEDED", "Memory Limit Exceeded"),
+                        ],
+                        max_length=30,
+                        null=True,
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
             ],
             options={
-                'verbose_name': 'Solution',
-                'verbose_name_plural': 'Solutions',
-                'db_table': 'solution',
-                'ordering': ['-created_at'],
+                "verbose_name": "Solution",
+                "verbose_name_plural": "Solutions",
+                "db_table": "solution",
+                "ordering": ["-created_at"],
             },
         ),
         migrations.CreateModel(
-            name='Tags',
+            name="Tags",
             fields=[
-                ('id', models.BigAutoField(primary_key=True, serialize=False)),
-                ('tags', models.CharField(max_length=255, unique=True)),
+                ("id", models.BigAutoField(primary_key=True, serialize=False)),
+                ("tags", models.CharField(max_length=255, unique=True)),
             ],
             options={
-                'verbose_name': 'Tag',
-                'verbose_name_plural': 'Tags',
-                'db_table': 'tags',
+                "verbose_name": "Tag",
+                "verbose_name_plural": "Tags",
+                "db_table": "tags",
             },
         ),
         migrations.CreateModel(
-            name='Testcase',
+            name="Testcase",
             fields=[
-                ('id', models.BigAutoField(primary_key=True, serialize=False)),
-                ('input', models.TextField(blank=True)),
-                ('output', models.TextField(blank=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ("id", models.BigAutoField(primary_key=True, serialize=False)),
+                ("input", models.TextField(blank=True)),
+                ("output", models.TextField(blank=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
             ],
             options={
-                'verbose_name': 'Test Case',
-                'verbose_name_plural': 'Test Cases',
-                'db_table': 'testcase',
-                'ordering': ['created_at'],
+                "verbose_name": "Test Case",
+                "verbose_name_plural": "Test Cases",
+                "db_table": "testcase",
+                "ordering": ["created_at"],
             },
         ),
     ]
