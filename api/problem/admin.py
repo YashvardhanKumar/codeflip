@@ -31,16 +31,26 @@ class ProblemTagsInline(admin.TabularInline):
 
 @admin.register(Problem)
 class ProblemAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "created_at")
-    list_filter = ("created_at",)
-    search_fields = ("id", "name", "problem_description")
-    readonly_fields = ("id", "created_at")
+    list_display = ('id', 'name', 'get_editorial_discussion', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = ('id', 'name', 'problem_description')
+    readonly_fields = ('id', 'created_at', 'get_editorial_discussion')
     inlines = [CodeblockInline, TestcaseInline, ProblemTagsInline]
 
     fieldsets = (
-        (None, {"fields": ("id", "name", "problem_description")}),
-        ("Metadata", {"fields": ("created_at",)}),
+        (None, {'fields': ('id', 'name', 'problem_description', 'get_editorial_discussion')}),
+        ('Metadata', {'fields': ('created_at',)}),
     )
+    
+    def get_editorial_discussion(self, obj):
+        editorial = obj.discussions.filter(is_editorial=True).first()
+        if editorial:
+            from django.utils.html import format_html
+            from django.urls import reverse
+            url = reverse('admin:problem_discuss_change', args=[editorial.id])
+            return format_html('<a href="{}">Discussion #{}</a>', url, editorial.id)
+        return "None"
+    get_editorial_discussion.short_description = 'Editorial Discussion'
 
     def get_description_preview(self, obj):
         return (
@@ -123,18 +133,25 @@ class DiscussTagsInline(admin.TabularInline):
 
 @admin.register(Discuss)
 class DiscussAdmin(admin.ModelAdmin):
-    list_display = ("id", "title", "author", "problem", "created_at")
-    list_filter = ("created_at", "problem")
-    search_fields = ("title", "body", "author__username")
-    readonly_fields = ("id", "created_at")
-    raw_id_fields = ("author", "problem", "user")
+    list_display = ('id', 'title', 'author', 'problem', 'is_editorial', 'created_at')
+    list_filter = ('is_editorial', 'created_at', 'problem')
+    search_fields = ('title', 'body', 'author__username')
+    readonly_fields = ('id', 'created_at')
+    raw_id_fields = ('author', 'problem', 'user')
     inlines = [DiscussTagsInline]
 
     fieldsets = (
-        (None, {"fields": ("id", "title", "body")}),
-        ("Relations", {"fields": ("author", "user", "problem")}),
-        ("Metadata", {"fields": ("created_at",)}),
+        (None, {'fields': ('id', 'title', 'body', 'is_editorial')}),
+        ('Relations', {'fields': ('author', 'user', 'problem')}),
+        ('Metadata', {'fields': ('created_at',)}),
     )
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly = list(self.readonly_fields)
+        if obj:
+            if not request.user.is_staff and not request.user.is_superuser:
+                readonly.append('is_editorial')
+        return tuple(readonly)
 
 
 @admin.register(DiscussTags)

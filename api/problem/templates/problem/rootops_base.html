@@ -1,0 +1,337 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+    :root {
+        --admin-bg: #121212;
+        --header-bg: #417690;
+        --sidebar-bg: #ffffff;
+        --sidebar-header: #79aec8;
+        --text-color: #f5f5f5;
+        --link-color: #3498db;
+    }
+
+    /* Absolute Reset */
+    html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        height: 100vh !important;
+        width: 100vw !important;
+        overflow: hidden !important;
+        background: var(--admin-bg) !important;
+    }
+
+    #container {
+        padding: 0 !important;
+        margin: 0 !important;
+        height: 100vh !important;
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        min-width: 0 !important;
+    }
+
+    /* Hide default Django admin containers completely */
+    #header, .breadcrumbs, #content-main, #footer, .messagelist {
+        display: none !important;
+    }
+    
+    /* Make the content container fill the whole space */
+    #content {
+        padding: 0 !important;
+        margin: 0 !important;
+        flex: 1 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+        width: 100% !important;
+        background: var(--admin-bg) !important;
+    }
+
+    /* Our Custom Navbar */
+    .sub-header {
+        background: #2c3e50;
+        color: #ecf0f1;
+        padding: 8px 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 13px;
+        flex-shrink: 0;
+        height: 40px;
+        box-sizing: border-box;
+        width: 100%;
+        z-index: 1000;
+    }
+
+    .sub-header .left-links {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .sub-header a {
+        color: #3498db;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .sub-header .user-tools {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .sub-header .user-tools b {
+        color: #f1c40f;
+    }
+
+    .logout-btn {
+        background: #c0392b;
+        color: white !important;
+        padding: 2px 8px;
+        border-radius: 3px;
+        font-weight: bold;
+        border: none;
+        cursor: pointer;
+        font-size: 12px;
+    }
+
+    /* Layout */
+    .dashboard-container {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+        width: 100%;
+    }
+
+    #sidebar {
+        width: 260px;
+        background: var(--sidebar-bg);
+        border-right: 1px solid #ddd;
+        overflow-y: auto;
+        height: 100%;
+        transition: transform 0.3s ease;
+        flex-shrink: 0;
+    }
+
+    #sidebar.collapsed {
+        transform: translateX(-260px);
+        margin-right: -260px;
+    }
+
+    #main-content-area {
+        flex: 1;
+        background: var(--admin-bg);
+        position: relative;
+        overflow-y: auto;
+        height: 100%;
+        padding-bottom: 100px;
+    }
+
+    /* Sidebar Styling */
+    .sidebar-section {
+        margin-bottom: 0;
+    }
+
+    .sidebar-header {
+        background: var(--sidebar-header);
+        color: white;
+        padding: 8px 12px;
+        font-weight: bold;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .sidebar-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .sidebar-list li a {
+        display: block;
+        padding: 12px 15px;
+        color: #444;
+        text-decoration: none;
+        font-size: 14px;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .sidebar-list li a i {
+        width: 18px;
+        text-align: center;
+        font-size: 16px;
+        color: #555;
+    }
+
+    .sidebar-list li a:hover {
+        background: #e1f1f8;
+    }
+
+    .sidebar-list li.active a {
+        background: #e1f1f8;
+        font-weight: bold;
+        border-left: 4px solid var(--link-color);
+        padding-left: 11px;
+    }
+
+    .toggle-btn {
+        background: #417690;
+        color: white;
+        border: none;
+        padding: 4px 8px;
+        cursor: pointer;
+        border-radius: 3px;
+        margin-right: 10px;
+    }
+
+    /* Custom scrollbar for sidebar */
+    #sidebar::-webkit-scrollbar {
+        width: 5px;
+    }
+    #sidebar::-webkit-scrollbar-thumb {
+        background: #ccc;
+    }
+
+    /* Unified Message Styling */
+    .rootops-messages {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        width: 100%;
+    }
+    .rootops-messages li {
+        padding: 12px 20px;
+        margin-bottom: 1px;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        font-weight: bold;
+        position: relative;
+    }
+    .rootops-messages li .close-msg {
+        margin-left: auto;
+        cursor: pointer;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+    }
+    .rootops-messages li .close-msg:hover {
+        opacity: 1;
+    }
+    .rootops-messages li.success {
+        background: #27ae60;
+        color: white;
+    }
+    .rootops-messages li.error {
+        background: #c0392b;
+        color: white;
+    }
+    .rootops-messages li.warning {
+        background: #f39c12;
+        color: white;
+    }
+    .rootops-messages li.info {
+        background: #2980b9;
+        color: white;
+    }
+</style>
+{% block rootops_extra_style %}{% endblock %}
+{% endblock %}
+
+{% block header %}{% endblock %}
+{% block breadcrumbs %}{% endblock %}
+
+{% block content %}
+<!-- Custom Top Navbar -->
+<div class="sub-header">
+    <div class="left-links">
+        <button class="toggle-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+        <a href="http://localhost" target="_blank"><i class="fas fa-home"></i> Home Page (localhost)</a>
+        <a href="http://localhost/api/admin" target="_blank"><i class="fas fa-cog"></i> Django Admin (localhost/admin)</a>
+    </div>
+    <div class="user-tools">
+        Logged in as: <b>{{ user.username }}</b> ({{ user.email }})
+        <form action="{% url 'admin:logout' %}" method="post" style="display: inline; margin-left: 10px;">
+            {% csrf_token %}
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
+    </div>
+</div>
+
+<div class="dashboard-container">
+    <div id="sidebar">
+        <!-- Root Operations -->
+        <div class="sidebar-section">
+            <div class="sidebar-header">Root Operations</div>
+            <ul class="sidebar-list">
+                <li class="{% if request.resolver_match.url_name == 'rootops' %}active{% endif %}">
+                    <a href="{% url 'rootops' %}"><i class="fas fa-tachometer-alt"></i> Dashboard Home</a>
+                </li>
+                <li class="{% if request.resolver_match.url_name == 'add_problem_custom' %}active{% endif %}">
+                    <a href="{% url 'add_problem_custom' %}"><i class="fas fa-plus"></i> Add a Problem</a>
+                </li>
+                <li class="{% if request.resolver_match.url_name == 'add_testcase_custom' %}active{% endif %}">
+                    <a href="{% url 'add_testcase_custom' %}"><i class="fas fa-flask"></i> Add Testcases</a>
+                </li>
+                <li class="{% if request.resolver_match.url_name == 'add_ai_testcases' %}active{% endif %}">
+                    <a href="{% url 'add_ai_testcases' %}"><i class="fas fa-robot"></i> Add AI Testcases</a>
+                </li>
+                <li class="{% if request.resolver_match.url_name == 'moderator_login' %}active{% endif %}">
+                    <a href="{% url 'moderator_login' %}"><i class="fas fa-user-shield"></i> Moderator Login</a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Dynamic Admin Apps -->
+        {% for app in app_list %}
+        <div class="sidebar-section">
+            <div class="sidebar-header">{{ app.name }}</div>
+            <ul class="sidebar-list">
+                {% for model in app.models %}
+                <li>
+                    <a href="{{ model.admin_url }}"><i class="fas fa-database"></i> {{ model.name }}</a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div id="main-content-area">
+        {% if messages %}
+        <ul class="rootops-messages">
+            {% for message in messages %}
+            <li class="{{ message.tags }}">
+                {% if message.tags == 'success' %}<i class="fas fa-check-circle"></i>{% endif %}
+                {% if message.tags == 'error' %}<i class="fas fa-exclamation-triangle"></i>{% endif %}
+                {% if message.tags == 'info' %}<i class="fas fa-info-circle"></i>{% endif %}
+                {% if message.tags == 'warning' %}<i class="fas fa-exclamation-circle"></i>{% endif %}
+                <span>{{ message }}</span>
+                <i class="fas fa-times close-msg" onclick="this.parentElement.style.display='none'"></i>
+            </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        
+        {% block rootops_content %}{% endblock %}
+    </div>
+</div>
+
+<script>
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        sidebar.classList.toggle('collapsed');
+    }
+</script>
+{% endblock %}

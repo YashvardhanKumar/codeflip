@@ -2,11 +2,6 @@
 # If you need more help, visit the Docker Compose reference guide at
 # https://docs.docker.com/go/compose-spec-reference/
 
-# Here the instructions define your application as a service called "server".
-# This service is built from the Dockerfile in the current directory.
-# You can add other services your application may depend on here, such as a
-# database or a cache. For examples, see the Awesome Compose repository:
-# https://github.com/docker/awesome-compose
 services:
 
   nginx:
@@ -24,6 +19,7 @@ services:
       - web
     networks:
       - app-network
+
   api:
     container_name: api
     build:
@@ -36,10 +32,25 @@ services:
     tty: true
     depends_on:
       - cdb
+      - redis
     volumes:
-      - ./api:/home/coderacer/api/
+      - ./api:/home/codeflip/api/
       - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - app-network
 
+  worker:
+    container_name: celery_worker
+    build:
+      context: ./api
+    command: celery -A apps worker --loglevel=info
+    env_file:
+      - ./api/.env
+    depends_on:
+      - cdb
+      - redis
+    volumes:
+      - ./api:/home/codeflip/api/
     networks:
       - app-network
 
@@ -48,14 +59,24 @@ services:
     build:
       context: ./web
     environment:
-      NODE_ENV: production
+      NODE_ENV: development
     restart: always
     init: true
     stdin_open: true
     tty: true
     command: bun dev
     volumes:
-      - ./web:/home/coderacer/web/
+      - ./web:/home/codeflip/web/
+      - /home/codeflip/web/node_modules/
+    networks:
+      - app-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: always
+    volumes:
+      - redis_data:/data
     networks:
       - app-network
 
@@ -73,6 +94,18 @@ services:
       POSTGRES_PASSWORD: admin
     networks:
       - app-network
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    restart: unless-stopped
+    command:
+      - "http"
+      - "nginx:80" # Points directly to the Nginx service name inside Docker
+    environment:
+      NGROK_AUTHTOKEN: 3EB4T8u4Y5lznXgMSXTI9Tia5di_2KH2m3shLDEP3ja8szUJ5
+    depends_on:
+      - nginx
+  
 
 volumes:
   pg_data:

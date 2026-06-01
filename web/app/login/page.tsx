@@ -21,8 +21,8 @@ export default function LoginPage() {
     e.preventDefault()
     setIsLoading(true)
     try {
-      const response = await apiClient.post('/auth/login/', formData)
-      login(response.data.token, response.data.user)
+      const response = await apiClient.post("auth/login/", formData);
+      login(response.data.token, response.data.user);
     } catch (error: any) {
       toast.error(
         error.response?.data?.error ||
@@ -225,11 +225,8 @@ export default function LoginPage() {
             </div>
 
             <p className="text-center text-sm text-slate-500 dark:text-slate-400">
-              New to CodeRacer?{' '}
-              <Link
-                href="/signup"
-                className="text-primary hover:underline font-bold"
-              >
+              New to CodeFlip?{" "}
+              <Link href="/signup" className="text-primary hover:underline font-bold">
                 Create an account
               </Link>
             </p>
@@ -237,7 +234,7 @@ export default function LoginPage() {
         </div>
 
         <div className="p-8 text-center text-xs text-slate-400">
-          © 2026 CodeRacer Platform. All rights reserved.
+          © 2026 CodeFlip Platform. All rights reserved.
         </div>
       </div>
     </div>

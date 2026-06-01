@@ -1,18 +1,40 @@
 // components/Sidebar.tsx
-import useSWR from 'swr'
-import FilterAccordion from './filter-accordion'
-import { BASE_URL } from '@/lib/constants'
-import { Tag } from '@/lib/models'
-import { Skeleton } from './ui/skeleton'
-import { motion } from 'framer-motion'
-import { useAuth } from './auth-provider'
-import { Button } from './ui/button'
-import Link from 'next/link'
+import useSWR from "swr";
+import FilterAccordion from "./filter-accordion";
+import { Difficulty, PaginatedResponse, Tag } from "@/lib/models";
+import { Skeleton } from "./ui/skeleton";
+import { motion } from "framer-motion";
+import { useAuth } from "./auth-provider";
+import { Button } from "./ui/button";
+import Link from "next/link";
+import { apiFetcher } from "@/lib/utils";
 
-export default function Sidebar() {
-  const { user } = useAuth()
-  const fetcher = (url: string) => fetch(url).then((r) => r.json())
-  const { data: tags, isLoading } = useSWR(`${BASE_URL}/api/tags/`, fetcher)
+type ProgressFilter = "solved" | "unsolved" | "attempted";
+
+interface SidebarProps {
+  selectedStatuses: ProgressFilter[];
+  selectedDifficulties: Difficulty[];
+  selectedTags: number[];
+  onToggleStatus: (status: ProgressFilter) => void;
+  onToggleDifficulty: (difficulty: Difficulty) => void;
+  onToggleTag: (tagId: number) => void;
+  onReset: () => void;
+}
+
+export default function Sidebar({
+  selectedStatuses,
+  selectedDifficulties,
+  selectedTags,
+  onToggleStatus,
+  onToggleDifficulty,
+  onToggleTag,
+  onReset,
+}: SidebarProps) {
+  const { user } = useAuth();
+  const { data: tags, isLoading } = useSWR<PaginatedResponse<Tag>>(
+    "tags/",
+    apiFetcher,
+  );
 
   const container = {
     hidden: { opacity: 0 },
@@ -22,12 +44,12 @@ export default function Sidebar() {
         staggerChildren: 0.1,
       },
     },
-  }
+  };
 
   const item = {
     hidden: { opacity: 0, x: -20 },
     show: { opacity: 1, x: 0 },
-  }
+  };
 
   return (
     <aside className="w-full lg:w-72 shrink-0 flex flex-col gap-6">
@@ -65,7 +87,9 @@ export default function Sidebar() {
       {/* Filter Header for Mobile */}
       <div className="flex lg:hidden items-center justify-between">
         <h3 className="font-bold text-lg">Filters</h3>
-        <button className="text-primary text-sm font-medium">Reset</button>
+        <button onClick={onReset} className="text-primary text-sm font-medium">
+          Reset
+        </button>
       </div>
 
       <motion.div
@@ -78,9 +102,21 @@ export default function Sidebar() {
         <motion.div variants={item}>
           <FilterAccordion icon="task_alt" title="Status" defaultOpen>
             <div className="pb-3 pt-1 flex flex-col gap-2">
-              <CheckboxItem label="Solved" />
-              <CheckboxItem label="Unsolved" />
-              <CheckboxItem label="Attempted" />
+              <CheckboxItem
+                label="Solved"
+                checked={selectedStatuses.includes("solved")}
+                onChange={() => onToggleStatus("solved")}
+              />
+              <CheckboxItem
+                label="Unsolved"
+                checked={selectedStatuses.includes("unsolved")}
+                onChange={() => onToggleStatus("unsolved")}
+              />
+              <CheckboxItem
+                label="Attempted"
+                checked={selectedStatuses.includes("attempted")}
+                onChange={() => onToggleStatus("attempted")}
+              />
             </div>
           </FilterAccordion>
         </motion.div>
@@ -95,16 +131,22 @@ export default function Sidebar() {
             <div className="pb-3 pt-1 flex flex-col gap-2">
               <CheckboxItem
                 label="Easy"
+                checked={selectedDifficulties.includes(Difficulty.EASY)}
+                onChange={() => onToggleDifficulty(Difficulty.EASY)}
                 checkboxColor="checked:bg-green-500 checked:border-green-500"
                 labelColor="text-green-600 dark:text-green-500"
               />
               <CheckboxItem
                 label="Medium"
+                checked={selectedDifficulties.includes(Difficulty.MEDIUM)}
+                onChange={() => onToggleDifficulty(Difficulty.MEDIUM)}
                 checkboxColor="checked:bg-yellow-500 checked:border-yellow-500"
                 labelColor="text-yellow-600 dark:text-yellow-500"
               />
               <CheckboxItem
                 label="Hard"
+                checked={selectedDifficulties.includes(Difficulty.HARD)}
+                onChange={() => onToggleDifficulty(Difficulty.HARD)}
                 checkboxColor="checked:bg-red-500 checked:border-red-500"
                 labelColor="text-red-600 dark:text-red-500"
               />
@@ -124,12 +166,18 @@ export default function Sidebar() {
                 </>
               ) : (
                 tags?.results.map((t: Tag) => (
-                  <span
+                  <button
+                    type="button"
                     key={t.id}
-                    className="cursor-pointer px-2 py-1 bg-slate-100 dark:bg-slate-800 text-xs rounded text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-primary dark:hover:text-white transition-all transform hover:scale-105"
+                    onClick={() => onToggleTag(t.id)}
+                    className={`cursor-pointer px-2 py-1 text-xs rounded transition-all transform hover:scale-105 ${
+                      selectedTags.includes(t.id)
+                        ? "bg-primary text-white shadow-sm shadow-primary/20"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-primary dark:hover:text-white"
+                    }`}
                   >
                     {t.tags}
-                  </span>
+                  </button>
                 ))
               )}
             </div>
@@ -168,12 +216,16 @@ export default function Sidebar() {
 // Checkbox Item Component
 function CheckboxItem({
   label,
-  checkboxColor = 'checked:bg-primary checked:border-primary',
-  labelColor = 'text-slate-600 dark:text-text-secondary',
+  checked,
+  onChange,
+  checkboxColor = "checked:bg-primary checked:border-primary",
+  labelColor = "text-slate-600 dark:text-text-secondary",
 }: {
-  label: string
-  checkboxColor?: string
-  labelColor?: string
+  label: string;
+  checked: boolean;
+  onChange: () => void;
+  checkboxColor?: string;
+  labelColor?: string;
 }) {
   return (
     <label className="flex items-center gap-3 cursor-pointer group/item">
@@ -181,6 +233,8 @@ function CheckboxItem({
         <input
           className={`peer size-4 appearance-none rounded border border-slate-300 dark:border-slate-600 bg-transparent transition-all ${checkboxColor}`}
           type="checkbox"
+          checked={checked}
+          onChange={onChange}
         />
         <span className="material-symbols-outlined absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white text-xs opacity-0 peer-checked:opacity-100 pointer-events-none">
           check

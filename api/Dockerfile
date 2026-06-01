@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Workdir
-WORKDIR /home/coderacer/api
+WORKDIR /home/codeflip/api
 
 # Install Python deps first (layer caching)
 COPY requirements.txt .

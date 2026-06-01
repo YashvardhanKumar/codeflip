@@ -6,8 +6,8 @@
 // const inter = Inter({ subsets: ['latin'] });
 
 // export const metadata: Metadata = {
-//   title: 'Problem List - Coderacer Clone',
-//   description: 'A Coderacer clone built with Next.js',
+//   title: 'Problem List - CodeFlip Clone',
+//   description: 'A CodeFlip clone built with Next.js',
 // };
 
 // export default function RootLayout({
@@ -45,7 +45,7 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'CodeRacer - Master Your Coding Skills',
+  title: 'CodeFlip - Master Your Coding Skills',
   description: 'A competitive coding platform for developers.',
 }
 
@@ -62,6 +62,26 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
           rel="stylesheet"
         />
+        <style dangerouslySetInnerHTML={{ __html: `
+          mjx-container {
+            display: inline-block !important;
+            margin: 0 0.15em !important;
+            vertical-align: -0.125em !important;
+            max-width: 100%;
+          }
+          mjx-container svg {
+            display: inline !important;
+            margin: 0 !important;
+          }
+          mjx-container[display="true"] {
+            display: block !important;
+            text-align: center !important;
+            margin: 1rem 0 !important;
+          }
+          mjx-container[display="true"] svg {
+            display: inline-block !important;
+          }
+        ` }} />
       </head>
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} font-display antialiased selection:bg-primary/30 bg-background-light dark:bg-background-dark text-slate-900 dark:text-white`}

@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
-  title: Coderacer API
-  version: 1.0.0
-  description: This is the API documentation for the Coderacer application.
+  title: CodeFlip API
+  version: 0.0.0
+  description: This is the API documentation for the CodeFlip application.
 paths:
   /api/codeblocks/:
     get:

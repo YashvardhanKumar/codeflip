@@ -85,22 +85,14 @@ export default function LandingPage() {
               <Zap size={14} />
               <span>The ultimate coding race begins</span>
             </motion.div>
+<motion.h1 variants={itemVariants} className="text-5xl md:text-7xl font-bold tracking-tight mb-6 bg-clip-text text-transparent bg-linear-to-b from-slate-900 to-slate-600 dark:from-white dark:to-slate-400">
 
-            <motion.h1
-              variants={itemVariants}
-              className="text-5xl md:text-7xl font-bold tracking-tight mb-6 bg-clip-text text-transparent bg-linear-to-b from-slate-900 to-slate-600 dark:from-white dark:to-slate-400"
-            >
-              Master Your Code, <br />
+              Master Your Code, <br /> 
               <span className="text-primary">Outpace the Rest.</span>
             </motion.h1>
 
-            <motion.p
-              variants={itemVariants}
-              className="text-lg md:text-xl text-slate-600 dark:text-text-secondary mb-10 max-w-2xl mx-auto"
-            >
-              CodeRacer is where developers sharpen their skills, compete in
-              real-time, and climb the global leaderboard. Join thousands of
-              developers today.
+            <motion.p variants={itemVariants} className="text-lg md:text-xl text-slate-600 dark:text-text-secondary mb-10 max-w-2xl mx-auto">
+              CodeFlip is where developers sharpen their skills, compete in real-time, and climb the global leaderboard. Join thousands of developers today.
             </motion.p>
 
             <motion.div
@@ -168,9 +160,7 @@ print(solve(42))`}</code>
         <section className="py-20 bg-slate-50 dark:bg-surface-dark/30">
           <div className="max-w-7xl mx-auto px-4">
             <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                Why CodeRacer?
-              </h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">Why CodeFlip?</h2>
               <p className="text-slate-600 dark:text-text-secondary max-w-xl mx-auto">
                 Built by developers for developers, focusing on performance,
                 community, and skill growth.
@@ -264,9 +254,7 @@ print(solve(42))`}</code>
               Terms
             </Link>
           </div>
-          <p className="text-sm text-slate-400">
-            © 2026 CodeRacer. All rights reserved.
-          </p>
+          <p className="text-sm text-slate-400">© 2026 CodeFlip. All rights reserved.</p>
         </div>
       </footer>
     </div>

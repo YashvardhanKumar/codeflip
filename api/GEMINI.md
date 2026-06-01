@@ -1,6 +1,6 @@
 # API Backend (Django)
 
-This directory contains the Django REST Framework backend for CodeRacer.
+This directory contains the Django REST Framework backend for CodeFlip.
 
 ## Tech Stack
 - **Python**: 3.13+

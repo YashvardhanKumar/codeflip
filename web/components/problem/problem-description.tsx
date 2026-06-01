@@ -1,20 +1,25 @@
 // components/problem/ProblemDescription.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
-import TabButton from '@/components/tab-button'
-import DifficultyBadge from '@/components/difficulty-badge'
-import CodeBlock from '@/components/code-block'
-import { ResizablePanel } from '../ui/resizable'
-import { Problem, Solution, Status } from '@/lib/models'
-import Script from 'next/script'
-import { useAuth } from '@/components/auth-provider'
-import useSWR from 'swr'
-import { BASE_URL } from '@/lib/constants'
-import { Loader } from '@/components/loader'
-import { format } from 'date-fns'
-import { CheckCircle2, XCircle, Clock, AlertCircle } from 'lucide-react'
-import Link from 'next/link'
+import { useState, useEffect, useMemo } from 'react';
+import TabButton from '@/components/tab-button';
+import DifficultyBadge from '@/components/difficulty-badge';
+import CodeBlock from '@/components/code-block';
+import { ResizablePanel } from '../ui/resizable';
+import { Discuss, PaginatedResponse, Problem, Solution, Status } from '@/lib/models';
+import Script from 'next/script';
+import { useAuth } from '@/components/auth-provider';
+import useSWR from 'swr';
+import { SubmissionSkeleton } from '@/components/loader';
+import { CheckCircle2, XCircle, Clock, AlertCircle } from 'lucide-react';
+import Link from 'next/link';
+import { apiFetcher, formatInUserTimezone } from '@/lib/utils';
+import SubmissionResult from './submission-result';
+import { AnimatePresence } from 'framer-motion';
+import { apiFetch } from '@/lib/utils';
+import EditorialTab from './editorial-tab';
+import SolutionsTab from './solutions-tab';
+import SolutionDetail from './solution-detail';
 
 declare global {
   interface Window {
@@ -34,8 +39,23 @@ interface Props {
 }
 
 export default function ProblemDescription({ problem }: Props) {
-  const [activeTab, setActiveTab] = useState('description')
-  const { user } = useAuth()
+  const [activeTab, setActiveTab] = useState('description');
+  const [selectedSubmissionId, setSelectedSubmissionId] = useState<number | null>(null);
+  const [selectedSubmission, setSelectedSubmission] = useState<Solution | null>(null);
+  const [viewingSolution, setViewingSolution] = useState<Discuss | null>(null);
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
+  const { user } = useAuth();
+
+  const { data: submissionsData } = useSWR<PaginatedResponse<Solution> | Solution[]>(
+    user ? `solutions/?problem_id=${problem.id}` : null,
+    apiFetcher
+  );
+
+  const history = useMemo(() => {
+    const subs = Array.isArray(submissionsData) ? submissionsData : submissionsData?.results || [];
+    // Only include submissions that have results for graphing
+    return subs.filter(s => s.status === Status.SUCCESS && s.testcase_results);
+  }, [submissionsData]);
 
   useEffect(() => {
     if (window.MathJax && window.MathJax.typesetPromise) {
@@ -43,11 +63,46 @@ export default function ProblemDescription({ problem }: Props) {
     }
   }, [problem, activeTab])
 
+  const handleViewSubmission = async (id: number) => {
+    setSelectedSubmissionId(id);
+    setIsDetailLoading(true);
+    try {
+      const data = await apiFetch(`solutions/${id}/`);
+      const json = await data.json();
+      setSelectedSubmission(json);
+    } catch (error) {
+      console.error("Error fetching submission details:", error);
+    } finally {
+      setIsDetailLoading(false);
+    }
+  };
+
   return (
-    <ResizablePanel
-      defaultSize={50}
-      className="flex flex-col border-r border-surface-border bg-background-dark overflow-hidden relative"
-    >
+    <ResizablePanel defaultSize={50} className="flex flex-col border-r border-surface-border bg-background-dark overflow-hidden relative">
+      <AnimatePresence>
+        {selectedSubmission && (
+          <SubmissionResult 
+            solution={selectedSubmission}
+            onClose={() => setSelectedSubmission(null)}
+            testcases={problem.testcases}
+            history={history}
+          />
+        )}
+        {viewingSolution && (
+          <SolutionDetail 
+            solution={viewingSolution}
+            onClose={() => setViewingSolution(null)}
+            currentUser={user}
+          />
+        )}
+      </AnimatePresence>
+      
+      {isDetailLoading && (
+        <div className="absolute inset-0 bg-background-dark/50 z-[60] flex items-center justify-center">
+          <div className="animate-spin size-8 border-4 border-primary border-t-transparent rounded-full"></div>
+        </div>
+      )}
+
       <Script id="mathjax-config" strategy="lazyOnload">
         {`
           window.MathJax = {
@@ -81,23 +136,26 @@ export default function ProblemDescription({ problem }: Props) {
       </div>
 
       {/* Content Scroll Area */}
-      <div className="flex-1 overflow-y-auto p-5 pb-20">
-        {activeTab === 'description' && (
-          <DescriptionContent problem={problem} />
-        )}
-        {activeTab === 'editorial' && (
-          <div className="text-gray-400">Editorial content...</div>
-        )}
+      <div className="flex-1 overflow-y-auto p-5 pb-10">
+        {activeTab === 'description' && <DescriptionContent problem={problem} />}
+        {activeTab === 'editorial' && <EditorialTab problem={problem} />}
         {activeTab === 'solutions' && (
-          <div className="text-gray-400">Solutions content...</div>
+          <SolutionsTab 
+            problem={problem} 
+            onViewSolution={(sol) => setViewingSolution(sol)} 
+          />
         )}
         {activeTab === 'submissions' && (
-          <SubmissionsTab problemId={problem.id} authenticated={!!user} />
+          <SubmissionsTab 
+            problemId={problem.id} 
+            authenticated={!!user} 
+            onViewDetail={handleViewSubmission}
+          />
         )}
       </div>
 
       {/* Footer */}
-      <div className="absolute bottom-0 w-full h-10 bg-surface-dark border-t border-surface-border flex items-center justify-between px-4 z-10">
+      <div className="w-full h-10 bg-surface-dark border-t border-surface-border flex items-center justify-between px-4 z-10 shrink-0">
         <button className="text-gray-400 hover:text-white text-xs flex items-center gap-1">
           <span className="material-symbols-outlined text-base">forum</span>
           Discussion (32)
@@ -209,24 +267,19 @@ function DescriptionContent({ problem }: Props) {
   )
 }
 
-function SubmissionsTab({
-  problemId,
-  authenticated,
-}: {
-  problemId: number
-  authenticated: boolean
+function SubmissionsTab({ 
+  problemId, 
+  authenticated, 
+  onViewDetail 
+}: { 
+  problemId: number, 
+  authenticated: boolean,
+  onViewDetail: (id: number) => void
 }) {
-  const fetcher = (url: string) =>
-    fetch(url, {
-      headers: {
-        Authorization: `Token ${localStorage.getItem('token')}`,
-      },
-    }).then((r) => r.json())
-
-  const { data, error, isLoading } = useSWR(
-    authenticated ? `${BASE_URL}/api/solutions/?problem_id=${problemId}` : null,
-    fetcher
-  )
+  const { data, error, isLoading } = useSWR<PaginatedResponse<Solution> | Solution[]>(
+    authenticated ? `solutions/?problem_id=${problemId}` : null,
+    apiFetcher
+  );
 
   if (!authenticated) {
     return (
@@ -250,12 +303,14 @@ function SubmissionsTab({
     )
   }
 
-  if (isLoading)
-    return (
-      <div className="py-10">
-        <Loader />
-      </div>
-    )
+  if (isLoading) return <div className="py-4"><SubmissionSkeleton /></div>;
+  
+  if (error || !data) return (
+    <div className="py-10 text-red-500 flex items-center gap-2">
+      <AlertCircle size={20} />
+      <span>Failed to load submissions</span>
+    </div>
+  );
 
   if (error || !data)
     return (
@@ -283,8 +338,8 @@ function SubmissionsTab({
   return (
     <div className="space-y-4 animate-in fade-in duration-300">
       <h3 className="text-lg font-bold text-white mb-6">Past Submissions</h3>
-      <div className="w-full overflow-hidden rounded-xl border border-surface-border">
-        <table className="w-full text-left border-collapse">
+      <div className="w-full overflow-x-auto rounded-xl border border-surface-border">
+        <table className="w-full text-left border-collapse min-w-[400px]">
           <thead className="bg-surface-dark/50 text-gray-400 text-xs uppercase tracking-wider">
             <tr>
               <th className="px-4 py-3 font-medium">Status</th>
@@ -294,9 +349,10 @@ function SubmissionsTab({
           </thead>
           <tbody className="divide-y divide-surface-border bg-background-dark">
             {submissions.map((sub) => (
-              <tr
-                key={sub.id}
-                className="hover:bg-white/5 transition-colors group"
+              <tr 
+                key={sub.id} 
+                className="hover:bg-white/5 transition-colors group cursor-pointer"
+                onClick={() => onViewDetail(sub.id)}
               >
                 <td className="px-4 py-4">
                   <div className="flex items-center gap-2">
@@ -316,7 +372,7 @@ function SubmissionsTab({
                   {sub.language_display}
                 </td>
                 <td className="px-4 py-4 text-xs text-gray-500">
-                  {format(new Date(sub.created_at), 'MMM d, yyyy HH:mm')}
+                  {formatInUserTimezone(sub.created_at, 'MMM d, yyyy HH:mm')}
                 </td>
               </tr>
             ))}

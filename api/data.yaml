@@ -838,7 +838,7 @@
     username: admin
     first_name: ''
     last_name: ''
-    email: admin@coderacer.com
+    email: admin@codeflip.com
     is_staff: true
     is_active: true
     date_joined: 2025-12-26 12:04:39.566649+00:00
@@ -856,7 +856,7 @@
     username: admin2
     first_name: ''
     last_name: ''
-    email: admin@coderacer.com
+    email: admin@codeflip.com
     is_staff: true
     is_active: true
     date_joined: 2026-04-17 05:21:04.729451+00:00
