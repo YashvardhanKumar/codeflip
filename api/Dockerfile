@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.13-slim
 
 # Environment sanity
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -15,12 +15,11 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 # Workdir
 WORKDIR /home/codeflip/api
 
-# Install Python deps first (layer caching)
-COPY requirements.txt .
-RUN uv pip install --system -r requirements.txt
-
 # Copy project
 COPY . .
+
+# Install Python deps
+RUN uv pip install --system -r requirements.txt
 
 # Expose Django port
 EXPOSE 8000
