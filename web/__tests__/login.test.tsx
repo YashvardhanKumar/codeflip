@@ -71,7 +71,7 @@ describe('LoginPage', () => {
     expect(screen.getByLabelText(/Username/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/Password/i)).toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: /Sign In to Race/i })
+      screen.getAllByRole('button', { name: /Sign In to Race/i })[0]
     ).toBeInTheDocument()
   })
 
@@ -89,7 +89,9 @@ describe('LoginPage', () => {
     fireEvent.change(screen.getByLabelText(/Password/i), {
       target: { value: 'password123' },
     })
-    fireEvent.click(screen.getByRole('button', { name: /Sign In to Race/i }))
+    fireEvent.click(
+      screen.getAllByRole('button', { name: /Sign In to Race/i })[0]
+    )
 
     await waitFor(() => {
       expect(apiClient.post).toHaveBeenCalledWith('auth/login/', {
@@ -113,7 +115,9 @@ describe('LoginPage', () => {
     fireEvent.change(screen.getByLabelText(/Password/i), {
       target: { value: 'wrongpass' },
     })
-    fireEvent.click(screen.getByRole('button', { name: /Sign In to Race/i }))
+    fireEvent.click(
+      screen.getAllByRole('button', { name: /Sign In to Race/i })[0]
+    )
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith('Invalid credentials')

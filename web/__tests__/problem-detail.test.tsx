@@ -3,6 +3,7 @@ import ProblemDetailPage from '../app/problems/[id]/page'
 import { AuthProvider } from '@/components/auth-provider'
 import useSWR from 'swr'
 import { useParams } from 'next/navigation'
+import { describe, it, expect, jest } from 'bun:test'
 
 // Mock next/navigation
 jest.mock('next/navigation', () => ({
@@ -14,7 +15,35 @@ jest.mock('next/navigation', () => ({
 }))
 
 // Mock useSWR
-jest.mock('swr')
+jest.mock('swr', () => ({
+  __esModule: true,
+  default: jest.fn(),
+}))
+
+// Mock components
+jest.mock('@/components/problem/code-editor', () => ({
+  __esModule: true,
+  default: () => <div data-testid="code-editor">Code Editor</div>,
+}))
+jest.mock('@/components/problem/problem-description', () => ({
+  __esModule: true,
+  default: () => <div data-testid="problem-description">Description</div>,
+}))
+jest.mock('@/components/header', () => ({
+  __esModule: true,
+  default: () => <div data-testid="problem-header">Header</div>,
+}))
+
+// Mock react-resizable-panels
+jest.mock('react-resizable-panels', () => ({
+  PanelGroup: ({ children }: any) => (
+    <div data-testid="panel-group">{children}</div>
+  ),
+  Panel: ({ children }: any) => <div data-testid="panel">{children}</div>,
+  PanelResizeHandle: ({ children }: any) => (
+    <div data-testid="resize-handle">{children}</div>
+  ),
+}))
 
 // Mock framer-motion
 jest.mock('framer-motion', () => {
@@ -43,28 +72,6 @@ jest.mock('framer-motion', () => {
     AnimatePresence: ({ children }: any) => <>{children}</>,
   }
 })
-
-// Mock heavy components
-jest.mock('@/components/problem/code-editor', () => () => (
-  <div data-testid="code-editor">Code Editor</div>
-))
-jest.mock('@/components/problem/problem-description', () => () => (
-  <div data-testid="problem-description">Description</div>
-))
-jest.mock('@/components/header', () => () => (
-  <div data-testid="problem-header">Header</div>
-))
-
-// Mock react-resizable-panels
-jest.mock('react-resizable-panels', () => ({
-  PanelGroup: ({ children }: any) => (
-    <div data-testid="panel-group">{children}</div>
-  ),
-  Panel: ({ children }: any) => <div data-testid="panel">{children}</div>,
-  PanelResizeHandle: ({ children }: any) => (
-    <div data-testid="resize-handle">{children}</div>
-  ),
-}))
 
 // Mock apiClient
 jest.mock('@/lib/utils', () => ({
@@ -102,7 +109,7 @@ describe('ProblemDetailPage', () => {
   it('renders problem details when loaded', () => {
     ;(useParams as jest.Mock).mockReturnValue({ id: '1' })
     ;(useSWR as jest.Mock).mockReturnValue({
-      data: { id: 1, name: 'Two Sum' },
+      data: { id: 1, name: 'Two Sum', testcases: [] },
       error: null,
       isLoading: false,
     })

@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "jest",
+    "test": "bun test",
     "test:watch": "jest --watch",
     "format": "prettier --write ."
   },
@@ -92,6 +92,7 @@
     "@types/react-syntax-highlighter": "^15.5.13",
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",
+    "jsdom": "^29.1.1",
     "postcss": "^8.5",
     "prettier": "^3.2.0",
     "tailwindcss": "^4.1.9",

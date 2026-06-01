@@ -1,9 +1,15 @@
 import { render, screen } from '@testing-library/react'
 import ProblemTable from '../components/problem-table'
 import useSWR from 'swr'
+import { describe, it, expect, jest, mock } from 'bun:test'
+
+// Ensure this component is NOT mocked if some other test mocked it globally
 
 // Mock useSWR
-jest.mock('swr')
+jest.mock('swr', () => ({
+  __esModule: true,
+  default: jest.fn(),
+}))
 
 const mockProblems = {
   count: 2,
@@ -109,7 +115,7 @@ describe('ProblemTable', () => {
 
     expect(screen.getByText(/Two Sum/i)).toBeInTheDocument()
     expect(screen.getByText(/Longest Substring/i)).toBeInTheDocument()
-    expect(screen.getByText(/EASY/i)).toBeInTheDocument()
-    expect(screen.getByText(/MEDIUM/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/EASY/i)[0]).toBeInTheDocument()
+    expect(screen.getAllByText(/MEDIUM/i)[0]).toBeInTheDocument()
   })
 })

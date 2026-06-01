@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import ProblemsPage from '../app/problems/page'
 import { AuthProvider } from '@/components/auth-provider'
 import useSWR from 'swr'
+import { describe, it, expect, jest } from 'bun:test'
 
 // Mock next/navigation
 jest.mock('next/navigation', () => ({
@@ -12,7 +13,25 @@ jest.mock('next/navigation', () => ({
 }))
 
 // Mock useSWR
-jest.mock('swr')
+jest.mock('swr', () => ({
+  __esModule: true,
+  default: jest.fn(),
+}))
+
+// Mock only components that don't have their own conflicting tests
+// We avoid mocking ProblemTable here because it causes issues with its own test file in Bun
+jest.mock('@/components/daily-challenge', () => ({
+  __esModule: true,
+  default: () => <div data-testid="daily-challenge">Daily Challenge</div>,
+}))
+jest.mock('@/components/sidebar', () => ({
+  __esModule: true,
+  default: () => <div data-testid="sidebar">Sidebar</div>,
+}))
+jest.mock('@/components/header', () => ({
+  __esModule: true,
+  default: () => <div data-testid="header">Header</div>,
+}))
 
 // Mock framer-motion
 jest.mock('framer-motion', () => {
@@ -43,20 +62,6 @@ jest.mock('framer-motion', () => {
   }
 })
 
-// Mock components that might be problematic in tests
-jest.mock('@/components/problem-table', () => () => (
-  <div data-testid="problem-table">Problem Table</div>
-))
-jest.mock('@/components/daily-challenge', () => () => (
-  <div data-testid="daily-challenge">Daily Challenge</div>
-))
-jest.mock('@/components/sidebar', () => () => (
-  <div data-testid="sidebar">Sidebar</div>
-))
-jest.mock('@/components/header', () => () => (
-  <div data-testid="header">Header</div>
-))
-
 describe('ProblemsPage', () => {
   it('renders correctly', () => {
     ;(useSWR as jest.Mock).mockReturnValue({
@@ -71,9 +76,13 @@ describe('ProblemsPage', () => {
       </AuthProvider>
     )
 
-    expect(screen.getByText(/Problems/i)).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: /Problems/i })
+    ).toBeInTheDocument()
     expect(screen.getByPlaceholderText(/Search questions/i)).toBeInTheDocument()
-    expect(screen.getByTestId('problem-table')).toBeInTheDocument()
+    // Since ProblemTable is not mocked, it will render the real one.
+    // With data=null, it should show the "No problems match" state or similar.
+    expect(screen.getByText(/No problems match/i)).toBeInTheDocument()
     expect(screen.getByTestId('daily-challenge')).toBeInTheDocument()
   })
 })

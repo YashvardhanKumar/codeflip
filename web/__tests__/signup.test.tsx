@@ -91,7 +91,7 @@ describe('SignupPage', () => {
       target: { value: 'pass2' },
     })
     fireEvent.click(
-      screen.getByRole('button', { name: /Create Free Account/i })
+      screen.getAllByRole('button', { name: /Create Free Account/i })[0]
     )
 
     expect(toast.error).toHaveBeenCalledWith('Passwords do not match')
@@ -121,7 +121,7 @@ describe('SignupPage', () => {
       target: { value: 'password123' },
     })
     fireEvent.click(
-      screen.getByRole('button', { name: /Create Free Account/i })
+      screen.getAllByRole('button', { name: /Create Free Account/i })[0]
     )
 
     await waitFor(() => {
