@@ -62,24 +62,20 @@ jobs:
       - name: Install Backend Dependencies
         run: |
           cd api
-          uv pip install --system -r requirements.txt
-          uv pip install --system pytest-django pytest
+          uv sync --dev
 
       - name: Install Frontend Dependencies
         run: |
           cd web
           bun install
 
-      - name: Set up pre-commit
-        run: |
-          pip install pre-commit
-
       - name: Run pre-commit hooks
         run: |
           # Use DJANGO_SETTINGS_MODULE so pytest hook works
           export DJANGO_SETTINGS_MODULE=apps.settings
           export PYTHONPATH=$PYTHONPATH:$(pwd)/api
-          pre-commit run --all-files
+          cd api
+          uv run pre-commit run --all-files
 
       - name: Run Backend Tests
         env:
@@ -89,7 +85,7 @@ jobs:
           GOOGLE_API_KEY: dummy_key
         run: |
           cd api
-          pytest
+          uv run pytest
 
       - name: Run Frontend Tests
         run: |
@@ -110,5 +106,5 @@ jobs:
           script: |
             cd coderacer-web
             git pull origin master
-            docker compose -f docker-compose.prod.yaml build
-            docker compose -f docker-compose.prod.yaml up -d
+            chmod +x scripts/optimize-deploy.sh
+            ./scripts/optimize-deploy.sh

@@ -3,6 +3,10 @@ services:
     image: nginx:alpine
     container_name: nginx_prod
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 32M
     environment:
       NGINX_ENTRYPOINT_QUIET_LOGS: 1
     volumes:
@@ -25,6 +29,10 @@ services:
     env_file:
       - ./api/.env
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 192M
     depends_on:
       - cdb
       - redis
@@ -43,6 +51,10 @@ services:
     command: celery -A apps worker --loglevel=info
     env_file:
       - ./api/.env
+    deploy:
+      resources:
+        limits:
+          memory: 192M
     depends_on:
       - cdb
       - redis
@@ -62,6 +74,10 @@ services:
       NODE_ENV: production
       NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL}
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 320M
     networks:
       - app-network
 
@@ -69,6 +85,10 @@ services:
     image: redis:7-alpine
     container_name: redis_prod
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 32M
     volumes:
       - redis_data:/data
     networks:
@@ -80,6 +100,10 @@ services:
     restart: always
     ports:
       - 5432:5432
+    deploy:
+      resources:
+        limits:
+          memory: 160M
     volumes:
       - pg_data:/var/lib/postgresql/data
     environment:

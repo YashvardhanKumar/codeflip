@@ -7,7 +7,11 @@ A monorepo for the CodeRacer platform, featuring a Django REST API and a Next.js
 - `web/`: Next.js frontend with Tailwind CSS.
 - `runners/`: Dockerized code execution environments for various languages.
 
-## General Guidelines
-- **Docker**: The project uses Docker Compose for local development. Always check `docker-compose.yaml` for service definitions.
-- **Monorepo**: Be mindful of the separate environments for `api` and `web`. Do not mix dependencies or configurations.
-- **Security**: Never commit sensitive data or credentials. Use environment variables.
+## Low-Resource Optimization (e.g., EC2 1GB RAM)
+
+The production environment is optimized for low-resource instances:
+- **Sequential Builds**: Use `./scripts/optimize-deploy.sh` to build services one by one. This prevents OOM crashes during the Next.js build.
+- **Standalone Frontend**: The Next.js app uses `output: 'standalone'` to minimize image size and memory footprint.
+- **Multi-stage API**: The Django image is built using a multi-stage process to remove build-time dependencies.
+- **Resource Limits**: Memory limits are enforced in `docker-compose.prod.yaml` to prevent container competition from crashing the host.
+- **Swap Space**: For 1GB RAM instances, it is highly recommended to enable at least 2GB of swap space.

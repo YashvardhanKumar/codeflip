@@ -95,17 +95,6 @@ services:
     networks:
       - app-network
 
-  ngrok:
-    image: ngrok/ngrok:latest
-    restart: unless-stopped
-    command:
-      - "http"
-      - "nginx:80" # Points directly to the Nginx service name inside Docker
-    environment:
-      NGROK_AUTHTOKEN: 3EB4T8u4Y5lznXgMSXTI9Tia5di_2KH2m3shLDEP3ja8szUJ5
-    depends_on:
-      - nginx
-
 
 volumes:
   pg_data:

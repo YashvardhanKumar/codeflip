@@ -14,4 +14,4 @@ echo "Applying database migrations..."
 python manage.py migrate --noinput
 
 echo "Starting Gunicorn + Uvicorn worker..."
-exec gunicorn apps.asgi:application -k uvicorn.workers.UvicornWorker --workers 4 --bind 0.0.0.0:8000
+exec gunicorn apps.asgi:application -k uvicorn.workers.UvicornWorker --workers 2 --bind 0.0.0.0:8000
