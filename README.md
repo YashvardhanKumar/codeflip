@@ -109,8 +109,8 @@ docker exec -it api python manage.py createsuperuser
 ## Accessing the Platform
 
 - **Frontend**: [http://localhost](http://localhost)
-- **API Dashboard (Root Ops)**: [http://localhost/rootops/](http://localhost/rootops/)
-- **Django Admin**: [http://localhost/admin/](http://localhost/admin/)
+- **API Dashboard (Root Ops)**: [http://localhost/api/rootops/](http://localhost/api/rootops/)
+- **Django Admin**: [http://localhost/api/admin/](http://localhost/api/admin/)
 
 ---
 

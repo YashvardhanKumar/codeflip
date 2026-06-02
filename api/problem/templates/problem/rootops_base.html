@@ -262,8 +262,8 @@
 <div class="sub-header">
     <div class="left-links">
         <button class="toggle-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
-        <a href="http://localhost" target="_blank"><i class="fas fa-home"></i> Home Page (localhost)</a>
-        <a href="http://localhost/api/admin" target="_blank"><i class="fas fa-cog"></i> Django Admin (localhost/admin)</a>
+        <a href="/" target="_blank"><i class="fas fa-home"></i> Home Page</a>
+        <a href="{% url 'admin:index' %}" target="_blank"><i class="fas fa-cog"></i> Django Admin</a>
     </div>
     <div class="user-tools">
         Logged in as: <b>{{ user.username }}</b> ({{ user.email }})

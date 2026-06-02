@@ -301,7 +301,7 @@
         pollingInterval = setInterval(async () => {
             try {
                 // Construct URL manually to avoid template tag issues in JS
-                const response = await fetch(`/rootops/task-status/${taskId}/`);
+                const response = await fetch(`/api/rootops/task-status/${taskId}/`);
                 const data = await response.json();
 
                 if (data.status === 'PROCESSING' || data.status === 'PENDING') {
