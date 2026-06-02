@@ -40,7 +40,21 @@ repos:
 
       - id: jest
         name: jest
-        entry: bash -c "cd web && npm test"
+        entry: bash -c "cd web && bun test"
+        language: system
+        pass_filenames: false
+        always_run: true
+
+      - id: eslint
+        name: eslint
+        entry: bash -c "cd web && bun run lint"
+        language: system
+        pass_filenames: false
+        always_run: true
+
+      - id: tsc
+        name: type-check
+        entry: bash -c "cd web && bun x tsc"
         language: system
         pass_filenames: false
         always_run: true
