@@ -25,7 +25,13 @@ services:
     build:
       context: ./api
     env_file:
-      - ./api/.env
+      - ./.env
+    environment:
+      POSTGRES_HOST: cdb
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: admin
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
     restart: always
     init: true
     stdin_open: true
@@ -45,7 +51,13 @@ services:
       context: ./api
     command: celery -A apps worker --loglevel=info
     env_file:
-      - ./api/.env
+      - ./.env
+    environment:
+      POSTGRES_HOST: cdb
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: admin
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
     depends_on:
       - cdb
       - redis
