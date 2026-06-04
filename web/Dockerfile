@@ -2,7 +2,7 @@
 
 # --- Base Stage ---
 FROM oven/bun:1-alpine AS base
-RUN apk add --no-cache libc6-compat
+RUN apk add --no-cache libc6-compat tar
 WORKDIR /home/codeflip/web
 COPY package.json bun.lock ./
 
@@ -15,7 +15,7 @@ CMD ["bun", "dev"]
 
 # --- Builder Stage (for Production) ---
 FROM base AS builder
-RUN bun install --frozen-lockfile
+RUN bun install --frozen-lockfile --no-cache
 COPY . .
 
 ARG NEXT_PUBLIC_BASE_URL
