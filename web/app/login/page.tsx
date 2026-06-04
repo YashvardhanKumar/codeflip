@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/components/auth-provider'
 import apiClient from '@/lib/utils'
+import { BASE_URL } from '@/lib/constants'
 import { toast } from 'sonner'
 import { Loader2, ArrowLeft, ShieldCheck, Zap, Code2 } from 'lucide-react'
 import Logo from '@/components/logo'
@@ -33,14 +34,11 @@ export default function LoginPage() {
     }
   }
 
-  const handleSocialLogin = (provider: 'google-oauth2' | 'github') => {
-    // In a real production app, you'd either redirect to backend:
-    // window.location.href = `${apiClient.defaults.baseURL}auth/login/${provider}/`;
-    // Or use a library to get the access token and then POST to /auth/social/
-
-    toast.info(
-      `${provider.charAt(0).toUpperCase() + provider.slice(1)} login coming soon! Configuration required.`
-    )
+  const handleSocialLogin = (
+    provider: 'google-oauth2' | 'github' | 'facebook'
+  ) => {
+    // Redirect to backend to start OAuth flow
+    window.location.href = `${BASE_URL}/social/login/${provider}/`
   }
 
   return (
@@ -201,26 +199,38 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-2">
               <Button
                 variant="outline"
-                className="h-11 dark:border-white/5 dark:bg-[#161618] hover:bg-slate-100 dark:hover:bg-white/5 font-bold"
+                className="h-11 dark:border-white/5 dark:bg-[#161618] hover:bg-slate-100 dark:hover:bg-white/5 font-bold px-2"
                 onClick={() => handleSocialLogin('google-oauth2')}
               >
                 <img
                   src="https://www.svgrepo.com/show/475656/google-color.svg"
-                  className="h-4 w-4 mr-2"
+                  className="h-4 w-4 mr-1 sm:mr-2"
                   alt="Google"
                 />
-                Google
+                <span className="text-[10px] sm:text-xs">Google</span>
               </Button>
               <Button
                 variant="outline"
-                className="h-11 dark:border-white/5 dark:bg-[#161618] hover:bg-slate-100 dark:hover:bg-white/5 font-bold"
+                className="h-11 dark:border-white/5 dark:bg-[#161618] hover:bg-slate-100 dark:hover:bg-white/5 font-bold px-2"
                 onClick={() => handleSocialLogin('github')}
               >
-                <Code2 className="h-4 w-4 mr-2" />
-                GitHub
+                <Code2 className="h-4 w-4 mr-1 sm:mr-2" />
+                <span className="text-[10px] sm:text-xs">GitHub</span>
+              </Button>
+              <Button
+                variant="outline"
+                className="h-11 dark:border-white/5 dark:bg-[#161618] hover:bg-slate-100 dark:hover:bg-white/5 font-bold px-2"
+                onClick={() => handleSocialLogin('facebook')}
+              >
+                <img
+                  src="https://www.svgrepo.com/show/475647/facebook-color.svg"
+                  className="h-4 w-4 mr-1 sm:mr-2"
+                  alt="Facebook"
+                />
+                <span className="text-[10px] sm:text-xs">Facebook</span>
               </Button>
             </div>
 

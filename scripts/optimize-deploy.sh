@@ -12,18 +12,18 @@ docker system prune -f
 # 2. Build images one by one to save RAM
 # Building everything at once with 'docker-compose build' can trigger OOM on 1GB RAM.
 echo "🏗️ Building API image sequentially..."
-docker compose -f docker-compose.prod.yaml build api
+DOCKER_TARGET=production docker compose build api
 
 echo "🏗️ Building Web image sequentially..."
 # This is the most memory-intensive part.
-docker compose -f docker-compose.prod.yaml build web
+DOCKER_TARGET=production NODE_ENV=production docker compose build web
 
 echo "🏗️ Building remaining services..."
-docker compose -f docker-compose.prod.yaml build --parallel=false
+DOCKER_TARGET=production docker compose build --parallel=false
 
 # 3. Start services
 echo "🆙 Starting services..."
-docker compose -f docker-compose.prod.yaml up -d
+DOCKER_TARGET=production NODE_ENV=production docker compose up -d
 
 # 4. Final cleanup
 echo "🧹 Final storage cleanup..."

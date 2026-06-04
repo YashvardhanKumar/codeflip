@@ -3,6 +3,8 @@ from datetime import timedelta
 from django.db.models import Count
 from django.db.models.functions import TruncDate
 from django.utils import timezone
+from django.shortcuts import redirect
+from django.conf import settings
 from rest_framework import viewsets, status, serializers
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
@@ -371,53 +373,23 @@ class LogoutView(viewsets.ViewSet):
         )
 
 
-class SocialAuthSerializer(serializers.Serializer):
-    provider = serializers.CharField(max_length=255)
-    access_token = serializers.CharField(max_length=4096)
-
-
 class SocialAuthView(APIView):
+    """
+    Callback view for social authentication.
+    Django redirects here after successful OAuth handshake.
+    We generate a DRF token and redirect back to the Next.js frontend.
+    """
+
     permission_classes = [AllowAny]
 
-    def post(self, request):
-        serializer = SocialAuthSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        provider = serializer.validated_data["provider"]
-        access_token = serializer.validated_data["access_token"]
-
-        try:
-            # This is a simplified version. In a real app, you'd use the PSA pipeline properly.
-            # For now, we'll implement a helper that handles the exchange.
-            user = self.get_user_from_social_token(provider, access_token)
-            if user:
-                token, _ = Token.objects.get_or_create(user=user)
-                return Response({"token": token.key, "user": UserSerializer(user).data})
+    def get(self, request):
+        if not request.user.is_authenticated:
             return Response(
                 {"error": "Authentication failed"}, status=status.HTTP_401_UNAUTHORIZED
             )
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    def get_user_from_social_token(self, provider, token):
-        # Psuedo-implementation ofPSA token exchange
-        # Since setting up full PSA for a single DRF endpoint is complex,
-        # we'll use a more direct approach if possible or mock for now if necessary.
-        # But let's try to do it right.
+        token, _ = Token.objects.get_or_create(user=request.user)
+        frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:3000")
 
-        from django.contrib.auth import login
-        from social_django.utils import load_backend, load_strategy
-
-        strategy = load_strategy(self.request)
-        try:
-            backend = load_backend(strategy, provider, redirect_uri=None)
-        except MissingBackend:
-            raise serializers.ValidationError({"provider": "Invalid provider"})
-
-        try:
-            user = backend.do_auth(token)
-        except AuthTokenError as e:
-            raise serializers.ValidationError({"access_token": str(e)})
-        except AuthForbidden as e:
-            raise serializers.ValidationError({"access_token": "Forbidden"})
-
-        return user
+        # Redirect to the frontend callback page with the token
+        return redirect(f"{frontend_url}/auth-callback?token={token.key}")

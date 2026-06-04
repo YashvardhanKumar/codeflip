@@ -33,28 +33,28 @@ repos:
     hooks:
       - id: pytest
         name: pytest
-        entry: bash -c "cd api && export DJANGO_SETTINGS_MODULE=apps.settings && export PYTHONPATH=$PYTHONPATH:. && pytest"
+        entry: bash -c "export PATH=$HOME/.local/bin:$HOME/.bun/bin:$PATH && cd api && export DJANGO_SETTINGS_MODULE=apps.settings && export PYTHONPATH=$PYTHONPATH:. && uv run pytest"
         language: system
         pass_filenames: false
         always_run: true
 
       - id: jest
         name: jest
-        entry: bash -c "cd web && bun test"
+        entry: bash -c "export PATH=$HOME/.local/bin:$HOME/.bun/bin:$PATH && cd web && bun test"
         language: system
         pass_filenames: false
         always_run: true
 
       - id: eslint
         name: eslint
-        entry: bash -c "cd web && bun run lint"
+        entry: bash -c "export PATH=$HOME/.local/bin:$HOME/.bun/bin:$PATH && cd web && bun run lint"
         language: system
         pass_filenames: false
         always_run: true
 
       - id: tsc
         name: type-check
-        entry: bash -c "cd web && bun x tsc"
+        entry: bash -c "export PATH=$HOME/.local/bin:$HOME/.bun/bin:$PATH && cd web && bun x tsc"
         language: system
         pass_filenames: false
         always_run: true

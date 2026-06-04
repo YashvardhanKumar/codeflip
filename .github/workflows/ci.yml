@@ -104,8 +104,30 @@ jobs:
           cd web
           bun test
 
+  docker-build-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Verify API Build (Development)
+        run: DOCKER_TARGET=development docker compose build api
+
+      - name: Verify API Build (Production)
+        run: DOCKER_TARGET=production docker compose build api
+
+      - name: Verify Web Build (Development)
+        run: DOCKER_TARGET=development docker compose build web
+
+      - name: Verify Web Build (Production)
+        run: |
+          # Use optimized build flags for CI environment
+          DOCKER_TARGET=production NODE_ENV=production docker compose build web
+
   deploy:
-    needs: lint-and-test
+    needs: [lint-and-test, docker-build-check]
     if: github.event_name == 'release' && github.event.action == 'published'
     runs-on: ubuntu-latest
     steps:

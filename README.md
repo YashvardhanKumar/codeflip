@@ -62,13 +62,13 @@ cd coderacer-web
 
 ### 2. Configure Environment Variables
 
-Create a `.env` file in the `api/` directory:
+Create a `.env` file in the root directory:
 
 ```bash
-touch api/.env
+touch .env
 ```
 
-Add the following keys to `api/.env`:
+Add the following keys to `.env`:
 
 ```text
 # AI Providers
@@ -85,7 +85,7 @@ DEBUG=True
 Use Docker Compose to build and start all services (API, Frontend, Database, Nginx):
 
 ```bash
-docker-compose up -d --build
+docker compose up -d --build
 ```
 
 ### 4. Initialize Database
@@ -94,14 +94,14 @@ Run migrations, load the initial data, and create an admin user:
 
 ```bash
 # Make and apply database migrations
-docker exec -it api python manage.py makemigrations
-docker exec -it api python manage.py migrate
+docker compose exec -it api python manage.py makemigrations
+docker compose exec -it api python manage.py migrate
 
 # Load the starter dataset (problems, tags, etc.)
-docker exec -it api python manage.py loaddata data.yaml
+docker compose exec -it api python manage.py loaddata data.yaml
 
 # Create an administrator account
-docker exec -it api python manage.py createsuperuser
+docker compose exec -it api python manage.py createsuperuser
 ```
 
 ---

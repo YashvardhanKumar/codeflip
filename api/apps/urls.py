@@ -51,6 +51,7 @@ urlpatterns = [
         ),
     ),
     # App-specific APIs
+    path("api/social/", include("social_django.urls", namespace="social")),
     path("api/auth/", include("user.urls")),
     path("api/engine/", include("engine.urls")),
     path("api/ai/", include("ai.urls")),

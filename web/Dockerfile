@@ -1,23 +1,40 @@
 # syntax=docker/dockerfile:1
 
-FROM oven/bun:1-alpine
-
-# Install libc6-compat for compatibility with some native binaries (like Next.js SWC)
+# --- Base Stage ---
+FROM oven/bun:1-alpine AS base
 RUN apk add --no-cache libc6-compat
-
 WORKDIR /home/codeflip/web
-
-# Copy package files
 COPY package.json bun.lock ./
 
-# Install dependencies
+# --- Development Stage ---
+FROM base AS development
 RUN bun install --frozen-lockfile
+COPY . .
+EXPOSE 3000
+CMD ["bun", "dev"]
 
-# Copy the rest of the application
+# --- Builder Stage (for Production) ---
+FROM base AS builder
+RUN bun install --frozen-lockfile
 COPY . .
 
-# Expose the port
-EXPOSE 3000
+ARG NEXT_PUBLIC_BASE_URL
+ENV NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL}
+# Optimization for low-resource builds
+ENV NODE_OPTIONS="--max-old-space-size=768"
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_BUILD_PARALLELISM=1
+ENV NEXT_PRIVATE_LOCAL_SKIP_LINT=1
+ENV NEXT_PRIVATE_LOCAL_SKIP_TYPECHECK=1
 
-# Start the application in development mode
-CMD ["bun", "dev"]
+RUN bun run build
+
+# --- Production Stage ---
+FROM base AS production
+ENV NODE_ENV=production
+COPY --from=builder /home/codeflip/web/public ./public
+COPY --from=builder /home/codeflip/web/.next/standalone ./
+COPY --from=builder /home/codeflip/web/.next/static ./.next/static
+
+EXPOSE 3000
+CMD ["bun", "server.js"]

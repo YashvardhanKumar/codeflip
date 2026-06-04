@@ -1,19 +1,21 @@
-# Comments are provided throughout this file to help you get started.
-# If you need more help, visit the Docker Compose reference guide at
-# https://docs.docker.com/go/compose-spec-reference/
-
 services:
 
   nginx:
     image: nginx:alpine
     container_name: nginx
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: ${NGINX_MEM_LIMIT:-32M}
     environment:
       NGINX_ENTRYPOINT_QUIET_LOGS: 1
     volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - static_data:/staticfiles:ro
+      - media_data:/mediafiles:ro
     ports:
-      - 80:80
+      - "80:80"
     depends_on:
       - api
       - web
@@ -24,18 +26,49 @@ services:
     container_name: api
     build:
       context: ./api
+      target: ${DOCKER_TARGET:-development}
     env_file:
-      - ./.env
+      - .env
     environment:
       POSTGRES_HOST: cdb
       POSTGRES_PORT: 5432
-      POSTGRES_DB: admin
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: ${POSTGRES_DB:-admin}
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
     restart: always
-    init: true
-    stdin_open: true
-    tty: true
+    deploy:
+      resources:
+        limits:
+          memory: ${API_MEM_LIMIT:-512M}
+    depends_on:
+      - cdb
+      - redis
+    volumes:
+      - ./api:/home/codeflip/api/
+      - static_data:/home/codeflip/api/static
+      - media_data:/home/codeflip/api/media
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - app-network
+
+  worker:
+    container_name: celery_worker
+    build:
+      context: ./api
+      target: ${DOCKER_TARGET:-development}
+    command: celery -A apps worker --loglevel=info
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: cdb
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-admin}
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+    deploy:
+      resources:
+        limits:
+          memory: ${WORKER_MEM_LIMIT:-512M}
     depends_on:
       - cdb
       - redis
@@ -45,38 +78,21 @@ services:
     networks:
       - app-network
 
-  worker:
-    container_name: celery_worker
-    build:
-      context: ./api
-    command: celery -A apps worker --loglevel=info
-    env_file:
-      - ./.env
-    environment:
-      POSTGRES_HOST: cdb
-      POSTGRES_PORT: 5432
-      POSTGRES_DB: admin
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
-    depends_on:
-      - cdb
-      - redis
-    volumes:
-      - ./api:/home/codeflip/api/
-    networks:
-      - app-network
-
   web:
     container_name: web
     build:
       context: ./web
+      target: ${DOCKER_TARGET:-development}
+      args:
+        NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL}
     environment:
-      NODE_ENV: development
+      NODE_ENV: ${NODE_ENV:-development}
+      NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL}
     restart: always
-    init: true
-    stdin_open: true
-    tty: true
-    command: bun dev
+    deploy:
+      resources:
+        limits:
+          memory: ${WEB_MEM_LIMIT:-512M}
     volumes:
       - ./web:/home/codeflip/web/
       - /home/codeflip/web/node_modules/
@@ -87,6 +103,10 @@ services:
     image: redis:7-alpine
     container_name: redis
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 32M
     volumes:
       - redis_data:/data
     networks:
@@ -97,21 +117,25 @@ services:
     container_name: postgresql
     restart: always
     ports:
-      - 5432:5432
+      - "5432:5432"
+    deploy:
+      resources:
+        limits:
+          memory: 160M
     volumes:
       - pg_data:/var/lib/postgresql/data
     environment:
-      POSTGRES_DB: admin
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: ${POSTGRES_DB:-admin}
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
     networks:
       - app-network
-
 
 volumes:
   pg_data:
   redis_data:
-    driver: local
+  static_data:
+  media_data:
 
 networks:
   app-network:
