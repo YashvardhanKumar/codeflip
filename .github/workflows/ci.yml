@@ -142,7 +142,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1 # Ensure this matches your EC2 region
+          aws-region: ap-south-1 # Updated to Mumbai region
 
       - name: Whitelist Runner IP
         run: |
