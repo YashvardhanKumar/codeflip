@@ -30,9 +30,14 @@ DEBUG = os.environ.get("DEBUG", "True") == "True"
 
 # settings.py
 allowed_hosts_env = os.environ.get(
-    "ALLOWED_HOSTS", "localhost,127.0.0.1,api,testserver"
+    "ALLOWED_HOSTS",
+    "localhost,127.0.0.1,api,testserver,codeflip.co.in,www.codeflip.co.in",
 )
 ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_env.split(",") if host.strip()]
+
+# Proxy settings for HTTPS
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 
 X_FRAME_OPTIONS = "SAMEORIGIN"
@@ -344,8 +349,19 @@ REST_FRAMEWORK = {
 }
 
 CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
     "http://localhost",
-    "https://*.ngrok-free.app",
+    "https://codeflip.co.in",
+    "https://www.codeflip.co.in",
+    "http://codeflip.co.in",
+    "http://www.codeflip.co.in",
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://codeflip.co.in",
+    "https://www.codeflip.co.in",
+    "http://codeflip.co.in",
+    "http://www.codeflip.co.in",
 ]
 
 SPECTACULAR_SETTINGS = {
