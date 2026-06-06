@@ -23,7 +23,8 @@ DOCKER_TARGET=production docker compose build --parallel=false
 
 # 3. Start services
 echo "🆙 Starting services..."
-DOCKER_TARGET=production NODE_ENV=production docker compose up -d
+# Unset dev volumes for production
+DEV_VOLUME_API=./empty_dir DEV_VOLUME_WEB=./empty_dir DOCKER_TARGET=production NODE_ENV=production docker compose up -d
 
 # 4. Final cleanup
 echo "🧹 Final storage cleanup..."

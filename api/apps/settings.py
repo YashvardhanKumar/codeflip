@@ -30,12 +30,9 @@ DEBUG = os.environ.get("DEBUG", "True") == "True"
 
 # settings.py
 allowed_hosts_env = os.environ.get(
-    "ALLOWED_HOSTS", ".ngrok-free.app,localhost,127.0.0.1,api,testserver"
+    "ALLOWED_HOSTS", "localhost,127.0.0.1,api,testserver"
 )
 ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_env.split(",") if host.strip()]
-
-# If you use Django's CSRF protection, also add:
-CSRF_TRUSTED_ORIGINS = ["https://*.ngrok-free.app"]
 
 
 X_FRAME_OPTIONS = "SAMEORIGIN"

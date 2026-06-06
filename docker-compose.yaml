@@ -44,7 +44,7 @@ services:
       - cdb
       - redis
     volumes:
-      - ./api:/home/codeflip/api/
+      - ${DEV_VOLUME_API:-./empty_dir}:/home/codeflip/api/
       - static_data:/home/codeflip/api/static
       - media_data:/home/codeflip/api/media
       - /var/run/docker.sock:/var/run/docker.sock

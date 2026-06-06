@@ -30,11 +30,16 @@ ENV NEXT_PRIVATE_LOCAL_SKIP_TYPECHECK=1
 RUN bun run build
 
 # --- Production Stage ---
-FROM base AS production
+# Next.js standalone mode is optimized for Node.js
+FROM node:22-alpine AS production
+WORKDIR /home/codeflip/web
 ENV NODE_ENV=production
+
+# Copy necessary files from builder
 COPY --from=builder /home/codeflip/web/public ./public
 COPY --from=builder /home/codeflip/web/.next/standalone ./
 COPY --from=builder /home/codeflip/web/.next/static ./.next/static
 
 EXPOSE 3000
-CMD ["bun", "server.js"]
+# server.js is the entry point created by standalone mode
+CMD ["node", "server.js"]
