@@ -23,8 +23,8 @@ DOCKER_TARGET=production docker compose build --parallel=false
 
 # 3. Start services
 echo "🆙 Starting services..."
-# Unset dev volumes for production
-DEV_VOLUME_API=./empty_dir DEV_VOLUME_WEB=./empty_dir DOCKER_TARGET=production NODE_ENV=production docker compose up -d
+# Override bind mounts to harmless paths for production
+API_BIND_MOUNT=./empty_dir:/tmp/ignore_api WEB_BIND_MOUNT=./empty_dir:/tmp/ignore_web DOCKER_TARGET=production NODE_ENV=production docker compose up -d
 
 # 4. Final cleanup
 echo "🧹 Final storage cleanup..."
