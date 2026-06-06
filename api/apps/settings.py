@@ -34,6 +34,8 @@ allowed_hosts_env = os.environ.get(
     "localhost,127.0.0.1,api,testserver,codeflip.co.in,www.codeflip.co.in",
 )
 ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_env.split(",") if host.strip()]
+if "api" not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append("api")
 
 # Proxy settings for HTTPS
 USE_X_FORWARDED_HOST = True
