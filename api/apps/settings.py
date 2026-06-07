@@ -41,8 +41,10 @@ if "api" not in ALLOWED_HOSTS:
 USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-# Ensure social auth OAuth callbacks use HTTPS in production
-SOCIAL_AUTH_REDIRECT_IS_HTTPS = not DEBUG
+# Ensure social auth OAuth callbacks use HTTPS
+SOCIAL_AUTH_REDIRECT_IS_HTTPS = (
+    os.environ.get("SOCIAL_AUTH_REDIRECT_IS_HTTPS", "False") == "True"
+)
 
 
 X_FRAME_OPTIONS = "SAMEORIGIN"
