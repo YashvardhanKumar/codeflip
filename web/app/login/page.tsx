@@ -34,9 +34,7 @@ export default function LoginPage() {
     }
   }
 
-  const handleSocialLogin = (
-    provider: 'google-oauth2' | 'github' | 'facebook'
-  ) => {
+  const handleSocialLogin = (provider: 'google-oauth2' | 'github') => {
     // Redirect to backend to start OAuth flow
     window.location.href = `${BASE_URL}/social/login/${provider}/`
   }
@@ -199,7 +197,7 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <Button
                 variant="outline"
                 className="h-11 dark:border-white/5 dark:bg-[#161618] hover:bg-slate-100 dark:hover:bg-white/5 font-bold px-2"
@@ -219,18 +217,6 @@ export default function LoginPage() {
               >
                 <Code2 className="h-4 w-4 mr-1 sm:mr-2" />
                 <span className="text-[10px] sm:text-xs">GitHub</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="h-11 dark:border-white/5 dark:bg-[#161618] hover:bg-slate-100 dark:hover:bg-white/5 font-bold px-2"
-                onClick={() => handleSocialLogin('facebook')}
-              >
-                <img
-                  src="https://www.svgrepo.com/show/475647/facebook-color.svg"
-                  className="h-4 w-4 mr-1 sm:mr-2"
-                  alt="Facebook"
-                />
-                <span className="text-[10px] sm:text-xs">Facebook</span>
               </Button>
             </div>
 
