@@ -36,6 +36,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-admin}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
       SOCIAL_AUTH_REDIRECT_IS_HTTPS: ${SOCIAL_AUTH_REDIRECT_IS_HTTPS:-False}
+      DOCKER_TARGET: ${DOCKER_TARGET:-development}
     restart: always
     deploy:
       resources:
