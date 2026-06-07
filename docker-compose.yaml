@@ -90,6 +90,7 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV:-development}
       NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL}
+      HOSTNAME: "0.0.0.0"
     restart: always
     deploy:
       resources:

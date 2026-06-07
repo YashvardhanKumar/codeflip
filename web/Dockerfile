@@ -34,6 +34,7 @@ RUN bun run build
 FROM node:22-alpine AS production
 WORKDIR /home/codeflip/web
 ENV NODE_ENV=production
+ENV HOSTNAME=0.0.0.0
 
 # Copy necessary files from builder
 COPY --from=builder /home/codeflip/web/public ./public
