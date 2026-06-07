@@ -28,7 +28,7 @@ services:
       context: ./api
       target: ${DOCKER_TARGET:-development}
     env_file:
-      - .env
+      - ./api/.env
     environment:
       POSTGRES_HOST: cdb
       POSTGRES_PORT: 5432
@@ -58,7 +58,7 @@ services:
       target: ${DOCKER_TARGET:-development}
     command: celery -A apps worker --loglevel=info
     env_file:
-      - .env
+      - ./api/.env
     environment:
       POSTGRES_HOST: cdb
       POSTGRES_PORT: 5432
@@ -85,6 +85,8 @@ services:
       target: ${DOCKER_TARGET:-development}
       args:
         NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL}
+    env_file:
+      - ./web/.env
     environment:
       NODE_ENV: ${NODE_ENV:-development}
       NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL}
