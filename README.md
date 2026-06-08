@@ -1,6 +1,6 @@
-# CodeRacer Web
+# Codeflip
 
-A professional monorepo for the CodeRacer platform, featuring a Django REST API, a Next.js frontend, and a Judge0-powered code execution engine.
+A professional monorepo for the Codeflip platform, featuring a Django REST API, a Next.js frontend, and a Judge0-powered code execution engine.
 
 [Web link](https://www.codeflip.co.in/)
 
