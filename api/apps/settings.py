@@ -357,6 +357,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://www.codeflip.co.in",
 ]
 
+CORS_ALLOW_CREDENTIALS = True
+
 CSRF_TRUSTED_ORIGINS = [
     "https://codeflip.co.in",
     "https://www.codeflip.co.in",
