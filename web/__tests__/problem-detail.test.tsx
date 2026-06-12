@@ -18,6 +18,7 @@ jest.mock('next/navigation', () => ({
 jest.mock('swr', () => ({
   __esModule: true,
   default: jest.fn(),
+  mutate: jest.fn(),
 }))
 
 // Mock components

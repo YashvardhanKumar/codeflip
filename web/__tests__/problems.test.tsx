@@ -16,6 +16,7 @@ jest.mock('next/navigation', () => ({
 jest.mock('swr', () => ({
   __esModule: true,
   default: jest.fn(),
+  mutate: jest.fn(),
 }))
 
 // Mock only components that don't have their own conflicting tests

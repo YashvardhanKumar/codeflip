@@ -9,6 +9,7 @@ import { describe, it, expect, jest, mock } from 'bun:test'
 jest.mock('swr', () => ({
   __esModule: true,
   default: jest.fn(),
+  mutate: jest.fn(),
 }))
 
 const mockProblems = {
