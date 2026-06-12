@@ -249,7 +249,19 @@ print(solve(42))`}</code>
           <div className="flex items-center gap-2">
             <Logo />
           </div>
-          <div className="flex gap-8 text-sm text-slate-500 dark:text-text-secondary">
+          <div className="flex flex-wrap justify-center gap-8 text-sm text-slate-500 dark:text-text-secondary">
+            <a
+              href="mailto:support@codeflip.co.in"
+              className="hover:text-primary transition-colors"
+            >
+              Support
+            </a>
+            <a
+              href="mailto:founder@codeflip.co.in"
+              className="hover:text-primary transition-colors"
+            >
+              Contact Founder
+            </a>
             <Link href="#" className="hover:text-primary transition-colors">
               Twitter
             </Link>

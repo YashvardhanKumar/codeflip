@@ -47,6 +47,22 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'CodeFlip - Master Your Coding Skills',
   description: 'A competitive coding platform for developers.',
+  openGraph: {
+    title: 'CodeFlip - Master Your Coding Skills',
+    description: 'A competitive coding platform for developers.',
+    url: 'https://www.codeflip.co.in', // Replace with your actual domain
+    siteName: 'CodeFlip',
+    images: [
+      {
+        url: 'https://www.codeflip.co.in/og-image.png', // Replace with actual OG image URL
+        width: 1200,
+        height: 630,
+        alt: 'CodeFlip - Competitive Coding Platform',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
 }
 
 export default function RootLayout({
