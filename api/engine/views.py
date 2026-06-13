@@ -57,12 +57,13 @@ class SubmitStreamView(APIView):
         # Pre-wrap code with boilerplate from Codeblock model
         codeblock = None
         if lang_str:
-            codeblock = problem.codeblocks.filter(language=lang_str).first()
+            codeblock = problem.codeblocks.filter(language__name=lang_str).first()
 
         if codeblock:
             # We wrap the code here so it's ready for Judge0 execution
+            imports = codeblock.language.import_block if codeblock.language else ""
             full_source_code = (
-                f"{codeblock.imports}\n\n{raw_source_code}\n\n{codeblock.runner_code}"
+                f"{imports}\n\n{raw_source_code}\n\n{codeblock.runner_code}"
             )
         else:
             # Fallback if no matching codeblock found

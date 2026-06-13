@@ -9,12 +9,13 @@ from .models import (
     Discuss,
     DiscussTags,
 )
+from user.models import Language
 
 
 class CodeblockInline(admin.TabularInline):
     model = Codeblock
     extra = 1
-    fields = ("imports", "block", "runner_code", "language")
+    fields = ("block", "runner_code", "language")
 
 
 class TestcaseInline(admin.TabularInline):
@@ -78,7 +79,7 @@ class ProblemAdmin(admin.ModelAdmin):
 class CodeblockAdmin(admin.ModelAdmin):
     list_display = ("id", "problem", "language", "get_block_preview")
     list_filter = ("problem", "language")
-    search_fields = ("problem__id", "imports", "block", "runner_code")
+    search_fields = ("problem__id", "block", "runner_code")
     readonly_fields = ("id",)
     raw_id_fields = ("problem",)
 
@@ -172,3 +173,9 @@ class DiscussTagsAdmin(admin.ModelAdmin):
     list_filter = ("tag",)
     search_fields = ("discuss__title", "tag__tags")
     raw_id_fields = ("discuss", "tag")
+
+
+@admin.register(Language)
+class LanguageAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "display_name", "judge0_language_id")
+    search_fields = ("name", "display_name")

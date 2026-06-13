@@ -10,7 +10,7 @@ from django.contrib.auth import get_user_model, login
 from django.http import StreamingHttpResponse, JsonResponse
 from django.forms import inlineformset_factory
 from ckeditor_uploader.widgets import CKEditorUploadingWidget
-from user.models import CodingLanguage
+from user.models import CodingLanguage, Language
 from ai.services import AIService
 from ai.tasks import generate_testcases_task
 
@@ -25,7 +25,9 @@ def rootops(request):
         {
             "user": request.user,
             "is_superuser": request.user.is_superuser,
-            "languages": CodingLanguage.choices,
+            "languages": [
+                (lang.name, lang.display_name) for lang in Language.objects.all()
+            ],
         },
     )
 
@@ -78,14 +80,11 @@ class CustomProblemForm(forms.ModelForm):
 CodeBlockFormSet = inlineformset_factory(
     Problem,
     Codeblock,
-    fields=["language", "imports", "block", "runner_code"],
+    fields=["language", "block", "runner_code"],
     extra=0,
     can_delete=True,
     widgets={
         "language": forms.Select(attrs={"class": "custom-input"}),
-        "imports": forms.Textarea(
-            attrs={"class": "custom-input", "rows": 2, "placeholder": "Imports..."}
-        ),
         "block": forms.Textarea(
             attrs={
                 "class": "custom-input",
@@ -167,7 +166,13 @@ def add_problem_custom(request):
     return render(
         request,
         "problem/add_problem_custom.html",
-        {"form": form, "formset": formset, "languages": CodingLanguage.choices},
+        {
+            "form": form,
+            "formset": formset,
+            "languages": [
+                (lang.name, lang.display_name) for lang in Language.objects.all()
+            ],
+        },
     )
 
 

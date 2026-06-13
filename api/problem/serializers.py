@@ -11,7 +11,7 @@ from .models import (
     AnswerStatus,
     Comment,
 )
-from user.models import User, CodingLanguage
+from user.models import User, CodingLanguage, Language
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -73,13 +73,15 @@ class CodeblockSerializer(serializers.ModelSerializer):
         source="get_language_display", read_only=True
     )
     full_code = serializers.SerializerMethodField()
+    language = serializers.SlugRelatedField(
+        slug_field="name", queryset=Language.objects.all()
+    )
 
     class Meta:
         model = Codeblock
         fields = [
             "id",
             "problem",
-            "imports",
             "block",
             "runner_code",
             "language",
@@ -89,7 +91,8 @@ class CodeblockSerializer(serializers.ModelSerializer):
         read_only_fields = ["id"]
 
     def get_full_code(self, obj):
-        return f"{obj.imports}\n\n{obj.block}\n\n{obj.runner_code}"
+        imports = obj.language.import_block if obj.language else ""
+        return f"{imports}\n\n{obj.block}\n\n{obj.runner_code}"
 
 
 class TestcaseSerializer(serializers.ModelSerializer):
@@ -256,11 +259,15 @@ class SolutionDetailSerializer(serializers.ModelSerializer):
 class SolutionSubmitSerializer(serializers.Serializer):
     problem_id = serializers.IntegerField()
     code = serializers.CharField()
-    language = serializers.ChoiceField(
-        choices=CodingLanguage.choices,
+    language = serializers.CharField(
         required=False,
         help_text="Programming language. If not provided, uses user's default language.",
     )
+
+    def validate_language(self, value):
+        if value and not Language.objects.filter(name=value).exists():
+            raise serializers.ValidationError(f"Unsupported language: {value}")
+        return value
 
     def validate_problem_id(self, value):
         if not Problem.objects.filter(id=value).exists():

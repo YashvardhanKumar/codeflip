@@ -13,18 +13,27 @@ def submit_solution_task(solution_id):
         solution = Solution.objects.get(id=solution_id)
 
         # Prepare evaluation payload
-        from problem.views import JUDGE0_LANGUAGE_MAP
+        from user.models import Language
         from problem.models import Codeblock
 
         codeblock = Codeblock.objects.get(
-            problem=solution.problem, language=solution.language
+            problem=solution.problem, language__name=solution.language
         )
-        full_code = f"{codeblock.imports}\n\n{solution.code}\n\n{codeblock.runner_code}"
+        imports = codeblock.language.import_block if codeblock.language else ""
+        full_code = f"{imports}\n\n{solution.code}\n\n{codeblock.runner_code}"
+
+        try:
+            lang_obj = Language.objects.get(name=solution.language)
+            judge0_lang_id = lang_obj.judge0_language_id
+        except Language.DoesNotExist:
+            from problem.views import JUDGE0_LANGUAGE_MAP
+
+            judge0_lang_id = JUDGE0_LANGUAGE_MAP.get(solution.language, 71)
 
         evaluation_payload = {
             "problem_id": solution.problem.id,
             "source_code": full_code,
-            "language_id": JUDGE0_LANGUAGE_MAP.get(solution.language, 71),
+            "language_id": judge0_lang_id,
         }
 
         # Evaluate

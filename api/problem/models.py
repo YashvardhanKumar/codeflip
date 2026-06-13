@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from user.models import CodingLanguage  # Import from user app
+from user.models import CodingLanguage, Language  # Import from user app
 from ckeditor.fields import RichTextField
 
 
@@ -73,13 +73,12 @@ class Codeblock(models.Model):
     problem = models.ForeignKey(
         Problem, on_delete=models.CASCADE, related_name="codeblocks"
     )
-    imports = models.TextField(blank=True, null=False, default="")
     block = models.TextField(blank=True, null=False, default="")
     runner_code = models.TextField(blank=True, null=False, default="")
-    language = models.CharField(
-        max_length=20,
-        choices=CodingLanguage.choices,
-        default=CodingLanguage.PYTHON,
+    language = models.ForeignKey(
+        Language,
+        on_delete=models.CASCADE,
+        related_name="codeblocks",
         verbose_name="Programming Language",
     )
 
@@ -88,6 +87,9 @@ class Codeblock(models.Model):
         verbose_name = "Code Block"
         verbose_name_plural = "Code Blocks"
         unique_together = ("problem", "language")
+
+    def get_language_display(self):
+        return self.language.display_name if self.language else ""
 
     def __str__(self):
         return (
@@ -132,8 +134,7 @@ class Solution(models.Model):
     code = models.TextField()
     language = models.CharField(
         max_length=20,
-        choices=CodingLanguage.choices,
-        default=CodingLanguage.PYTHON,
+        default="PYTHON",
         verbose_name="Programming Language",
     )
     status = models.CharField(
@@ -147,6 +148,12 @@ class Solution(models.Model):
         verbose_name = "Solution"
         verbose_name_plural = "Solutions"
         ordering = ["-created_at"]
+
+    def get_language_display(self):
+        try:
+            return Language.objects.get(name=self.language).display_name
+        except Language.DoesNotExist:
+            return self.language
 
     def __str__(self):
         return f"Solution by {self.user.username} for Problem #{self.problem.id} ({self.get_language_display()})"

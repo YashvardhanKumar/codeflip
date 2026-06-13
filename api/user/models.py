@@ -10,6 +10,44 @@ class CodingLanguage(models.TextChoices):
     TYPESCRIPT = "TYPESCRIPT", "TypeScript"
 
 
+class Language(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    name = models.CharField(
+        max_length=50,
+        unique=True,
+        choices=CodingLanguage.choices,
+        help_text="Language code/key (e.g. CPP, JAVA, PYTHON, JAVASCRIPT, TYPESCRIPT)",
+    )
+    display_name = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="Human readable name of the language (automatically populated from choices)",
+    )
+    import_block = models.TextField(
+        blank=True,
+        null=False,
+        default="",
+        help_text="Standard imports for this language (common for all problems)",
+    )
+    judge0_language_id = models.IntegerField(
+        help_text="Judge0 language ID corresponding to this language"
+    )
+
+    class Meta:
+        db_table = "language"
+        verbose_name = "Language"
+        verbose_name_plural = "Languages"
+
+    def save(self, *args, **kwargs):
+        # Automatically set display_name from CodingLanguage choices
+        if self.name:
+            self.display_name = dict(CodingLanguage.choices).get(self.name, self.name)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.display_name
+
+
 class User(AbstractUser):
     id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=255, blank=True, null=True)
