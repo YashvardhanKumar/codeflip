@@ -58,7 +58,7 @@ services:
     build:
       context: ./api
       target: ${DOCKER_TARGET:-development}
-    command: celery -A apps worker --loglevel=info
+    command: celery -A apps worker --loglevel=info --concurrency=${CELERY_CONCURRENCY:-1}
     env_file:
       - ./api/.env
     environment:

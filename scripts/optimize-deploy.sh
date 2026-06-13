@@ -26,6 +26,9 @@ echo "🆙 Starting services..."
 # Override bind mounts to harmless paths for production
 API_BIND_MOUNT=./empty_dir:/tmp/ignore_api WEB_BIND_MOUNT=./empty_dir:/tmp/ignore_web DOCKER_TARGET=production NODE_ENV=production docker compose up -d
 
+echo "🔄 Restarting Nginx to refresh DNS and container IPs..."
+docker compose restart nginx
+
 # 4. Final cleanup
 echo "🧹 Final storage cleanup..."
 docker system prune -f

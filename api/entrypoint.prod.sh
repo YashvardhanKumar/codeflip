@@ -19,8 +19,9 @@ python manage.py migrate --noinput
 
 # If a command is provided, execute it. Otherwise, start gunicorn.
 if [ -z "$1" ]; then
-    echo "Starting Gunicorn + Uvicorn worker..."
-    exec gunicorn apps.asgi:application -k uvicorn.workers.UvicornWorker --workers 2 --bind 0.0.0.0:8000
+    WORKERS=${GUNICORN_WORKERS:-1}
+    echo "Starting Gunicorn + Uvicorn worker (workers: $WORKERS)..."
+    exec gunicorn apps.asgi:application -k uvicorn.workers.UvicornWorker --workers $WORKERS --bind 0.0.0.0:8000
 else
     echo "Running custom command: $@"
     exec "$@"

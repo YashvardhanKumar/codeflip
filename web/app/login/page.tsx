@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,10 +14,18 @@ import { toast } from 'sonner'
 import { Loader2, ArrowLeft, ShieldCheck, Zap, Code2 } from 'lucide-react'
 import Logo from '@/components/logo'
 
-export default function LoginPage() {
+function LoginContent() {
   const { login } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({ username: '', password: '' })
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const error = searchParams.get('error')
+    if (error) {
+      toast.error(error)
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -237,5 +246,19 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#0a0a0b]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      }
+    >
+      <LoginContent />
+    </Suspense>
   )
 }
