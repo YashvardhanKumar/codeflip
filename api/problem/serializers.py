@@ -10,8 +10,9 @@ from .models import (
     DiscussTags,
     AnswerStatus,
     Comment,
+    Variable,
 )
-from user.models import User, CodingLanguage, Language
+from user.models import User, CodingLanguage
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -73,9 +74,7 @@ class CodeblockSerializer(serializers.ModelSerializer):
         source="get_language_display", read_only=True
     )
     full_code = serializers.SerializerMethodField()
-    language = serializers.SlugRelatedField(
-        slug_field="name", queryset=Language.objects.all()
-    )
+    language = serializers.ChoiceField(choices=CodingLanguage.choices)
 
     class Meta:
         model = Codeblock
@@ -91,7 +90,9 @@ class CodeblockSerializer(serializers.ModelSerializer):
         read_only_fields = ["id"]
 
     def get_full_code(self, obj):
-        imports = obj.language.import_block if obj.language else ""
+        from problem.utils import IMPORT_BLOCKS
+
+        imports = IMPORT_BLOCKS.get(obj.language, "")
         return f"{imports}\n\n{obj.block}\n\n{obj.runner_code}"
 
 
@@ -103,7 +104,6 @@ class TestcaseSerializer(serializers.ModelSerializer):
             "problem",
             "input",
             "output",
-            "output_type",
             "display_testcase",
             "created_at",
         ]
@@ -119,7 +119,6 @@ class TestcaseListSerializer(serializers.ModelSerializer):
             "id",
             "input",
             "output",
-            "output_type",
             "display_testcase",
             "created_at",
         ]
@@ -152,6 +151,12 @@ class ProblemListSerializer(serializers.ModelSerializer):
         return obj.testcases.count()
 
 
+class VariableSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Variable
+        fields = ["id", "name", "type", "template_type", "array_dimensions"]
+
+
 class ProblemDetailSerializer(serializers.ModelSerializer):
     tags = TagsSerializer(many=True, read_only=True)
     tag_ids = serializers.ListField(
@@ -159,6 +164,7 @@ class ProblemDetailSerializer(serializers.ModelSerializer):
     )
     codeblocks = CodeblockSerializer(many=True, read_only=True)
     testcases = TestcaseListSerializer(many=True, read_only=True)
+    variables = VariableSerializer(many=True, read_only=True)
     success_rate = serializers.SerializerMethodField()
 
     class Meta:
@@ -172,6 +178,7 @@ class ProblemDetailSerializer(serializers.ModelSerializer):
             "tag_ids",
             "codeblocks",
             "testcases",
+            "variables",
             "created_at",
             "success_rate",
         ]
@@ -265,8 +272,8 @@ class SolutionSubmitSerializer(serializers.Serializer):
     )
 
     def validate_language(self, value):
-        if value and not Language.objects.filter(name=value).exists():
-            raise serializers.ValidationError(f"Unsupported language: {value}")
+        if value and value not in dict(CodingLanguage.choices):
+            raise serializers.ValidationError("Invalid language selection.")
         return value
 
     def validate_problem_id(self, value):

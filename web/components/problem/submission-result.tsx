@@ -6,6 +6,7 @@ import {
   Status,
   TestcaseList,
   LanguageDisplayNames,
+  Variable,
 } from '@/lib/models'
 import {
   CheckCircle2,
@@ -38,6 +39,7 @@ interface SubmissionResultProps {
   onClose: () => void
   history?: Solution[]
   testcases: TestcaseList[]
+  variables?: Variable[]
 }
 
 export default function SubmissionResult({
@@ -45,6 +47,7 @@ export default function SubmissionResult({
   onClose,
   history = [],
   testcases,
+  variables,
 }: SubmissionResultProps) {
   const [copied, setCopied] = useState(false)
 
@@ -345,6 +348,7 @@ export default function SubmissionResult({
                 <TestResultDetail
                   result={firstFailedResult.result}
                   testcase={firstFailedResult.testcase}
+                  variables={variables}
                 />
               )}
             </div>

@@ -3,14 +3,13 @@
 import { Skeleton } from '../ui/skeleton'
 // components/problem/TestPanel.tsx
 
-import { Language, Problem, TestcaseList, User } from '@/lib/models'
-import { useEffect, useState } from 'react'
+import { TestcaseList, Problem, User } from '@/lib/models'
 import TestResultDetail from './test-result-detail'
 
 interface Props {
   problem: Problem
   user: User | null
-  language?: Language
+  language: string
   runData: any[] | null
   submitData: any[] | null
   isLoading: boolean
@@ -19,12 +18,14 @@ interface Props {
   setActiveTab: (tab: string) => void
   activeCase: number
   setActiveCase: (index: number) => void
+  sampleTestcases: TestcaseList[]
+  setSampleTestcases: React.Dispatch<React.SetStateAction<TestcaseList[]>>
 }
 
 export default function TestPanel({
   problem,
   user,
-  language = Language.PYTHON,
+  language,
   runData,
   submitData,
   isLoading,
@@ -33,15 +34,68 @@ export default function TestPanel({
   setActiveTab,
   activeCase,
   setActiveCase,
+  sampleTestcases,
+  setSampleTestcases,
 }: Props) {
-  // Original Sample Testcases (Sample cases only)
-  const [sampleTestcases, setSampleTestcases] = useState<TestcaseList[]>([])
+  const handleInputChange = (lineIndex: number, newValue: string) => {
+    setSampleTestcases((prev) => {
+      const updated = [...prev]
+      const currentCase = { ...updated[activeCase] }
+      if (currentCase) {
+        const lines = currentCase.input.replaceAll('\r\n', '\n').split('\n')
+        const line = lines[lineIndex]
+        const splitIdx = line.indexOf('=')
+        if (splitIdx !== -1) {
+          const key = line.substring(0, splitIdx).trim()
+          lines[lineIndex] = `${key} = ${newValue}`
+        } else {
+          lines[lineIndex] = newValue
+        }
+        currentCase.input = lines.join('\n')
+        updated[activeCase] = currentCase
+      }
+      return updated
+    })
+  }
 
-  useEffect(() => {
-    setSampleTestcases(
-      problem.testcases.filter((e) => e.display_testcase == true)
-    )
-  }, [problem])
+  const handleDeleteTestcase = (indexToDelete: number) => {
+    const updated = sampleTestcases.filter((_, idx) => idx !== indexToDelete)
+    setSampleTestcases(updated)
+    if (activeCase >= updated.length) {
+      setActiveCase(Math.max(0, updated.length - 1))
+    } else if (activeCase === indexToDelete && activeCase > 0) {
+      setActiveCase(activeCase - 1)
+    }
+  }
+
+  const handleAddTestcase = () => {
+    let newInput = ''
+    if (sampleTestcases.length > 0) {
+      const lines = sampleTestcases[0].input
+        .replaceAll('\r\n', '\n')
+        .split('\n')
+      const newLines = lines.map((line) => {
+        const splitIdx = line.indexOf('=')
+        if (splitIdx !== -1) {
+          const key = line.substring(0, splitIdx).trim()
+          return `${key} = `
+        }
+        return ''
+      })
+      newInput = newLines.join('\n')
+    }
+
+    const newCase = {
+      id: Math.max(0, ...sampleTestcases.map((t) => t.id || 0)) + 1,
+      input: newInput,
+      output: '',
+      display_testcase: true,
+      created_at: new Date().toISOString(),
+    }
+
+    setSampleTestcases([...sampleTestcases, newCase])
+    setActiveCase(sampleTestcases.length)
+  }
 
   const getTabStatusClasses = (index: number, isSubmit?: boolean) => {
     const result = isSubmit ? submitData?.[index] : runData?.[index]
@@ -117,17 +171,33 @@ export default function TestPanel({
                 <button
                   key={index}
                   onClick={() => setActiveCase(index)}
-                  className={`px-4 py-1.5 rounded-md text-xs font-medium transition-all active:scale-95 border ${
+                  className={`relative px-4 py-1.5 rounded-md text-xs font-medium transition-all active:scale-95 border ${
                     activeCase === index
                       ? 'bg-surface-border text-white border-surface-border'
                       : 'text-gray-400 hover:text-white hover:bg-surface-border border-transparent'
                   }`}
                 >
                   Case {index + 1}
+                  {sampleTestcases.length > 1 && (
+                    <span
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDeleteTestcase(index)
+                      }}
+                      className="absolute -top-1 -right-1 bg-neutral-800 hover:bg-neutral-700 text-gray-400 hover:text-white rounded-full size-3.5 flex items-center justify-center text-[10px] transition-colors cursor-pointer font-bold border border-neutral-700/50 shadow-sm"
+                      title="Delete Case"
+                    >
+                      ×
+                    </span>
+                  )}
                 </button>
               ))}
 
-              <button className="text-gray-400 hover:text-white hover:bg-surface-border size-7 flex items-center justify-center rounded-md transition-all active:scale-90">
+              <button
+                onClick={handleAddTestcase}
+                title="Add Testcase"
+                className="text-gray-400 hover:text-white hover:bg-surface-border size-7 flex items-center justify-center rounded-md transition-all active:scale-90"
+              >
                 <span className="material-symbols-outlined text-lg">add</span>
               </button>
             </div>
@@ -136,22 +206,52 @@ export default function TestPanel({
               key={activeCase}
               className="space-y-3 font-mono text-xs animate-in fade-in duration-200"
             >
-              {sampleTestcases &&
-                sampleTestcases
-                  .at(activeCase)
-                  ?.input.replaceAll('\r\n', '\n')
+              {sampleTestcases && sampleTestcases[activeCase]?.input ? (
+                sampleTestcases[activeCase].input
+                  .replaceAll('\r\n', '\n')
                   .split('\n')
                   .map((line, i) => {
-                    const [key, value] = line.split('=', 2)
-                    return (
-                      <div key={i}>
-                        <p className="text-gray-400 mb-1">{key} = </p>
-                        <div className="bg-surface-border p-2 rounded text-white border border-gray-700">
-                          {value}
+                    const splitIdx = line.indexOf('=')
+                    if (splitIdx !== -1) {
+                      const key = line.substring(0, splitIdx).trim()
+                      const value = line.substring(splitIdx + 1).trim()
+                      return (
+                        <div key={i}>
+                          <p className="text-gray-400 mb-1">{key} = </p>
+                          <textarea
+                            value={value}
+                            onChange={(e) =>
+                              handleInputChange(i, e.target.value)
+                            }
+                            rows={1}
+                            className="w-full bg-surface-border px-3 py-2 rounded text-white border border-gray-700 outline-none focus:border-primary focus:ring-1 focus:ring-primary font-mono text-xs resize-y"
+                          />
                         </div>
-                      </div>
-                    )
-                  })}
+                      )
+                    } else {
+                      return (
+                        <div key={i}>
+                          <p className="text-gray-400 mb-1">
+                            {problem.variables && problem.variables[i]
+                              ? problem.variables[i].name
+                              : `Arg ${i + 1}`}{' '}
+                            ={' '}
+                          </p>
+                          <textarea
+                            value={line}
+                            onChange={(e) =>
+                              handleInputChange(i, e.target.value)
+                            }
+                            rows={1}
+                            className="w-full bg-surface-border px-3 py-2 rounded text-white border border-gray-700 outline-none focus:border-primary focus:ring-1 focus:ring-primary font-mono text-xs resize-y"
+                          />
+                        </div>
+                      )
+                    }
+                  })
+              ) : (
+                <div className="text-gray-500 italic p-2">Hidden test case</div>
+              )}
             </div>
           </div>
         )}
@@ -218,6 +318,7 @@ export default function TestPanel({
                 <TestResultDetail
                   result={runData[activeCase]}
                   testcase={sampleTestcases[activeCase]}
+                  variables={problem.variables}
                 />
               </div>
             ) : (
@@ -231,13 +332,13 @@ export default function TestPanel({
             {submitData ? (
               <div className="flex divide-x relative space-x-3 flex-1 min-h-0">
                 <div
-                  className={`overflow-y-auto gap-3 pr-3 ${isLoading ? 'flex flex-wrap' : 'grid grid-cols-1 shrink-0'}`}
+                  className={`overflow-y-auto gap-3 pr-3 content-start items-start ${isLoading ? 'flex flex-wrap' : 'grid grid-cols-1 shrink-0'}`}
                 >
                   {submitData.map((res, index) => (
                     <button
                       key={index}
                       onClick={() => setActiveCase(index)}
-                      className={`px-3 py-1.5 rounded-md w-24 flex gap-1 text-xs font-medium transition-all active:scale-95 border ${submitData[index]?.status?.id === 1 ? '' : getTabStatusClasses(index, true)}`}
+                      className={`px-3 py-1.5 rounded-md w-24 h-fit flex justify-start gap-1 text-xs font-medium transition-all active:scale-95 border ${submitData[index]?.status?.id === 1 ? '' : getTabStatusClasses(index, true)}`}
                     >
                       {submitData[index]?.status?.id === 1 && (
                         <div className="animate-spin size-3 border border-primary border-t-transparent rounded-full"></div>
@@ -252,6 +353,7 @@ export default function TestPanel({
                       <TestResultDetail
                         result={submitData[activeCase]}
                         testcase={sampleTestcases[activeCase]}
+                        variables={problem.variables}
                       />
                     ) : (
                       <div className="h-full flex flex-col items-center justify-center gap-4 text-gray-500">

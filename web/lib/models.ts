@@ -134,7 +134,6 @@ export interface Testcase {
   problem: number
   input: string
   output: string
-  output_type: DataType
   display_testcase: boolean
   created_at: string
 }
@@ -143,9 +142,16 @@ export interface TestcaseList {
   id: number
   input: string
   output: string
-  output_type: DataType
   display_testcase: boolean
   created_at: string
+}
+
+export interface Variable {
+  id: number
+  name: string
+  type: string
+  template_type?: string
+  array_dimensions?: number
 }
 
 export interface Problem {
@@ -156,6 +162,7 @@ export interface Problem {
   tags: Tag[]
   codeblocks: Codeblock[]
   testcases: TestcaseList[]
+  variables: Variable[]
   created_at: string
   success_rate: string
 }

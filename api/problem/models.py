@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from user.models import CodingLanguage, Language  # Import from user app
+from user.models import CodingLanguage
 from ckeditor.fields import RichTextField
 
 
@@ -31,6 +31,122 @@ class Difficulty(models.TextChoices):
 class DataType(models.TextChoices):
     STRING = "string"
     INTEGER = "integer"
+
+
+class VariableType(models.TextChoices):
+    INTEGER = "INTEGER", "Integer"
+    STRING = "STRING", "String"
+    BOOLEAN = "BOOLEAN", "Boolean"
+    CHAR = "CHAR", "Character"
+    FLOAT = "FLOAT", "Float / Double"
+    LONG = "LONG", "Long"
+    ARRAY = "ARRAY", "Array"
+    CUSTOM = "CUSTOM", "Custom"
+    OBJECT = "OBJECT", "Object"
+
+
+class CustomType(models.Model):
+    name = models.CharField(
+        max_length=255,
+        unique=True,
+        help_text="Name of the custom type (e.g., ListNode)",
+    )
+
+    class Meta:
+        db_table = "custom_type"
+        verbose_name = "Custom Type"
+        verbose_name_plural = "Custom Types"
+
+    def __str__(self):
+        return self.name
+
+
+class CustomTypeLanguage(models.Model):
+    custom_type = models.ForeignKey(
+        CustomType, on_delete=models.CASCADE, related_name="languages"
+    )
+    language = models.CharField(max_length=50, choices=CodingLanguage.choices)
+    class_declaration = models.TextField(
+        blank=True,
+        default="",
+        help_text="Class definition (e.g., struct ListNode { ... })",
+    )
+    input_function = models.TextField(
+        blank=True, default="", help_text="Input parsing function"
+    )
+
+    class Meta:
+        db_table = "custom_type_language"
+        unique_together = ("custom_type", "language")
+
+    def __str__(self):
+        return f"{self.custom_type.name} - {self.get_language_display()}"
+
+
+class Method(models.Model):
+    problem = models.ForeignKey(
+        "Problem", on_delete=models.CASCADE, related_name="methods"
+    )
+    name = models.CharField(
+        max_length=255, help_text="Name of the method (e.g., addTwoNumbers)"
+    )
+    type = models.CharField(max_length=100, help_text="Return type of the method")
+    template_type = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text="Inner type if this is an array",
+    )
+    array_dimensions = models.PositiveIntegerField(
+        default=1, help_text="Number of dimensions if type is Array"
+    )
+    is_constructor = models.BooleanField(
+        default=False, help_text="Is this the constructor method?"
+    )
+
+    class Meta:
+        db_table = "method"
+        verbose_name = "Method"
+        verbose_name_plural = "Methods"
+
+    def __str__(self):
+        return f"{self.name} ({self.type})"
+
+
+class Variable(models.Model):
+    problem = models.ForeignKey(
+        "Problem", on_delete=models.CASCADE, related_name="variables"
+    )
+    method = models.ForeignKey(
+        Method,
+        on_delete=models.CASCADE,
+        related_name="parameters",
+        null=True,
+        blank=True,
+        help_text="Method this variable belongs to",
+    )
+    name = models.CharField(
+        max_length=255, help_text="Name of the variable (e.g., nums, target)"
+    )
+    type = models.CharField(max_length=100, help_text="Type of the variable")
+    template_type = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text="Inner type if this is an array (e.g., Integer for a 1D Array of Integers)",
+    )
+    array_dimensions = models.PositiveIntegerField(
+        default=1,
+        help_text="Number of dimensions if type is Array (e.g., 2 for 2D array)",
+    )
+
+    class Meta:
+        db_table = "variable"
+        verbose_name = "Variable"
+        verbose_name_plural = "Variables"
+
+    def __str__(self):
+        return f"{self.name} ({self.type})"
 
 
 class Tags(models.Model):
@@ -75,10 +191,9 @@ class Codeblock(models.Model):
     )
     block = models.TextField(blank=True, null=False, default="")
     runner_code = models.TextField(blank=True, null=False, default="")
-    language = models.ForeignKey(
-        Language,
-        on_delete=models.CASCADE,
-        related_name="codeblocks",
+    language = models.CharField(
+        max_length=50,
+        choices=CodingLanguage.choices,
         verbose_name="Programming Language",
     )
 
@@ -89,7 +204,7 @@ class Codeblock(models.Model):
         unique_together = ("problem", "language")
 
     def get_language_display(self):
-        return self.language.display_name if self.language else ""
+        return dict(CodingLanguage.choices).get(self.language, self.language)
 
     def __str__(self):
         return (
@@ -104,12 +219,6 @@ class Testcase(models.Model):
     )
     input = models.TextField(blank=True, null=False)
     output = models.TextField(blank=True, null=False)
-    output_type = models.CharField(
-        max_length=10,
-        choices=DataType.choices,
-        default=DataType.INTEGER,
-        verbose_name="Output Data Type",
-    )
     display_testcase = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -150,10 +259,7 @@ class Solution(models.Model):
         ordering = ["-created_at"]
 
     def get_language_display(self):
-        try:
-            return Language.objects.get(name=self.language).display_name
-        except Language.DoesNotExist:
-            return self.language
+        return dict(CodingLanguage.choices).get(self.language, self.language)
 
     def __str__(self):
         return f"Solution by {self.user.username} for Problem #{self.problem.id} ({self.get_language_display()})"

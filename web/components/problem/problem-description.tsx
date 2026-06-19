@@ -6,6 +6,7 @@ import TabButton from '@/components/tab-button'
 import DifficultyBadge from '@/components/difficulty-badge'
 import CodeBlock from '@/components/code-block'
 import { ResizablePanel } from '../ui/resizable'
+import { ImperativePanelHandle } from 'react-resizable-panels'
 import {
   Discuss,
   PaginatedResponse,
@@ -42,9 +43,19 @@ const tabs = [
 
 interface Props {
   problem: Problem
+  maximizedSide?: 'left' | 'right' | null
+  onMaximize?: () => void
+  onRestore?: () => void
+  ref?: React.Ref<ImperativePanelHandle>
 }
 
-export default function ProblemDescription({ problem }: Props) {
+function ProblemDescription({
+  problem,
+  maximizedSide,
+  onMaximize,
+  onRestore,
+  ref,
+}: Props) {
   const [activeTab, setActiveTab] = useState('description')
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<
     number | null
@@ -90,7 +101,10 @@ export default function ProblemDescription({ problem }: Props) {
 
   return (
     <ResizablePanel
+      ref={ref}
       defaultSize={50}
+      minSize={0}
+      collapsible={true}
       className="flex flex-col border-r border-surface-border bg-background-dark overflow-hidden relative"
     >
       <AnimatePresence>
@@ -147,6 +161,62 @@ export default function ProblemDescription({ problem }: Props) {
             onClick={() => setActiveTab(tab.id)}
           />
         ))}
+        <div className="flex-1" />
+        <div className="panel-right-btn flex space-x-1 pr-1">
+          {maximizedSide === 'left' ? (
+            <div data-state="closed">
+              <button
+                onClick={onRestore}
+                title="Restore Panel"
+                className="relative text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sd-ring disabled:pointer-events-none disabled:opacity-50 text-sd-foreground hover:text-sd-accent-foreground rounded-sd-md hover:bg-fill-secondary dark:hover:bg-fill-secondary flex h-6 w-6 cursor-pointer items-center justify-center !rounded p-[5px] fold text-gray-400 hover:text-white"
+              >
+                <div className="relative text-[14px] leading-[normal] p-[1px] before:block before:h-3.5 before:w-3.5 h-[14px] w-[14px] text-text-secondary dark:text-text-secondary">
+                  <svg
+                    aria-hidden="true"
+                    focusable="false"
+                    data-prefix="far"
+                    data-icon="chevron-left"
+                    className="svg-inline--fa fa-chevron-left absolute h-[1em] -translate-x-1/2 -translate-y-1/2 align-[-0.125em] left-1/2 top-1/2"
+                    role="img"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 320 512"
+                  >
+                    <path
+                      fill="currentColor"
+                      d="M15 239c-9.4 9.4-9.4 24.6 0 33.9L207 465c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9L65.9 256 241 81c9.4-9.4 9.4-24.6 0-33.9s-24.6-9.4-33.9 0L15 239z"
+                    ></path>
+                  </svg>
+                </div>
+              </button>
+            </div>
+          ) : (
+            <div data-state="closed">
+              <button
+                onClick={onMaximize}
+                title="Maximize Panel"
+                className="relative text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sd-ring disabled:pointer-events-none disabled:opacity-50 text-sd-foreground hover:text-sd-accent-foreground rounded-sd-md hover:bg-fill-secondary dark:hover:bg-fill-secondary flex h-6 w-6 cursor-pointer items-center justify-center !rounded p-[5px] maximize text-gray-400 hover:text-white"
+              >
+                <div className="relative text-[14px] leading-[normal] p-[1px] before:block before:h-3.5 before:w-3.5 h-[14px] w-[14px] text-text-secondary dark:text-text-secondary">
+                  <svg
+                    aria-hidden="true"
+                    focusable="false"
+                    data-prefix="far"
+                    data-icon="expand"
+                    className="svg-inline--fa fa-expand absolute h-[1em] -translate-x-1/2 -translate-y-1/2 align-[-0.125em] left-1/2 top-1/2"
+                    role="img"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 448 512"
+                  >
+                    <path
+                      fill="currentColor"
+                      d="M136 32c13.3 0 24 10.7 24 24s-10.7 24-24 24H48v88c0 13.3-10.7 24-24 24s-24-10.7-24-24V56C0 42.7 10.7 32 24 32H136zM0 344c0-13.3 10.7-24 24-24s24 10.7 24 24v88h88c13.3 0 24 10.7 24 24s-10.7 24-24 24H24c-13.3 0-24-10.7-24-24V344zM424 32c13.3 0 24 10.7 24 24V168c0 13.3-10.7 24-24 24s-24-10.7-24-24V80H312c-13.3 0-24-10.7-24-24s10.7-24 24-24H424zM400 344c0-13.3 10.7-24 24-24s24 10.7 24 24V456c0 13.3-10.7 24-24 24H312c-13.3 0-24-10.7-24-24s10.7-24 24-24h88V344z"
+                    ></path>
+                  </svg>
+                </div>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Content Scroll Area */}
@@ -403,3 +473,5 @@ function SubmissionsTab({
     </div>
   )
 }
+
+export default ProblemDescription

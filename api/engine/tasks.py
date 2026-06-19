@@ -13,28 +13,43 @@ def submit_solution_task(solution_id):
         solution = Solution.objects.get(id=solution_id)
 
         # Prepare evaluation payload
-        from user.models import Language
         from problem.models import Codeblock
+        from problem.utils import IMPORT_BLOCKS
 
         codeblock = Codeblock.objects.get(
-            problem=solution.problem, language__name=solution.language
+            problem=solution.problem, language=solution.language
         )
-        imports = codeblock.language.import_block if codeblock.language else ""
-        full_code = f"{imports}\n\n{solution.code}\n\n{codeblock.runner_code}"
+        imports = IMPORT_BLOCKS.get(solution.language, "")
+        if "###__CODE_SEPARATOR__###" in codeblock.runner_code:
+            before, _, after = codeblock.runner_code.partition(
+                "###__CODE_SEPARATOR__###"
+            )
+            if before.endswith("\n"):
+                before = before[:-1]
+                if before.endswith("\r"):
+                    before = before[:-1]
+            if after.startswith("\n"):
+                after = after[1:]
+            elif after.startswith("\r\n"):
+                after = after[2:]
+            full_code = f"{imports}\n\n{before}\n\n{solution.code}\n\n{after}"
+        else:
+            full_code = f"{imports}\n\n{solution.code}\n\n{codeblock.runner_code}"
 
-        try:
-            lang_obj = Language.objects.get(name=solution.language)
-            judge0_lang_id = lang_obj.judge0_language_id
-        except Language.DoesNotExist:
-            from problem.views import JUDGE0_LANGUAGE_MAP
+        from problem.views import JUDGE0_LANGUAGE_MAP
 
-            judge0_lang_id = JUDGE0_LANGUAGE_MAP.get(solution.language, 71)
+        judge0_lang_id = JUDGE0_LANGUAGE_MAP.get(solution.language, 71)
 
         evaluation_payload = {
             "problem_id": solution.problem.id,
             "source_code": full_code,
             "language_id": judge0_lang_id,
         }
+
+        if judge0_lang_id == 74:
+            evaluation_payload["compiler_options"] = (
+                "--target es2020 --lib es2020,dom --module commonjs"
+            )
 
         # Evaluate
         result = submit_to_judge0(evaluation_payload, is_submit=True)

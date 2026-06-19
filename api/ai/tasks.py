@@ -36,10 +36,56 @@ def generate_testcases_task(self, problem_id, count):
         while remaining > 0:
             current_batch = min(batch_size, remaining)
 
+            # Collect existing testcases to avoid duplicates
+            existing_tc = Testcase.objects.filter(problem=problem).values_list(
+                "input", flat=True
+            )[:20]
+            existing_tc_str = "\n".join(existing_tc) if existing_tc else "None"
+
+            # Describe variables and methods
+            def format_type(obj):
+                base = obj.type
+                if obj.type == "ARRAY":
+                    dim_str = "[]" * obj.array_dimensions
+                    base = f"{obj.template_type}{dim_str}"
+                return base
+
+            methods_str = "\n".join(
+                [
+                    f"- Method: {m.name} | Return Type: {format_type(m)}"
+                    for m in problem.methods.all()
+                ]
+            )
+            vars_str = "\n".join(
+                [
+                    f"- Variable: {v.name} | Type: {format_type(v)} | Target Method: {v.method.name if v.method else 'None'}"
+                    for v in problem.variables.all()
+                ]
+            )
+
             prompt = f"""
             You are an expert competitive programmer. Generate exactly {current_batch} unique test cases for the following problem.
-            Problem Description: {problem.problem_description}
-            Code Template: {codeblock.block}
+
+            Problem Description:
+            {problem.problem_description}
+
+            Methods:
+            {methods_str}
+
+            Variables (Inputs):
+            {vars_str}
+
+            Code Template:
+            {codeblock.block}
+
+            Existing Testcases (do not duplicate these):
+            {existing_tc_str}
+
+            FORMAT REQUIREMENTS FOR 'input' FIELD:
+            - Every variable MUST be written on a new line.
+            - Testcase for an array MUST be generated with [] brackets, and elements comma separated (e.g., [1, 2, 3]).
+            - Nested arrays MUST also use [] brackets and be comma separated (e.g., [[1, 2], [3, 4]]).
+
             Output MUST be a raw JSON array of objects.
             Format: [ {{"input": "...", "output": "..."}}, ... ]
             """
@@ -65,7 +111,6 @@ def generate_testcases_task(self, problem_id, count):
                                 problem=problem,
                                 input=str(data.get("input", "")),
                                 output=str(data.get("output", "")),
-                                output_type=DataType.STRING,
                                 display_testcase=False,
                             )
                         )

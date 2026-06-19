@@ -15,6 +15,7 @@ const nextConfig: NextConfig = {
     'react-markdown',
     'rehype-raw',
     'remark-gfm',
+    'mathjax-full',
   ],
 }
 
