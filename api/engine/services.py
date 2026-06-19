@@ -19,6 +19,7 @@ VALID_JUDGE0_FIELDS = {
     "stack_limit",
     "max_processes_and_or_threads",
     "max_file_size",
+    "compiler_options",
 }
 
 
@@ -40,7 +41,46 @@ def decode_base64(text: str) -> str:
         return text
 
 
-def format_stdin(raw_input: str) -> str:
+def flatten_json_array(arr):
+    if not isinstance(arr, list):
+        return [arr]
+    res = [len(arr)]
+    for item in arr:
+        res.extend(flatten_json_array(item))
+    return res
+
+
+def _unquote_value(val):
+    """
+    Strip surrounding double quotes from a value.
+    """
+    if len(val) >= 2 and val.startswith('"') and val.endswith('"'):
+        return val[1:-1]
+    return val
+
+
+def _flatten_for_stdin(item):
+    """
+    Recursively flatten a parsed JSON value for stdin.
+    - Strings are unquoted (returned without surrounding double quotes).
+    - null (None) becomes an empty string (true null value).
+    - Lists are prefixed with their length then each element is flattened.
+    """
+    if item is None:
+        return ["null"]
+    if isinstance(item, str):
+        return [item]  # already unquoted by json.loads
+    if isinstance(item, (int, float, bool)):
+        return [str(item).lower() if isinstance(item, bool) else str(item)]
+    if isinstance(item, list):
+        res = [str(len(item))]
+        for sub in item:
+            res.extend(_flatten_for_stdin(sub))
+        return res
+    return [str(item)]
+
+
+def format_stdin(raw_input: str, language_id: int = None) -> str:
     if not raw_input:
         return ""
     lines = raw_input.strip().splitlines()
@@ -50,14 +90,30 @@ def format_stdin(raw_input: str) -> str:
             value = line.split("=", 1)[1].strip()
         else:
             value = line.strip()
-        if value.startswith("[") and value.endswith("]"):
+
+        # Bare `null` (without quotes) → treat as null input (empty value)
+        if value == "null":
+            formatted_lines.append("null")
+            continue
+
+        # JSON array – flatten with unquoted strings and null handling
+        if (
+            language_id in [50, 54, 62]
+            and value.startswith("[")
+            and value.endswith("]")
+        ):
             try:
                 arr = json.loads(value)
                 if isinstance(arr, list):
-                    formatted_lines.append(f"{len(arr)} {' '.join(map(str, arr))}")
+                    flat = _flatten_for_stdin(arr)
+                    formatted_lines.append("\n".join(flat))
                     continue
             except Exception:
                 pass
+
+        # Double-quoted string like "pwwkew" → strip the quotes
+        value = _unquote_value(value)
+
         formatted_lines.append(value)
     return "\n".join(formatted_lines)
 
@@ -67,7 +123,8 @@ def run_testcase_internal(base_payload, tc):
     Core function to evaluate a single testcase against Judge0.
     """
     payload = {**base_payload}
-    formatted_stdin = format_stdin(tc.input)
+    language_id = payload.get("language_id")
+    formatted_stdin = format_stdin(tc.input, language_id)
     if formatted_stdin:
         payload["stdin"] = encode_base64(formatted_stdin)
     if tc.output:
@@ -133,11 +190,16 @@ def submit_to_judge0(payload: dict, is_submit: bool) -> dict:
         for k, v in merged_payload.items()
         if k in VALID_JUDGE0_FIELDS and k not in ["stdin", "expected_output"]
     }
+    if merged_payload.get("language_id") == 74:
+        base_payload["compiler_options"] = (
+            "--target es2020 --lib es2020,dom --module commonjs"
+        )
+
     if "source_code" in base_payload:
         base_payload["source_code"] = encode_base64(base_payload["source_code"])
 
     results = []
-    with ThreadPoolExecutor(max_workers=10) as executor:
+    with ThreadPoolExecutor(max_workers=4) as executor:
         futures = {
             executor.submit(run_testcase_internal, base_payload, tc): tc
             for tc in testcases

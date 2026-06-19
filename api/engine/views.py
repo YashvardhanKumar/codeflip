@@ -46,9 +46,29 @@ class SubmitStreamView(APIView):
         if is_submit:
             testcases = Testcase.objects.filter(problem_id=problem_id).order_by("id")
         else:
-            testcases = Testcase.objects.filter(
-                problem_id=problem_id, display_testcase=True
-            ).order_by("id")
+            custom_testcases_data = request.data.get("custom_testcases")
+            if custom_testcases_data:
+
+                class MockTestcase:
+                    def __init__(self, id, input, output="", display_testcase=True):
+                        self.id = id
+                        self.input = input
+                        self.output = output
+                        self.display_testcase = display_testcase
+
+                testcases = [
+                    MockTestcase(
+                        id=tc.get("id", i),
+                        input=tc.get("input", ""),
+                        output=tc.get("output", ""),
+                        display_testcase=tc.get("display_testcase", True),
+                    )
+                    for i, tc in enumerate(custom_testcases_data)
+                ]
+            else:
+                testcases = Testcase.objects.filter(
+                    problem_id=problem_id, display_testcase=True
+                ).order_by("id")
 
         # Logic for code wrapping
         raw_source_code = validated.get("source_code")
@@ -57,14 +77,32 @@ class SubmitStreamView(APIView):
         # Pre-wrap code with boilerplate from Codeblock model
         codeblock = None
         if lang_str:
-            codeblock = problem.codeblocks.filter(language__name=lang_str).first()
+            codeblock = problem.codeblocks.filter(language=lang_str).first()
 
         if codeblock:
+            from problem.utils import IMPORT_BLOCKS
+
             # We wrap the code here so it's ready for Judge0 execution
-            imports = codeblock.language.import_block if codeblock.language else ""
-            full_source_code = (
-                f"{imports}\n\n{raw_source_code}\n\n{codeblock.runner_code}"
-            )
+            imports = IMPORT_BLOCKS.get(lang_str, "")
+            if "###__CODE_SEPARATOR__###" in codeblock.runner_code:
+                before, _, after = codeblock.runner_code.partition(
+                    "###__CODE_SEPARATOR__###"
+                )
+                if before.endswith("\n"):
+                    before = before[:-1]
+                    if before.endswith("\r"):
+                        before = before[:-1]
+                if after.startswith("\n"):
+                    after = after[1:]
+                elif after.startswith("\r\n"):
+                    after = after[2:]
+                full_source_code = (
+                    f"{imports}\n\n{before}\n\n{raw_source_code}\n\n{after}"
+                )
+            else:
+                full_source_code = (
+                    f"{imports}\n\n{raw_source_code}\n\n{codeblock.runner_code}"
+                )
         else:
             # Fallback if no matching codeblock found
             full_source_code = raw_source_code
@@ -81,6 +119,11 @@ class SubmitStreamView(APIView):
 
         # Final encoded code for execution
         base_judge0_payload["source_code"] = encode_base64(full_source_code)
+
+        if validated.get("language_id") == 74 or lang_str == "TYPESCRIPT":
+            base_judge0_payload["compiler_options"] = (
+                "--target es2020 --lib es2020,dom --module commonjs"
+            )
 
         def generator():
             results = []

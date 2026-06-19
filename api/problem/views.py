@@ -164,12 +164,12 @@ class ProblemViewSet(viewsets.ModelViewSet):
             status_breakdown[choice[1]] = count
 
         language_breakdown = {}
-        from user.models import Language
+        from user.models import CodingLanguage
 
-        for lang in Language.objects.all():
-            count = solutions.filter(language=lang.name).count()
+        for lang_code, lang_name in CodingLanguage.choices:
+            count = solutions.filter(language=lang_code).count()
             if count > 0:
-                language_breakdown[lang.display_name] = count
+                language_breakdown[lang_name] = count
 
         data = {
             "total_submissions": total,

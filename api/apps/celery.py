@@ -19,3 +19,12 @@ app.autodiscover_tasks()
 @app.task(bind=True)
 def debug_task(self):
     print(f"Request: {self.request!r}")
+
+
+from celery.signals import task_postrun
+from django.db import reset_queries
+
+
+@task_postrun.connect
+def clear_django_queries(*args, **kwargs):
+    reset_queries()

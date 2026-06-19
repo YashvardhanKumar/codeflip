@@ -7,7 +7,8 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import rehypeRaw from 'rehype-raw'
-import rehypeMathjax from 'rehype-mathjax/svg'
+import rehypeKatex from 'rehype-katex'
+import 'katex/dist/katex.min.css'
 import { Skeleton } from '../ui/skeleton'
 import { AlertCircle, User as UserIcon, Calendar, Eye } from 'lucide-react'
 import { formatInUserTimezone } from '@/lib/utils'
@@ -112,7 +113,7 @@ export default function EditorialTab({ problem }: Props) {
       <div className="prose prose-invert max-w-none prose-sm prose-code:before:content-none prose-code:after:content-none border-t border-surface-border pt-6">
         <ReactMarkdown
           remarkPlugins={[remarkGfm, remarkMath]}
-          rehypePlugins={[rehypeRaw, rehypeMathjax]}
+          rehypePlugins={[rehypeRaw, rehypeKatex]}
           components={{
             pre: ({ children }) => <>{children}</>,
             code({ node, inline, className, children, ...props }: any) {

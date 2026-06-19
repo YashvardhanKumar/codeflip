@@ -8,26 +8,71 @@ from .models import (
     ProblemTags,
     Discuss,
     DiscussTags,
+    Variable,
+    Method,
 )
-from user.models import Language
+from .utils import generate_codeblocks_for_problem
 
 
 class CodeblockInline(admin.TabularInline):
     model = Codeblock
     extra = 1
-    fields = ("block", "runner_code", "language")
+    fields = ("language", "block", "runner_code")
 
 
-class TestcaseInline(admin.TabularInline):
-    model = Testcase
+from .models import CustomType, CustomTypeLanguage
+
+
+class CustomTypeLanguageInline(admin.TabularInline):
+    model = CustomTypeLanguage
     extra = 1
-    readonly_fields = ("id", "created_at")
-    fields = ("input", "output", "output_type", "display_testcase", "created_at")
+
+
+@admin.register(CustomType)
+class CustomTypeAdmin(admin.ModelAdmin):
+    list_display = ("id", "name")
+    search_fields = ("name",)
+    inlines = [CustomTypeLanguageInline]
 
 
 class ProblemTagsInline(admin.TabularInline):
     model = ProblemTags
     extra = 1
+
+
+from .admin_views import TypeSelectForm
+
+
+class MethodInline(admin.TabularInline):
+    model = Method
+    extra = 1
+    form = TypeSelectForm
+
+
+class VariableInline(admin.TabularInline):
+    model = Variable
+    extra = 1
+    form = TypeSelectForm
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "method":
+            if request.resolver_match and request.resolver_match.kwargs.get(
+                "object_id"
+            ):
+                object_id = request.resolver_match.kwargs.get("object_id")
+                kwargs["queryset"] = Method.objects.filter(problem_id=object_id)
+            else:
+                kwargs["queryset"] = Method.objects.none()
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+
+@admin.action(description="Generate Codeblocks from Variables")
+def generate_codeblocks_action(modeladmin, request, queryset):
+    for problem in queryset:
+        generate_codeblocks_for_problem(problem)
+    modeladmin.message_user(
+        request, "Codeblocks successfully generated for selected problems."
+    )
 
 
 @admin.register(Problem)
@@ -36,7 +81,11 @@ class ProblemAdmin(admin.ModelAdmin):
     list_filter = ("created_at",)
     search_fields = ("id", "name", "problem_description")
     readonly_fields = ("id", "created_at", "get_editorial_discussion")
-    inlines = [CodeblockInline, TestcaseInline, ProblemTagsInline]
+    inlines = [MethodInline, VariableInline, CodeblockInline, ProblemTagsInline]
+    actions = [generate_codeblocks_action]
+
+    class Media:
+        js = "admin/js/codeblock_updater.js"
 
     fieldsets = (
         (
@@ -73,6 +122,18 @@ class ProblemAdmin(admin.ModelAdmin):
         )
 
     get_description_preview.short_description = "Description"
+
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        # Check if variables were updated and generate codeblocks automatically
+        for formset in formsets:
+            if formset.model == Variable and formset.has_changed():
+                generate_codeblocks_for_problem(form.instance)
+                break
+        else:
+            # Also generate if we are just creating the problem and variables are present
+            if not change:
+                generate_codeblocks_for_problem(form.instance)
 
 
 @admin.register(Codeblock)
@@ -173,9 +234,3 @@ class DiscussTagsAdmin(admin.ModelAdmin):
     list_filter = ("tag",)
     search_fields = ("discuss__title", "tag__tags")
     raw_id_fields = ("discuss", "tag")
-
-
-@admin.register(Language)
-class LanguageAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "display_name", "judge0_language_id")
-    search_fields = ("name", "display_name")

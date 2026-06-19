@@ -6,7 +6,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import rehypeRaw from 'rehype-raw'
-import rehypeMathjax from 'rehype-mathjax/svg'
+import rehypeKatex from 'rehype-katex'
 import Link from 'next/link'
 import CodeBlock from '../code-block'
 import {
@@ -207,7 +207,7 @@ export default function SolutionDetail({
           <div className="prose prose-invert max-w-none prose-sm prose-headings:text-white prose-p:text-gray-300 prose-code:before:content-none prose-code:after:content-none bg-surface-dark/30 p-6 rounded-2xl border border-surface-border">
             <ReactMarkdown
               remarkPlugins={[remarkGfm, remarkMath]}
-              rehypePlugins={[rehypeRaw, rehypeMathjax]}
+              rehypePlugins={[rehypeRaw, rehypeKatex]}
               components={{
                 pre: ({ children }) => <>{children}</>,
 

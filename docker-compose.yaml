@@ -55,10 +55,11 @@ services:
 
   worker:
     container_name: celery_worker
+    restart: always
     build:
       context: ./api
       target: ${DOCKER_TARGET:-development}
-    command: celery -A apps worker --loglevel=info --concurrency=${CELERY_CONCURRENCY:-1}
+    command: celery -A apps worker --loglevel=info --concurrency=${CELERY_CONCURRENCY:-1} --pool=solo
     env_file:
       - ./api/.env
     environment:
@@ -94,10 +95,6 @@ services:
       NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL}
       HOSTNAME: "0.0.0.0"
     restart: always
-    deploy:
-      resources:
-        limits:
-          memory: ${WEB_MEM_LIMIT:-512M}
     volumes:
       - ${WEB_BIND_MOUNT:-./empty_dir:/tmp/ignore_web}
       - /home/codeflip/web/node_modules/

@@ -8,10 +8,16 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from '../ui/resizable'
-import { Language, LanguageCodes, Problem, User } from '@/lib/models'
+import {
+  Language,
+  LanguageCodes,
+  Problem,
+  User,
+  TestcaseList,
+} from '@/lib/models'
 import { useEffect, useState, useRef } from 'react'
-import apiClient, { apiFetch } from '@/lib/utils'
 import { ImperativePanelHandle } from 'react-resizable-panels'
+import apiClient, { apiFetch } from '@/lib/utils'
 import { toast } from 'sonner'
 import { mutate } from 'swr'
 import Link from 'next/link'
@@ -26,9 +32,20 @@ import useSWR from 'swr'
 interface Props {
   problem: Problem
   user: User | null
+  maximizedSide?: 'left' | 'right' | null
+  onMaximize?: () => void
+  onRestore?: () => void
+  ref?: React.Ref<ImperativePanelHandle>
 }
 
-export default function CodeEditor({ problem, user }: Props) {
+function CodeEditor({
+  problem,
+  user,
+  maximizedSide,
+  onMaximize,
+  onRestore,
+  ref,
+}: Props) {
   const [language, setLanguage] = useState<Language>(
     user?.default_lang ?? Language.CPP
   )
@@ -41,6 +58,7 @@ export default function CodeEditor({ problem, user }: Props) {
   const [activeTab, setActiveTab] = useState('testcase')
   const [activeCase, setActiveCase] = useState(0)
   const [isTestPanelCollapsed, setIsTestPanelCollapsed] = useState(false)
+  const [sampleTestcases, setSampleTestcases] = useState<TestcaseList[]>([])
 
   const { data: submissionsData } = useSWR<
     PaginatedResponse<Solution> | Solution[]
@@ -56,6 +74,14 @@ export default function CodeEditor({ problem, user }: Props) {
   const testPanelRef = useRef<ImperativePanelHandle>(null)
 
   const availableLanguages = problem.codeblocks?.map((cb) => cb.language) ?? []
+
+  useEffect(() => {
+    if (problem && problem.testcases) {
+      setSampleTestcases(
+        problem.testcases.filter((e) => e.display_testcase == true)
+      )
+    }
+  }, [problem])
 
   // Update default language in backend whenever it changes
   useEffect(() => {
@@ -95,14 +121,51 @@ export default function CodeEditor({ problem, user }: Props) {
     setCode(defaultCode)
   }
 
+  const handleEditorDidMount = (editor: any, monaco: any) => {
+    if (monaco) {
+      monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
+        noSemanticValidation: true,
+        noSyntaxValidation: true,
+      })
+      monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+        noSemanticValidation: true,
+        noSyntaxValidation: true,
+      })
+    }
+  }
+
   const toggleTestPanel = () => {
     const panel = testPanelRef.current
     if (panel) {
       if (isTestPanelCollapsed) {
+        try {
+          const saved = localStorage.getItem(
+            'react-resizable-panels:coderacer-vertical-layout'
+          )
+          if (saved) {
+            const sizes = JSON.parse(saved)
+            if (Array.isArray(sizes) && sizes.length === 2) {
+              panel.expand()
+              panel.resize(sizes[1])
+              return
+            }
+          }
+        } catch (e) {
+          console.error('Error expanding vertical layout:', e)
+        }
         panel.expand(40)
       } else {
         panel.collapse()
       }
+    }
+  }
+
+  const handleMaximize = () => {
+    if (onMaximize) {
+      onMaximize()
+    }
+    if (testPanelRef.current) {
+      testPanelRef.current.collapse()
     }
   }
 
@@ -111,9 +174,7 @@ export default function CodeEditor({ problem, user }: Props) {
     setActiveTab('result')
     setError(null)
 
-    const relevantTestcases = problem.testcases
-      .filter((e) => e.display_testcase == true)
-      .sort((a, b) => a.id - b.id)
+    const relevantTestcases = sampleTestcases
 
     const initialRunData = relevantTestcases.map(() => ({
       status: { id: 1, description: 'Running' },
@@ -133,6 +194,12 @@ export default function CodeEditor({ problem, user }: Props) {
           source_code: code,
           language: language,
           language_id: LanguageCodes[language],
+          custom_testcases: sampleTestcases.map((tc) => ({
+            id: tc.id,
+            input: tc.input,
+            output: tc.output || '',
+            display_testcase: tc.display_testcase,
+          })),
         }),
       })
 
@@ -283,8 +350,10 @@ export default function CodeEditor({ problem, user }: Props) {
 
   return (
     <ResizablePanel
+      ref={ref}
       defaultSize={50}
-      minSize={20}
+      minSize={0}
+      collapsible={true}
       className="h-full flex flex-col"
     >
       <div className="h-full flex flex-col bg-[#1e1e1e] relative overflow-hidden">
@@ -295,11 +364,16 @@ export default function CodeEditor({ problem, user }: Props) {
               onClose={() => setFinalSubmission(null)}
               testcases={problem.testcases}
               history={history}
+              variables={problem.variables}
             />
           )}
         </AnimatePresence>
 
-        <ResizablePanelGroup direction="vertical" className="flex-1">
+        <ResizablePanelGroup
+          autoSaveId="coderacer-vertical-layout"
+          direction="vertical"
+          className="flex-1"
+        >
           <ResizablePanel
             defaultSize={60}
             minSize={15}
@@ -311,6 +385,9 @@ export default function CodeEditor({ problem, user }: Props) {
                 language={language}
                 setLanguage={setLanguage}
                 availableLanguages={availableLanguages}
+                maximizedSide={maximizedSide}
+                onMaximize={handleMaximize}
+                onRestore={onRestore}
               />
               <div className="flex-1 min-h-0">
                 {code !== null && (
@@ -320,6 +397,7 @@ export default function CodeEditor({ problem, user }: Props) {
                     value={code}
                     theme="vs-dark"
                     onChange={(value) => setCode(value ?? '')}
+                    onMount={handleEditorDidMount}
                     options={{
                       minimap: { enabled: false },
                       fontSize: 14,
@@ -362,6 +440,8 @@ export default function CodeEditor({ problem, user }: Props) {
                 setActiveTab={setActiveTab}
                 activeCase={activeCase}
                 setActiveCase={setActiveCase}
+                sampleTestcases={sampleTestcases}
+                setSampleTestcases={setSampleTestcases}
               />
             </div>
           </ResizablePanel>
@@ -428,3 +508,5 @@ export default function CodeEditor({ problem, user }: Props) {
     </ResizablePanel>
   )
 }
+
+export default CodeEditor

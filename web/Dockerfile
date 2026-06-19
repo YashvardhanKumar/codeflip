@@ -8,7 +8,13 @@ COPY package.json bun.lock ./
 
 # --- Development Stage ---
 FROM base AS development
-RUN bun install --frozen-lockfile
+
+RUN apk add --no-cache libc6-compat
+WORKDIR /home/codeflip/web
+COPY package.json  bun.lock ./
+
+RUN bun install --no-cache
+
 COPY . .
 EXPOSE 3000
 CMD ["bun", "dev"]

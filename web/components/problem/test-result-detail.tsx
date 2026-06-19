@@ -1,4 +1,4 @@
-import { TestcaseList } from '@/lib/models'
+import { TestcaseList, Variable } from '@/lib/models'
 
 interface TestResultDetailProps {
   result?: {
@@ -8,11 +8,13 @@ interface TestResultDetailProps {
     compile_output?: string | null
   } | null
   testcase?: TestcaseList
+  variables?: Variable[]
 }
 
 export default function TestResultDetail({
   result,
   testcase,
+  variables,
 }: TestResultDetailProps) {
   return (
     <div className="space-y-3 w-full max-w-2xl shrink-0">
@@ -23,16 +25,35 @@ export default function TestResultDetail({
             .replaceAll('\r\n', '\n')
             .split('\n')
             .map((line, i) => {
-              const [key, value] = line.split('=', 2)
-              return (
-                <div
-                  key={i}
-                  className="bg-surface-border p-2 rounded text-white border border-gray-700"
-                >
-                  <p className="text-gray-400 mb-1">{key} = </p>
-                  <div>{value}</div>
-                </div>
-              )
+              const splitIdx = line.indexOf('=')
+              if (splitIdx !== -1) {
+                const key = line.substring(0, splitIdx).trim()
+                const value = line.substring(splitIdx + 1).trim()
+                return (
+                  <div
+                    key={i}
+                    className="bg-surface-border p-2 rounded text-white border border-gray-700"
+                  >
+                    <p className="text-gray-400 mb-1">{key} = </p>
+                    <div>{value}</div>
+                  </div>
+                )
+              } else {
+                return (
+                  <div
+                    key={i}
+                    className="bg-surface-border p-2 rounded text-white border border-gray-700"
+                  >
+                    <p className="text-gray-400 mb-1">
+                      {variables && variables[i]
+                        ? variables[i].name
+                        : `Arg ${i + 1}`}{' '}
+                      ={' '}
+                    </p>
+                    <div>{line}</div>
+                  </div>
+                )
+              }
             })
         ) : (
           <div className="bg-surface-border p-2 rounded text-gray-500 border border-gray-700 italic">

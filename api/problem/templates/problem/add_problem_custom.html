@@ -4,148 +4,7 @@
 {% block rootops_extra_style %}
 {{ form.media }}
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<style>
-    .form-container {
-        max-width: 1000px;
-        margin: 40px auto;
-        background: #1e1e1e;
-        padding: 40px;
-        border-radius: 12px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        border-top: 4px solid #3498db;
-    }
 
-    h1, h2 {
-        margin-top: 0;
-        margin-bottom: 30px;
-        font-weight: 300;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        color: white;
-    }
-
-    h2 { border-bottom: 1px solid #333; padding-bottom: 10px; margin-top: 40px; color: #79aec8; }
-
-    .custom-input {
-        width: 100%;
-        background: #2d2d2d;
-        border: 1px solid #444;
-        color: #fff;
-        padding: 12px 15px;
-        border-radius: 6px;
-        margin-bottom: 20px;
-        font-size: 14px;
-        box-sizing: border-box;
-    }
-
-    /* Fixed select styling */
-    select.custom-input {
-        appearance: none;
-        -webkit-appearance: none;
-        background-color: #2d2d2d !important;
-        color: #fff !important;
-        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233498db' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-        background-repeat: no-repeat;
-        background-position: right 1rem center;
-        background-size: 1em;
-        padding-right: 2.5rem;
-        cursor: pointer;
-    }
-
-    select.custom-input option {
-        background-color: #2d2d2d !important;
-        color: #fff !important;
-    }
-
-    .custom-input:focus {
-        border-color: #3498db;
-        outline: none;
-        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
-    }
-
-    label {
-        display: block;
-        margin-bottom: 8px;
-        font-weight: bold;
-        color: #aaa;
-        font-size: 13px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .codeblock-item {
-        background: #252525;
-        padding: 20px;
-        border-radius: 8px;
-        margin-bottom: 20px;
-        border-left: 4px solid #79aec8;
-        position: relative;
-    }
-
-    .submit-row {
-        margin-top: 30px;
-        text-align: right;
-    }
-
-    .btn-save {
-        background: #3498db;
-        color: white;
-        border: none;
-        padding: 12px 40px;
-        border-radius: 6px;
-        font-weight: bold;
-        cursor: pointer;
-        transition: background 0.2s;
-        font-size: 16px;
-    }
-
-    .btn-save:hover { background: #2980b9; }
-
-    .lang-btn {
-        background: #2c3e50;
-        color: #ecf0f1;
-        border: 1px solid #34495e;
-        padding: 8px 18px;
-        border-radius: 20px;
-        cursor: pointer;
-        font-size: 13px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        transition: all 0.2s;
-        position: relative;
-    }
-
-    .lang-btn:hover {
-        background: #34495e;
-        border-color: #3498db;
-        transform: translateY(-2px);
-    }
-
-    .lang-btn.selected {
-        background: #3498db;
-        border-color: #2980b9;
-        color: white;
-    }
-
-    .lang-btn .remove-icon {
-        display: none;
-        margin-left: 5px;
-        font-size: 14px;
-    }
-
-    .lang-btn.selected .remove-icon {
-        display: inline-block;
-    }
-
-    .lang-btn.selected i.fa-plus {
-        display: none;
-    }
-
-    /* CKEditor specific dark tweaks */
-    .django-ckeditor-widget { width: 100% !important; margin-bottom: 20px; }
-</style>
 {% endblock %}
 
 {% block rootops_content %}
@@ -154,6 +13,11 @@
     <form method="post">
         {% csrf_token %}
 
+        <div class="step-indicator" style="margin-bottom: 20px; color: #aaa; font-weight: bold;">
+            Step {{ step }} of 7
+        </div>
+
+        {% if step == 1 %}
         <div class="problem-main">
             {% for field in form %}
             <div class="field-wrapper">
@@ -163,9 +27,231 @@
             </div>
             {% endfor %}
         </div>
+        <div class="submit-row">
+            <button type="submit" class="btn-save"><i class="fas fa-arrow-right"></i> Create Problem and Add Next</button>
+        </div>
 
+        {% elif step == 2 %}
+        <h2><i class="fas fa-tags"></i> Tags</h2>
+        <p style="color: #aaa; margin-bottom: 20px;">Add tags to classify this problem (e.g., Arrays, Dynamic Programming).</p>
+
+        {{ tags_formset.management_form }}
+        <div id="tags-container">
+            {% for tag_form in tags_formset %}
+            <div class="codeblock-item">
+                {{ tag_form.id }}
+                {% for field in tag_form.visible_fields %}
+                <div class="field-wrapper">
+                    {{ field.errors }}
+                    <label>
+                        {{ field.label }}
+                    </label>
+                    {{ field }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <div style="margin-bottom: 30px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; border: 1px dashed #34495e;">
+            <label style="color: #eee; display: block; margin-bottom: 8px; font-weight: bold;"><i class="fas fa-magic"></i> Or create new tags (comma separated):</label>
+            <input type="text" name="new_tags" placeholder="e.g. Array, Dynamic Programming, Two Pointers" class="custom-input" style="background: rgba(255,255,255,0.05); color: #fff;">
+            <small style="color: #aaa; display: block; margin-top: 5px;">These tags will be created and automatically linked to your problem!</small>
+        </div>
+
+        <div style="margin-bottom: 30px;">
+            <button type="button" class="lang-btn" onclick="addTagBlock()" style="background: #34495e; border-color: #2c3e50;">
+                <i class="fas fa-plus"></i> Add Another Existing Tag
+            </button>
+        </div>
+
+        <!-- Empty form template for Tag -->
+        <div id="empty-tag-template" style="display: none;">
+            <div class="codeblock-item">
+                {% for field in tags_formset.empty_form.visible_fields %}
+                <div class="field-wrapper">
+                    <label>
+                        {{ field.label }}
+                    </label>
+                    {{ field }}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="submit-row">
+            <button type="submit" class="btn-save btn-purple"><i class="fas fa-arrow-right"></i> Save Tags and Next</button>
+        </div>
+
+        {% elif step == 3 %}
+        <h2><i class="fas fa-cube"></i> Custom Type (Optional)</h2>
+        <p style="color: #aaa; margin-bottom: 20px;">If this problem requires a new custom data structure (like ListNode), you can define it here globally. Otherwise, click Skip.</p>
+
+        <div class="codeblock-item">
+            {% for field in ct_form.visible_fields %}
+            <div class="field-wrapper">
+                {{ field.errors }}
+                <label>{{ field.label }} {% if field.help_text %}<i class="fas fa-info-circle" title="{{ field.help_text }}" style="color: #3498db; margin-left: 5px;"></i>{% endif %}</label>
+                {{ field }}
+            </div>
+            {% endfor %}
+        </div>
+
+        <h3 style="margin-top: 30px; margin-bottom: 25px;"><i class="fas fa-code"></i> Language-Specific Syntax</h3>
+        {{ ctl_formset.management_form }}
+        <div id="ctl-container">
+            {% for form in ctl_formset %}
+            <div class="codeblock-item ctl-item" style="margin-top: 25px;">
+                <div class="lang-tag" style="position: absolute; top: -12px; left: 20px; background: #e67e22; color: white; padding: 2px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
+                    Syntax {{ forloop.counter }}
+                </div>
+                {{ form.id }}
+                {% for field in form.visible_fields %}
+                <div class="field-wrapper">
+                    {{ field.errors }}
+                    <label>{{ field.label }} {% if field.help_text %}<i class="fas fa-info-circle" title="{{ field.help_text }}" style="color: #3498db; margin-left: 5px;"></i>{% endif %}</label>
+                    {{ field }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <div style="margin-bottom: 30px;">
+            <button type="button" class="lang-btn" onclick="addCtlBlock()" style="background: #e67e22; border-color: #d35400;">
+                <i class="fas fa-plus"></i> Add Another Language Syntax
+            </button>
+        </div>
+
+        <div id="empty-ctl-template" style="display: none;">
+            <div class="codeblock-item ctl-item" style="margin-top: 25px;">
+                <div class="lang-tag" style="position: absolute; top: -12px; left: 20px; background: #e67e22; color: white; padding: 2px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
+                    New Syntax
+                </div>
+                {% for field in ctl_formset.empty_form.visible_fields %}
+                <div class="field-wrapper">
+                    <label>{{ field.label }} {% if field.help_text %}<i class="fas fa-info-circle" title="{{ field.help_text }}" style="color: #3498db; margin-left: 5px;"></i>{% endif %}</label>
+                    {{ field }}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="submit-row" style="display: flex; gap: 15px; justify-content: flex-end;">
+            <button type="submit" name="skip" value="1" formnovalidate class="btn-save" style="background: #555; color: white;"><i class="fas fa-forward"></i> Skip Step</button>
+            <button type="submit" class="btn-save btn-orange"><i class="fas fa-save"></i> Save Custom Type and Next</button>
+        </div>
+
+        {% elif step == 4 %}
+        <h2><i class="fas fa-project-diagram"></i> Methods</h2>
+        <p style="color: #aaa; margin-bottom: 20px;">Define the methods for this problem.</p>
+
+        {{ method_formset.management_form }}
+        <div id="methods-container">
+            {% for method_form in method_formset %}
+            <div class="codeblock-item method-item">
+                <div class="lang-tag" style="position: absolute; top: -12px; left: 20px; background: #9b59b6; color: white; padding: 2px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
+                    Method {{ forloop.counter }}
+                </div>
+                {{ method_form.id }}
+                {% for field in method_form.visible_fields %}
+                <div class="field-wrapper">
+                    {{ field.errors }}
+                    <label>
+                        {{ field.label }}
+                    </label>
+                    {{ field }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <div style="margin-bottom: 30px;">
+            <button type="button" class="lang-btn" onclick="addMethodBlock()" style="background: #9b59b6; border-color: #8e44ad;">
+                <i class="fas fa-plus"></i> Add Another Method
+            </button>
+        </div>
+
+        <!-- Empty form template for Method -->
+        <div id="empty-method-template" style="display: none;">
+            <div class="codeblock-item method-item">
+                <div class="lang-tag" style="position: absolute; top: -12px; left: 20px; background: #9b59b6; color: white; padding: 2px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
+                    New Method
+                </div>
+                {% for field in method_formset.empty_form.visible_fields %}
+                <div class="field-wrapper">
+                    <label>
+                        {{ field.label }}
+                    </label>
+                    {{ field }}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="submit-row">
+            <button type="submit" class="btn-save btn-purple"><i class="fas fa-arrow-right"></i> Add Methods and Next</button>
+        </div>
+
+        {% elif step == 5 %}
+        <h2><i class="fas fa-list-ol"></i> Variables (Inputs)</h2>
+        <p style="color: #aaa; margin-bottom: 20px;">Define the variables for this problem. The code blocks will be automatically generated based on these!</p>
+
+        {{ var_formset.management_form }}
+        <div id="variables-container">
+            {% for var_form in var_formset %}
+            <div class="codeblock-item variable-item">
+                <div class="lang-tag" style="position: absolute; top: -12px; left: 20px; background: #27ae60; color: white; padding: 2px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
+                    Variable {{ forloop.counter }}
+                </div>
+                {{ var_form.id }}
+                {% for field in var_form.visible_fields %}
+                <div class="field-wrapper">
+                    {{ field.errors }}
+                    <label>
+                        {{ field.label }}
+                        {% if field.help_text %}
+                        <i class="fas fa-info-circle" title="{{ field.help_text }}" style="color: #3498db; margin-left: 5px; cursor: help;"></i>
+                        {% endif %}
+                    </label>
+                    {{ field }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <div style="margin-bottom: 30px;">
+            <button type="button" class="lang-btn" onclick="addVariableBlock()" style="background: #27ae60; border-color: #2ecc71;">
+                <i class="fas fa-plus"></i> Add Another Variable
+            </button>
+        </div>
+
+        <!-- Empty form template for Variable -->
+        <div id="empty-var-template" style="display: none;">
+            <div class="codeblock-item variable-item">
+                <div class="lang-tag" style="position: absolute; top: -12px; left: 20px; background: #27ae60; color: white; padding: 2px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
+                    New Variable
+                </div>
+                {% for field in empty_var_form.visible_fields %}
+                <div class="field-wrapper">
+                    <label>
+                        {{ field.label }}
+                        {% if field.help_text %}
+                        <i class="fas fa-info-circle" title="{{ field.help_text }}" style="color: #3498db; margin-left: 5px; cursor: help;"></i>
+                        {% endif %}
+                    </label>
+                    {{ field }}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="submit-row">
+            <button type="submit" class="btn-save btn-green"><i class="fas fa-arrow-right"></i> Create Variable and Next</button>
+        </div>
+
+        {% elif step == 6 %}
         <h2><i class="fas fa-code"></i> Languages & Code Blocks</h2>
-        <p style="color: #aaa; margin-bottom: 20px;">Select the languages you want to provide starter code for:</p>
+        <p style="color: #aaa; margin-bottom: 20px;">Optionally, select languages to provide custom boilerplate. Missing ones will auto-generate!</p>
 
         <div class="language-selector" style="display: flex; gap: 10px; margin-bottom: 30px; flex-wrap: wrap;">
             {% for lang_code, lang_name in languages %}
@@ -187,7 +273,12 @@
                 {% for field in fs_form.visible_fields %}
                 <div class="field-wrapper">
                     {{ field.errors }}
-                    <label>{{ field.label }}</label>
+                    <label>
+                        {{ field.label }}
+                        {% if field.help_text %}
+                        <i class="fas fa-info-circle" title="{{ field.help_text }}" style="color: #3498db; margin-left: 5px; cursor: help;"></i>
+                        {% endif %}
+                    </label>
                     {{ field }}
                 </div>
                 {% endfor %}
@@ -195,15 +286,20 @@
             {% endfor %}
         </div>
 
-        <!-- Empty form template for JavaScript -->
+        <!-- Empty form template for Code Block -->
         <div id="empty-form-template" style="display: none;">
-            <div class="codeblock-item">
+            <div class="codeblock-item" data-lang="__prefix__">
                 <div class="lang-tag" style="position: absolute; top: -12px; left: 20px; background: #79aec8; color: white; padding: 2px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
                     __LANG_NAME__
                 </div>
                 {% for field in formset.empty_form.visible_fields %}
                 <div class="field-wrapper">
-                    <label>{{ field.label }}</label>
+                    <label>
+                        {{ field.label }}
+                        {% if field.help_text %}
+                        <i class="fas fa-info-circle" title="{{ field.help_text }}" style="color: #3498db; margin-left: 5px; cursor: help;"></i>
+                        {% endif %}
+                    </label>
                     {{ field }}
                 </div>
                 {% endfor %}
@@ -211,8 +307,64 @@
         </div>
 
         <div class="submit-row">
-            <button type="submit" class="btn-save">Publish Problem</button>
+            <button type="submit" class="btn-save"><i class="fas fa-save"></i> Save Code Blocks and Next</button>
         </div>
+
+        {% elif step == 7 %}
+        <h2><i class="fas fa-vial"></i> Add Testcases</h2>
+        <p style="color: #aaa; margin-bottom: 20px;">Your problem and code blocks are saved! Now, add manual testcases or generate them with AI.</p>
+
+        <div style="display: flex; gap: 20px;">
+            <!-- Manual Testcase Form -->
+            <div class="codeblock-item" style="flex: 1;">
+                <h3><i class="fas fa-keyboard"></i> Manual Testcase</h3>
+                <div class="field-wrapper" style="display: none;">
+                    {{ manual_form.problem }}
+                </div>
+                <div class="field-wrapper">
+                    {{ manual_form.input.errors }}
+                    <label>Input</label>
+                    {{ manual_form.input }}
+                    <small style="color:#aaa;">Values must match the order of variables. Use newlines for multiple variables.</small>
+                </div>
+                <div class="field-wrapper">
+                    {{ manual_form.output.errors }}
+                    <label>Output</label>
+                    {{ manual_form.output }}
+                </div>
+                <div class="field-wrapper">
+                    <label style="display: flex; align-items: center; gap: 10px;">
+                        {{ manual_form.display_testcase }}
+                        Display this testcase to users (Example Testcase)
+                    </label>
+                </div>
+                <div class="submit-row" style="margin-top: 15px;">
+                    <button type="submit" name="add_manual" class="btn-save btn-green" style="width: 100%;"><i class="fas fa-plus"></i> Add Manual Testcase</button>
+                </div>
+            </div>
+
+            <!-- AI Testcase Form -->
+            <div class="codeblock-item" style="flex: 1;">
+                <h3><i class="fas fa-robot"></i> AI Generated Testcases</h3>
+                <div class="field-wrapper" style="display: none;">
+                    {{ ai_form.problem }}
+                </div>
+                <div class="field-wrapper">
+                    {{ ai_form.count.errors }}
+                    <label>Number of Testcases to Generate</label>
+                    {{ ai_form.count }}
+                    <small style="color:#aaa;">AI will parse your problem description and methods to automatically generate inputs and outputs.</small>
+                </div>
+                <div class="submit-row" style="margin-top: 15px;">
+                    <button type="submit" name="generate_ai" class="btn-save btn-purple" style="width: 100%;"><i class="fas fa-magic"></i> Generate with AI</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="submit-row" style="margin-top: 30px;">
+            <button type="submit" name="finish" class="btn-save" style="width: 100%; font-size: 1.1em; padding: 15px;"><i class="fas fa-check-circle"></i> Finish & Publish Problem</button>
+        </div>
+        {% endif %}
     </form>
 </div>
 
@@ -243,6 +395,7 @@
 
         // Tag the element for easy removal
         newForm.setAttribute('id', `codeblock-container-${langCode}`);
+        newForm.setAttribute('data-lang', langCode);
 
         const langSelect = newForm.querySelector('select[name$="-language"]');
         if (langSelect) {
@@ -256,6 +409,13 @@
         // Update button state
         const btn = document.querySelector(`.lang-btn[data-lang="${langCode}"]`);
         btn.classList.add('selected');
+
+        updateTooltips();
+
+        // Initialize CodeMirror for the new block's textareas
+        newForm.querySelectorAll('textarea').forEach(textarea => {
+            window.initCodeMirror(textarea);
+        });
     }
 
     function removeLanguageBlock(langCode) {
@@ -297,6 +457,107 @@
         totalForms.value = items.length;
     }
 
+    // Variables Formset Logic
+    function addVariableBlock() {
+        const container = document.getElementById('variables-container');
+        const totalForms = document.getElementById('id_variables-TOTAL_FORMS');
+        const currentCount = parseInt(totalForms.value);
+
+        let template = document.getElementById('empty-var-template').innerHTML;
+        template = template.replace(/__prefix__/g, currentCount);
+
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = template;
+        const newForm = tempDiv.firstElementChild;
+
+        container.appendChild(newForm);
+        totalForms.value = currentCount + 1;
+    }
+
+    // Tags Formset Logic
+    function addTagBlock() {
+        const container = document.getElementById('tags-container');
+        const totalForms = document.getElementById('id_problemtags_set-TOTAL_FORMS');
+        const currentCount = parseInt(totalForms.value);
+
+        let template = document.getElementById('empty-tag-template').innerHTML;
+        template = template.replace(/__prefix__/g, currentCount);
+
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = template;
+        const newForm = tempDiv.firstElementChild;
+
+        container.appendChild(newForm);
+        totalForms.value = currentCount + 1;
+    }
+
+    // Methods Formset Logic
+    function addMethodBlock() {
+        const container = document.getElementById('methods-container');
+        const totalForms = document.getElementById('id_methods-TOTAL_FORMS');
+        const currentCount = parseInt(totalForms.value);
+
+        let template = document.getElementById('empty-method-template').innerHTML;
+        template = template.replace(/__prefix__/g, currentCount);
+
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = template;
+        const newForm = tempDiv.firstElementChild;
+
+        // Update the tag text to match the new count
+        const tag = newForm.querySelector('.lang-tag');
+        if (tag) {
+            tag.innerText = 'Method ' + (currentCount + 1);
+        }
+
+        container.appendChild(newForm);
+        totalForms.value = currentCount + 1;
+
+        // Ensure new inputs have correct classes
+        newForm.querySelectorAll('input, select, textarea').forEach(el => {
+            el.classList.add('custom-input');
+        });
+
+        // Initialize CodeMirror for the new block's textareas if applicable
+        newForm.querySelectorAll('textarea').forEach(textarea => {
+            if (window.initCodeMirror) {
+                window.initCodeMirror(textarea);
+            }
+        });
+    }
+
+    function addCtlBlock() {
+        const container = document.getElementById('ctl-container');
+        const totalForms = document.getElementById('id_languages-TOTAL_FORMS');
+        const currentCount = parseInt(totalForms.value);
+
+        let template = document.getElementById('empty-ctl-template').innerHTML;
+        template = template.replace(/__prefix__/g, currentCount);
+
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = template;
+        const newForm = tempDiv.firstElementChild;
+
+        const tag = newForm.querySelector('.lang-tag');
+        if (tag) {
+            tag.innerText = 'Syntax ' + (currentCount + 1);
+        }
+
+        container.appendChild(newForm);
+        totalForms.value = currentCount + 1;
+
+        newForm.querySelectorAll('input, select, textarea').forEach(el => {
+            el.classList.add('custom-input');
+        });
+
+        // Initialize CodeMirror for the new block's textareas if applicable
+        newForm.querySelectorAll('textarea').forEach(textarea => {
+            if (window.initCodeMirror) {
+                window.initCodeMirror(textarea);
+            }
+        });
+    }
+
     // Handle initial state if editing (though this view is currently for adding)
     document.addEventListener('DOMContentLoaded', function() {
         const existingBlocks = document.querySelectorAll('.codeblock-item[data-lang]');
@@ -307,6 +568,51 @@
                 if (btn) btn.classList.add('selected');
             }
         });
+        updateTooltips();
+    });
+
+    function updateTooltips() {
+        let customTypeName = '<Type>';
+        const customTypeInputs = document.querySelectorAll('input[name$="-custom_type_name"]');
+        for (let input of customTypeInputs) {
+            if (input.value && input.value.trim() !== '') {
+                customTypeName = input.value.trim();
+                break;
+            }
+        }
+
+        const INPUT_FUNCTION_HELP_DYNAMIC = {
+            'CPP': `Format: ${customTypeName} parse_${customTypeName}()`,
+            'JAVA': `Format: class Parser { static ${customTypeName} parse_${customTypeName}(Scanner sc) }`,
+            'PYTHON': `Format: def parse_${customTypeName}(data_str):`,
+            'JAVASCRIPT': `Format: function parse_${customTypeName}(data_str) {}`,
+            'TYPESCRIPT': `Format: function parse_${customTypeName}(data_str) {}`
+        };
+
+        document.querySelectorAll('#codeblocks-container .codeblock-item').forEach(item => {
+            const langCode = item.getAttribute('data-lang');
+            if (langCode && INPUT_FUNCTION_HELP_DYNAMIC[langCode]) {
+                const inputFuncField = item.querySelector('textarea[name$="-input_function"]');
+                if (inputFuncField) {
+                    const wrapper = inputFuncField.closest('.field-wrapper');
+                    if (wrapper) {
+                        const label = wrapper.querySelector('label');
+                        if (label) {
+                            let icon = label.querySelector('.fa-info-circle');
+                            if (icon) {
+                                icon.title = INPUT_FUNCTION_HELP_DYNAMIC[langCode];
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    document.body.addEventListener('input', function(e) {
+        if (e.target.matches('input[name$="-custom_type_name"]')) {
+            updateTooltips();
+        }
     });
 </script>
 {% endblock %}

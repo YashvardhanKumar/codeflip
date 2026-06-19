@@ -99,8 +99,18 @@ export default function WriteSolutionPage() {
 
   const DRAFT_KEY = `coderacer_solution_draft_${id}`
 
-  const handleEditorDidMount = (editor: any) => {
+  const handleEditorDidMount = (editor: any, monaco: any) => {
     editorRef.current = editor
+    if (monaco) {
+      monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
+        noSemanticValidation: true,
+        noSyntaxValidation: true,
+      })
+      monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+        noSemanticValidation: true,
+        noSyntaxValidation: true,
+      })
+    }
   }
 
   // Cooldown timer logic
@@ -553,7 +563,11 @@ export default function WriteSolutionPage() {
           </div>
         </div>
 
-        <ResizablePanelGroup direction="horizontal" className="flex-1">
+        <ResizablePanelGroup
+          autoSaveId="coderacer-write-solution-layout"
+          direction="horizontal"
+          className="flex-1"
+        >
           {!isPreviewOnly && (
             <ResizablePanel
               defaultSize={50}
