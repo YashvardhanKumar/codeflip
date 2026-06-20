@@ -83,7 +83,12 @@ class ProblemAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "get_editorial_discussion", "created_at")
     list_filter = ("created_at",)
     search_fields = ("id", "name", "problem_description")
-    readonly_fields = ("id", "created_at", "get_editorial_discussion")
+    readonly_fields = (
+        "id",
+        "created_at",
+        "get_editorial_discussion",
+        "manage_testcases_link",
+    )
     inlines = [MethodInline, VariableInline, CodeblockInline, ProblemTagsInline]
     actions = [generate_codeblocks_action]
 
@@ -99,11 +104,31 @@ class ProblemAdmin(admin.ModelAdmin):
                     "name",
                     "problem_description",
                     "get_editorial_discussion",
+                    "manage_testcases_link",
                 )
             },
         ),
         ("Metadata", {"fields": ("created_at",)}),
     )
+
+    def manage_testcases_link(self, obj):
+        if obj.id:
+            from django.utils.html import format_html
+            from django.urls import reverse
+
+            url = (
+                reverse("admin:problem_testcase_changelist")
+                + f"?problem__id__exact={obj.id}"
+            )
+            count = obj.testcases.count()
+            return format_html(
+                '<a href="{}" class="button" target="_blank" style="background-color: #27ae60; color: white; padding: 5px 12px; border-radius: 4px; text-decoration: none; font-weight: bold; display: inline-block;">Manage {} Test Cases ➔</a>',
+                url,
+                count,
+            )
+        return "Save the problem first to add test cases."
+
+    manage_testcases_link.short_description = "Test Cases"
 
     def get_editorial_discussion(self, obj):
         editorial = obj.discussions.filter(is_editorial=True).first()
