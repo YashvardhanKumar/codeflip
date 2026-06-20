@@ -34,6 +34,9 @@ class CustomTypeAdmin(admin.ModelAdmin):
     search_fields = ("name",)
     inlines = [CustomTypeLanguageInline]
 
+    class Media:
+        js = ("admin/js/codeblock_updater.js", "admin/js/cm6_loader.js")
+
 
 class ProblemTagsInline(admin.TabularInline):
     model = ProblemTags
@@ -69,7 +72,7 @@ class VariableInline(admin.TabularInline):
 @admin.action(description="Generate Codeblocks from Variables")
 def generate_codeblocks_action(modeladmin, request, queryset):
     for problem in queryset:
-        generate_codeblocks_for_problem(problem)
+        generate_codeblocks_for_problem(problem, force=True)
     modeladmin.message_user(
         request, "Codeblocks successfully generated for selected problems."
     )
@@ -85,7 +88,7 @@ class ProblemAdmin(admin.ModelAdmin):
     actions = [generate_codeblocks_action]
 
     class Media:
-        js = "admin/js/codeblock_updater.js"
+        js = ("admin/js/codeblock_updater.js", "admin/js/cm6_loader.js")
 
     fieldsets = (
         (
@@ -128,12 +131,12 @@ class ProblemAdmin(admin.ModelAdmin):
         # Check if variables were updated and generate codeblocks automatically
         for formset in formsets:
             if formset.model == Variable and formset.has_changed():
-                generate_codeblocks_for_problem(form.instance)
+                generate_codeblocks_for_problem(form.instance, force=True)
                 break
         else:
             # Also generate if we are just creating the problem and variables are present
             if not change:
-                generate_codeblocks_for_problem(form.instance)
+                generate_codeblocks_for_problem(form.instance, force=True)
 
 
 @admin.register(Codeblock)

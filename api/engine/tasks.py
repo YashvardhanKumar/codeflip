@@ -13,28 +13,11 @@ def submit_solution_task(solution_id):
         solution = Solution.objects.get(id=solution_id)
 
         # Prepare evaluation payload
-        from problem.models import Codeblock
-        from problem.utils import IMPORT_BLOCKS
+        from problem.utils import assemble_full_code
 
-        codeblock = Codeblock.objects.get(
-            problem=solution.problem, language=solution.language
+        full_code = assemble_full_code(
+            solution.problem, solution.language, solution.code
         )
-        imports = IMPORT_BLOCKS.get(solution.language, "")
-        if "###__CODE_SEPARATOR__###" in codeblock.runner_code:
-            before, _, after = codeblock.runner_code.partition(
-                "###__CODE_SEPARATOR__###"
-            )
-            if before.endswith("\n"):
-                before = before[:-1]
-                if before.endswith("\r"):
-                    before = before[:-1]
-            if after.startswith("\n"):
-                after = after[1:]
-            elif after.startswith("\r\n"):
-                after = after[2:]
-            full_code = f"{imports}\n\n{before}\n\n{solution.code}\n\n{after}"
-        else:
-            full_code = f"{imports}\n\n{solution.code}\n\n{codeblock.runner_code}"
 
         from problem.views import JUDGE0_LANGUAGE_MAP
 

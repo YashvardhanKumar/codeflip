@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const cbRows = document.querySelectorAll('.dynamic-codeblocks, .codeblock-item, .dynamic-codeblocks-group .inline-related:not(.empty-form)');
         cbRows.forEach(row => {
             let langSelect = row.querySelector('select[name$="-language"], input[name$="-language"]');
-            let inputFunc = row.querySelector('textarea[name$="-input_function"]');
+            let inputFunc = row.querySelector('textarea[name$="-input_output_function"]');
             if (langSelect && inputFunc) {
                 funcs[langSelect.value] = inputFunc.value;
             }
@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': getCookie('csrftoken') || ''
             },
-            body: JSON.stringify({ variables: variables, object_declarations: objectDeclarations, input_functions: inputFunctions })
+            body: JSON.stringify({ variables: variables, object_declarations: objectDeclarations, input_output_functions: inputFunctions, input_functions: inputFunctions })
         })
         .then(response => response.json())
         .then(data => {
@@ -137,13 +137,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Attach listeners to all variable inputs
     document.body.addEventListener('input', function(e) {
-        if (e.target.matches('.dynamic-variables input, .dynamic-variables select, .variable-item input, .variable-item select, .dynamic-variables-group input, .dynamic-variables-group select, textarea[name$="-object_declaration"], textarea[name$="-input_function"]')) {
+        if (e.target.matches('.dynamic-variables input, .dynamic-variables select, .variable-item input, .variable-item select, .dynamic-variables-group input, .dynamic-variables-group select, textarea[name$="-object_declaration"], textarea[name$="-input_function"], textarea[name$="-input_output_function"]')) {
             triggerUpdate();
         }
     });
 
     document.body.addEventListener('change', function(e) {
-        if (e.target.matches('.dynamic-variables input, .dynamic-variables select, .variable-item input, .variable-item select, .dynamic-variables-group input, .dynamic-variables-group select, textarea[name$="-object_declaration"], textarea[name$="-input_function"]')) {
+        if (e.target.matches('.dynamic-variables input, .dynamic-variables select, .variable-item input, .variable-item select, .dynamic-variables-group input, .dynamic-variables-group select, textarea[name$="-object_declaration"], textarea[name$="-input_function"], textarea[name$="-input_output_function"]')) {
             triggerUpdate();
         }
     });

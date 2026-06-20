@@ -70,7 +70,7 @@ INSTALLED_APPS = [
     "ckeditor_uploader",
     "social_django",
     "user",
-    "problem",
+    "problem.apps.ProblemConfig",
     "ai",
     "engine",
 ]

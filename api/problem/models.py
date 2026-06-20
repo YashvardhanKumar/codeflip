@@ -71,8 +71,8 @@ class CustomTypeLanguage(models.Model):
         default="",
         help_text="Class definition (e.g., struct ListNode { ... })",
     )
-    input_function = models.TextField(
-        blank=True, default="", help_text="Input parsing function"
+    input_output_function = models.TextField(
+        blank=True, default="", help_text="Input parsing and custom printing function"
     )
 
     class Meta:

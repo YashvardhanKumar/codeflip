@@ -75,34 +75,10 @@ class SubmitStreamView(APIView):
         lang_str = validated.get("language")
 
         # Pre-wrap code with boilerplate from Codeblock model
-        codeblock = None
-        if lang_str:
-            codeblock = problem.codeblocks.filter(language=lang_str).first()
+        if lang_str and problem.codeblocks.filter(language=lang_str).exists():
+            from problem.utils import assemble_full_code
 
-        if codeblock:
-            from problem.utils import IMPORT_BLOCKS
-
-            # We wrap the code here so it's ready for Judge0 execution
-            imports = IMPORT_BLOCKS.get(lang_str, "")
-            if "###__CODE_SEPARATOR__###" in codeblock.runner_code:
-                before, _, after = codeblock.runner_code.partition(
-                    "###__CODE_SEPARATOR__###"
-                )
-                if before.endswith("\n"):
-                    before = before[:-1]
-                    if before.endswith("\r"):
-                        before = before[:-1]
-                if after.startswith("\n"):
-                    after = after[1:]
-                elif after.startswith("\r\n"):
-                    after = after[2:]
-                full_source_code = (
-                    f"{imports}\n\n{before}\n\n{raw_source_code}\n\n{after}"
-                )
-            else:
-                full_source_code = (
-                    f"{imports}\n\n{raw_source_code}\n\n{codeblock.runner_code}"
-                )
+            full_source_code = assemble_full_code(problem, lang_str, raw_source_code)
         else:
             # Fallback if no matching codeblock found
             full_source_code = raw_source_code

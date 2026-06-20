@@ -2,17 +2,43 @@ from .models import Codeblock, VariableType
 from user.models import CodingLanguage
 from django.utils.html import strip_tags
 import html
+import re
+
+
+def has_custom_print(input_output_code, ret_type, lang_name):
+    if not input_output_code or not ret_type:
+        return False
+    # Clean comments to avoid false matches
+    code_clean = re.sub(r"//.*", "", input_output_code)
+    if lang_name == "PYTHON":
+        code_clean = re.sub(r"#.*", "", input_output_code)
+    code_clean = re.sub(r"/\*.*?\*/", "", code_clean, flags=re.DOTALL)
+
+    if lang_name == "PYTHON":
+        return bool(re.search(r"\bdef\s+print\s*\(", code_clean))
+    elif lang_name in ["JAVASCRIPT", "TYPESCRIPT"]:
+        return bool(re.search(r"\bfunction\s+print\s*\(", code_clean))
+    elif lang_name == "CPP":
+        pattern = (
+            r"\bprint\s*\(\s*(const\s+)?(struct\s+)?\b" + re.escape(ret_type) + r"\b"
+        )
+        return bool(re.search(pattern, code_clean))
+    elif lang_name == "JAVA":
+        pattern = r"\bprint\s*\(\s*(final\s+)?" + re.escape(ret_type) + r"\b"
+        return bool(re.search(pattern, code_clean))
+    return False
+
 
 IMPORT_BLOCKS = {
     CodingLanguage.CPP: '#include <bits/stdc++.h>\nusing namespace std;\n\ntemplate<typename T> void _print_res(const T& val) { cout << val; }\nvoid _print_res(const string& val) { cout << "\\"" << val << "\\""; }\ntemplate<typename T> void _print_res(const vector<T>& val) { cout << "["; for(size_t i=0; i<val.size(); i++) { if(i>0) cout << ","; _print_res(val[i]); } cout << "]"; }',
     CodingLanguage.JAVA: "import java.util.*;\nimport java.io.*;",
     CodingLanguage.PYTHON: "import sys\nimport math\nimport collections\nimport itertools\nimport bisect\nimport heapq\nimport json\n\nclass CustomEncoder(json.JSONEncoder):\n    def default(self, obj):\n        if hasattr(obj, '__str__'):\n            try:\n                return json.loads(str(obj))\n            except:\n                return str(obj)\n        return super().default(obj)",
-    CodingLanguage.JAVASCRIPT: "",
-    CodingLanguage.TYPESCRIPT: "",
+    CodingLanguage.JAVASCRIPT: "const fs = require('fs');",
+    CodingLanguage.TYPESCRIPT: "declare var require: any;\nconst fs = require('fs');",
 }
 
 
-def generate_codeblocks_for_problem(problem):
+def generate_codeblocks_for_problem(problem, force=False):
     # Determine methods
     methods = list(problem.methods.all().order_by("id"))
 
@@ -59,7 +85,9 @@ def generate_codeblocks_for_problem(problem):
             obj_decl = "\n".join(
                 [c.class_declaration for c in ctl if c.class_declaration]
             )
-            inp_func = "\n".join([c.input_function for c in ctl if c.input_function])
+            inp_func = "\n".join(
+                [c.input_output_function for c in ctl if c.input_output_function]
+            )
 
         codeblock = Codeblock.objects.filter(
             problem=problem, language=lang_code
@@ -76,7 +104,7 @@ def generate_codeblocks_for_problem(problem):
 
         if codeblock:
             codeblock.runner_code = runner_code
-            if not codeblock.block.strip():
+            if force or not codeblock.block.strip():
                 codeblock.block = block
             elif "class Solution" in codeblock.block and "class Solution" in block:
                 new_prefix = block.split("class Solution")[0]
@@ -231,7 +259,7 @@ def generate_code_for_language(
     lang_name,
     methods,
     class_declaration="",
-    input_function="",
+    input_output_function="",
     is_multi=False,
     description="",
 ):
@@ -303,8 +331,8 @@ def generate_code_for_language(
                     and v.type != VariableType.ARRAY
                 ):
                     t = get_cpp_type(v.type)
-                    if input_function.strip():
-                        runner_code += f"    {t} {v.name} = parse_{v.type}();\n"
+                    if input_output_function.strip():
+                        runner_code += f"    {t} {v.name} = input();\n"
                     else:
                         runner_code += f"    {t} {v.name};\n    // TODO: Implement parsing logic for custom type {v.type}\n"
                 else:
@@ -319,7 +347,10 @@ def generate_code_for_language(
             call = f"sol.{method.name}({', '.join([v.name for v in inputs])})"
             if method.type != "void" and method.type != "VOID" and ret_type != "void":
                 runner_code += f"    {ret_type} result = {call};\n"
-                runner_code += f"    _print_res(result);\n    cout << endl;\n"
+                if has_custom_print(input_output_function, method.type, "CPP"):
+                    runner_code += f"    print(result);\n    cout << endl;\n"
+                else:
+                    runner_code += f"    _print_res(result);\n    cout << endl;\n"
             else:
                 runner_code += f"    {call};\n"
             runner_code += "    return 0;\n}\n"
@@ -375,7 +406,10 @@ def generate_code_for_language(
                 call = f"obj->{method.name}({', '.join([v.name for v in inputs])})"
                 if method.type != "void" and method.type != "VOID":
                     runner_code += f"            auto res = {call};\n"
-                    runner_code += "            _print_res(res);\n"
+                    if has_custom_print(input_output_function, method.type, "CPP"):
+                        runner_code += "            print(res);\n"
+                    else:
+                        runner_code += "            _print_res(res);\n"
                 else:
                     runner_code += f'            {call};\n            cout << "null";\n'
                 runner_code += "        }\n"
@@ -417,16 +451,14 @@ def generate_code_for_language(
         if not is_multi and methods:
             method = methods[0]
             inputs = list(method.parameters.all().order_by("id"))
-            runner_code = "def main():\n    import sys, json\n    input_data = sys.stdin.read().splitlines()\n    if not input_data: return\n"
+            runner_code = "def main():\n    input_data = sys.stdin.read().splitlines()\n    if not input_data: return\n"
             for i, v in enumerate(inputs):
                 if (
                     v.type not in dict(VariableType.choices)
                     and v.type != VariableType.ARRAY
                 ):
-                    if input_function.strip():
-                        runner_code += (
-                            f"    {v.name} = parse_{v.type}(input_data[{i}])\n"
-                        )
+                    if input_output_function.strip():
+                        runner_code += f"    {v.name} = input(input_data[{i}])\n"
                     else:
                         runner_code += f"    {v.name} = None # TODO: Implement parsing logic for custom type {v.type}\n"
                 else:
@@ -438,12 +470,15 @@ def generate_code_for_language(
             call = f"sol.{method.name}({', '.join([v.name for v in inputs])})"
             if method.type != "void" and method.type != "VOID" and method.type:
                 runner_code += f"    result = {call}\n"
-                runner_code += f"    print(json.dumps(result, separators=(',', ':'), cls=CustomEncoder))\n"
+                if has_custom_print(input_output_function, method.type, "PYTHON"):
+                    runner_code += f"    print(result)\n"
+                else:
+                    runner_code += f"    print(json.dumps(result, separators=(',', ':'), cls=CustomEncoder))\n"
             else:
                 runner_code += f"    {call}\n"
             runner_code += "\nif __name__ == '__main__':\n    main()\n"
         elif is_multi:
-            runner_code = "def main():\n    import sys, json\n    input_data = sys.stdin.read().splitlines()\n    if len(input_data) < 2: return\n"
+            runner_code = "def main():\n    input_data = sys.stdin.read().splitlines()\n    if len(input_data) < 2: return\n"
             runner_code += "    commands = json.loads(input_data[0])\n"
             runner_code += "    args_list = json.loads(input_data[1])\n"
             runner_code += "    outputs = []\n"
@@ -542,17 +577,15 @@ def generate_code_for_language(
             runner_code = ""
             if lang_name == "TYPESCRIPT":
                 runner_code += "declare var require: any;\n"
-            runner_code += "const fs = require('fs');\nconst input_data = fs.readFileSync(0, 'utf-8').trim().split('\\n');\n"
+            runner_code += "\nconst input_data = fs.readFileSync(0, 'utf-8').trim().split('\\n');\n"
             runner_code += f"if (input_data.length >= {len(inputs)}) {{\n"
             for i, v in enumerate(inputs):
                 if (
                     v.type not in dict(VariableType.choices)
                     and v.type != VariableType.ARRAY
                 ):
-                    if input_function.strip():
-                        runner_code += (
-                            f"    const {v.name} = parse_{v.type}(input_data[{i}]);\n"
-                        )
+                    if input_output_function.strip():
+                        runner_code += f"    const {v.name} = input(input_data[{i}]);\n"
                     else:
                         runner_code += f"    const {v.name} = null; // TODO: Implement parsing logic for custom type {v.type}\n"
                 else:
@@ -564,7 +597,10 @@ def generate_code_for_language(
             call = f"solution.{method.name}({', '.join([v.name for v in inputs])})"
             if method.type != "void" and method.type != "VOID":
                 runner_code += f"    const result = {call};\n"
-                runner_code += f"    console.log(JSON.stringify(result));\n"
+                if has_custom_print(input_output_function, method.type, lang_name):
+                    runner_code += f"    print(result);\n"
+                else:
+                    runner_code += f"    console.log(JSON.stringify(result));\n"
             else:
                 runner_code += f"    {call};\n"
             runner_code += "}\n"
@@ -572,7 +608,7 @@ def generate_code_for_language(
             runner_code = ""
             if lang_name == "TYPESCRIPT":
                 runner_code += "declare var require: any;\n"
-            runner_code += "const fs = require('fs');\nconst input_data = fs.readFileSync(0, 'utf-8').trim().split('\\n');\n"
+            runner_code += "\nconst input_data = fs.readFileSync(0, 'utf-8').trim().split('\\n');\n"
             runner_code += "if (input_data.length >= 2) {\n"
             runner_code += "    const commands = JSON.parse(input_data[0].trim());\n"
             runner_code += "    const args_list = JSON.parse(input_data[1].trim());\n"
@@ -609,7 +645,6 @@ def generate_code_for_language(
             runner_code = ""
             if lang_name == "TYPESCRIPT":
                 runner_code += "declare var require: any;\n"
-            runner_code += "const fs = require('fs');\n"
 
     elif lang_name == "JAVA":
         block += f"class {class_name} {{\n"
@@ -664,10 +699,8 @@ def generate_code_for_language(
                     and v.type != VariableType.ARRAY
                 ):
                     t = get_java_type(v.type)
-                    if input_function.strip():
-                        runner_code += (
-                            f"        {t} {v.name} = Parser.parse_{v.type}(sc);\n"
-                        )
+                    if input_output_function.strip():
+                        runner_code += f"        {t} {v.name} = Parser.input(sc);\n"
                     else:
                         runner_code += f"        {t} {v.name} = null; // TODO: Implement parsing logic\n"
                 else:
@@ -684,9 +717,14 @@ def generate_code_for_language(
             call = f"sol.{method.name}({', '.join([v.name for v in inputs])})"
             if method.type != "void" and method.type != "VOID" and ret_type != "void":
                 runner_code += f"        {ret_type} result = {call};\n"
-                runner_code += (
-                    "        _print_res(result);\n        System.out.println();\n"
-                )
+                if has_custom_print(input_output_function, method.type, "JAVA"):
+                    runner_code += (
+                        "        Parser.print(result);\n        System.out.println();\n"
+                    )
+                else:
+                    runner_code += (
+                        "        _print_res(result);\n        System.out.println();\n"
+                    )
             else:
                 runner_code += f"        {call};\n"
             runner_code += "    }\n}\n"
@@ -758,7 +796,10 @@ def generate_code_for_language(
                 call = f"obj.{method.name}({', '.join([v.name for v in inputs])})"
                 if method.type != "void" and method.type != "VOID":
                     runner_code += f"                {get_java_type(method.type, method.template_type, method.array_dimensions)} res = {call};\n"
-                    runner_code += "                _print_res(res);\n"
+                    if has_custom_print(input_output_function, method.type, "JAVA"):
+                        runner_code += "                Parser.print(res);\n"
+                    else:
+                        runner_code += "                _print_res(res);\n"
                 else:
                     runner_code += f'                {call};\n                System.out.print("null");\n'
                 runner_code += "            }\n"
@@ -769,14 +810,99 @@ def generate_code_for_language(
                 "public class Main { public static void main(String[] args) {} }"
             )
 
-    if lang_name == "TYPESCRIPT":
-        runner_code += "\nexport {};\n"
-
-    runner_code = (
-        class_declaration
-        + "\n\n"
-        + input_function
-        + "\n###__CODE_SEPARATOR__###\n"
-        + runner_code
-    )
     return runner_code, block
+
+
+def clean_js_ts_fs_imports(code, language):
+    if not code:
+        return code
+    from user.models import CodingLanguage
+
+    if language == CodingLanguage.JAVASCRIPT:
+        code = re.sub(r"const\s+fs\s*=\s*require\(['\"]fs['\"]\);?", "", code)
+    elif language == CodingLanguage.TYPESCRIPT:
+        pattern1 = r"const\s+fs\s*=\s*require\(['\"]fs['\"]\);?"
+        pattern2 = r"import\s+(\*\s+as\s+)?fs\s+from\s+['\"]fs['\"];?"
+        pattern3 = r"import\s+fs\s*=\s*require\(['\"]fs['\"]\);?"
+        pattern4 = r"declare\s+var\s+require\s*:\s*any;?"
+        for p in [pattern1, pattern2, pattern3, pattern4]:
+            code = re.sub(p, "", code)
+    return code
+
+
+def assemble_full_code(problem, language, user_code):
+    from problem.models import Codeblock, CustomTypeLanguage, VariableType
+    from problem.utils import IMPORT_BLOCKS
+
+    codeblock = Codeblock.objects.filter(problem=problem, language=language).first()
+    if not codeblock:
+        return user_code
+
+    imports = IMPORT_BLOCKS.get(language, "")
+
+    # Retrieve custom type names used by the problem
+    methods = list(problem.methods.all().order_by("id"))
+    custom_type_names = set()
+    for m in methods:
+        if (
+            m.type
+            and m.type not in dict(VariableType.choices)
+            and m.type != VariableType.ARRAY
+        ):
+            custom_type_names.add(m.type)
+        if (
+            m.template_type
+            and m.template_type not in dict(VariableType.choices)
+            and m.template_type != VariableType.ARRAY
+        ):
+            custom_type_names.add(m.template_type)
+        for v in m.parameters.all():
+            if (
+                v.type
+                and v.type not in dict(VariableType.choices)
+                and v.type != VariableType.ARRAY
+            ):
+                custom_type_names.add(v.type)
+            if (
+                v.template_type
+                and v.template_type not in dict(VariableType.choices)
+                and v.template_type != VariableType.ARRAY
+            ):
+                custom_type_names.add(v.template_type)
+
+    ctl_qs = CustomTypeLanguage.objects.filter(
+        custom_type__name__in=custom_type_names, language=language
+    )
+    class_declaration = "\n".join(
+        [c.class_declaration for c in ctl_qs if c.class_declaration]
+    )
+    input_output_function = "\n".join(
+        [c.input_output_function for c in ctl_qs if c.input_output_function]
+    )
+
+    runner_code = codeblock.runner_code
+    if "###__CODE_SEPARATOR__###" in runner_code:
+        parts = runner_code.split("###__CODE_SEPARATOR__###")
+        runner_code = parts[-1]
+
+    runner_code = runner_code.strip()
+
+    # Clean duplicates of global fs declaration
+    class_declaration = clean_js_ts_fs_imports(class_declaration, language)
+    input_output_function = clean_js_ts_fs_imports(input_output_function, language)
+    user_code = clean_js_ts_fs_imports(user_code, language)
+    runner_code = clean_js_ts_fs_imports(runner_code, language)
+
+    parts = []
+    if imports.strip():
+        parts.append(imports.strip())
+    if class_declaration.strip():
+        parts.append(class_declaration.strip())
+    if input_output_function.strip():
+        parts.append(input_output_function.strip())
+    if user_code.strip():
+        parts.append(user_code.strip())
+    if runner_code.strip():
+        parts.append(runner_code)
+
+    return "\n\n".join(parts)
