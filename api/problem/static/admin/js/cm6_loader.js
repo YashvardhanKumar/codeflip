@@ -13,7 +13,7 @@ cm6Style.innerHTML = `
 }
 .cm-scroller {
     overflow: auto;
-    max-height: 400px;
+    max-height: 250px;
 }
 .cm-focused {
     outline: 1px solid #3498db !important;
@@ -59,8 +59,24 @@ window.initCodeMirror = function(textarea) {
         langCode = blockItem.getAttribute('data-lang');
         if (!langCode) {
             // Standard django admin: select element
-            const langSelect = blockItem.querySelector('select[name$="-language"]');
-            if (langSelect) langCode = langSelect.value;
+            const langSelect = blockItem.querySelector('select[name$="language"]');
+            if (langSelect) {
+                langCode = langSelect.value;
+                if (!langSelect._hasCmListener) {
+                    langSelect._hasCmListener = true;
+                    langSelect.addEventListener('change', () => {
+                        // When language changes, re-initialize CodeMirror for all textareas in this block
+                        blockItem.querySelectorAll('textarea').forEach(ta => {
+                            if (ta._cmView) {
+                                ta.value = ta._cmView.state.doc.toString();
+                                ta._cmView.destroy();
+                                ta._cmView = null;
+                            }
+                            window.initCodeMirror(ta);
+                        });
+                    });
+                }
+            }
         }
     }
 
@@ -89,15 +105,88 @@ window.initCodeMirror = function(textarea) {
     textarea._cmView = view;
 };
 
-// Drain queue
-window.initCodeMirrorQueue.forEach(ta => window.initCodeMirror(ta));
-window.initCodeMirrorQueue = [];
+// Drain queue and init existing ones
+function initAll() {
+    console.log("cm6_loader: initAll started. readyState:", document.readyState);
+    window.initCodeMirrorQueue.forEach(ta => {
+        console.log("cm6_loader: draining queue item name:", ta.name);
+        window.initCodeMirror(ta);
+    });
+    window.initCodeMirrorQueue = [];
 
-// Init existing ones (both custom admin and standard admin)
-document.querySelectorAll('textarea[name$="-block"], textarea[name$="-object_declaration"], textarea[name$="-class_declaration"], textarea[name$="-input_function"], textarea[name$="-runner_code"]').forEach(textarea => {
-    if (!textarea.closest('#empty-form-template') && !textarea.closest('.empty-form') && !textarea.closest('#empty-ctl-template')) {
-        window.initCodeMirror(textarea);
-    }
-});
+    const allTAs = document.querySelectorAll('textarea');
+    console.log("cm6_loader: total textareas found on load:", allTAs.length);
+    allTAs.forEach(textarea => {
+        const name = textarea.name || '';
+        const isTarget = name.endsWith('block') ||
+                         name.endsWith('object_declaration') ||
+                         name.endsWith('class_declaration') ||
+                         name.endsWith('input_function') ||
+                         name.endsWith('input_output_function') ||
+                         name.endsWith('runner_code');
+        const isTemplate = textarea.closest('#empty-form-template') ||
+                           textarea.closest('.empty-form') ||
+                           textarea.closest('#empty-ctl-template') ||
+                           textarea.closest('.empty-form-row');
+        console.log("cm6_loader: checking textarea:", name, "isTarget:", isTarget, "isTemplate:", !!isTemplate);
+        if (isTarget && !isTemplate) {
+            window.initCodeMirror(textarea);
+        }
+    });
+
+    // MutationObserver to automatically initialize dynamically added textareas (Django Admin inline rows, custom wizards, etc.)
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach(mutation => {
+            mutation.addedNodes.forEach(node => {
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    const textareas = node.querySelectorAll('textarea');
+                    textareas.forEach(textarea => {
+                        const name = textarea.name || '';
+                        const isTarget = name.endsWith('block') ||
+                                         name.endsWith('object_declaration') ||
+                                         name.endsWith('class_declaration') ||
+                                         name.endsWith('input_function') ||
+                                         name.endsWith('input_output_function') ||
+                                         name.endsWith('runner_code');
+                        const isTemplate = textarea.closest('#empty-form-template') ||
+                                           textarea.closest('.empty-form') ||
+                                           textarea.closest('#empty-ctl-template') ||
+                                           textarea.closest('.empty-form-row');
+                        if (isTarget && !isTemplate) {
+                            console.log("cm6_loader: MutationObserver found textarea:", name);
+                            window.initCodeMirror(textarea);
+                        }
+                    });
+
+                    if (node.tagName === 'TEXTAREA') {
+                        const name = node.name || '';
+                        const isTarget = name.endsWith('block') ||
+                                         name.endsWith('object_declaration') ||
+                                         name.endsWith('class_declaration') ||
+                                         name.endsWith('input_function') ||
+                                         name.endsWith('input_output_function') ||
+                                         name.endsWith('runner_code');
+                        const isTemplate = node.closest('#empty-form-template') ||
+                                           node.closest('.empty-form') ||
+                                           node.closest('#empty-ctl-template') ||
+                                           node.closest('.empty-form-row');
+                        if (isTarget && !isTemplate) {
+                            console.log("cm6_loader: MutationObserver found node itself as textarea:", name);
+                            window.initCodeMirror(node);
+                        }
+                    }
+                }
+            });
+        });
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+}
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initAll);
+} else {
+    initAll();
+}
 `;
 document.head.appendChild(script);

@@ -211,13 +211,15 @@ from .models import CustomType, CustomTypeLanguage
 CustomTypeLanguageFormSet = inlineformset_factory(
     CustomType,
     CustomTypeLanguage,
-    fields=["language", "class_declaration", "input_function"],
+    fields=["language", "class_declaration", "input_output_function"],
     extra=1,
     can_delete=True,
     widgets={
         "language": forms.Select(attrs={"class": "custom-input"}),
         "class_declaration": forms.Textarea(attrs={"class": "custom-input", "rows": 4}),
-        "input_function": forms.Textarea(attrs={"class": "custom-input", "rows": 4}),
+        "input_output_function": forms.Textarea(
+            attrs={"class": "custom-input", "rows": 4}
+        ),
     },
 )
 
@@ -279,7 +281,9 @@ def generate_codeblocks_preview(request):
         data = json.loads(request.body)
         variables_data = data.get("variables", [])
         object_declarations = data.get("object_declarations", {})
-        input_functions = data.get("input_functions", {})
+        input_functions = data.get(
+            "input_output_functions", data.get("input_functions", {})
+        )
 
         # We need to construct mock variable objects
         class MockVariable:
@@ -423,6 +427,9 @@ def add_problem_custom(request):
                     f.fields["method"].queryset = problem.methods.all()
             if var_formset.is_valid():
                 var_formset.save()
+                from .utils import generate_codeblocks_for_problem
+
+                generate_codeblocks_for_problem(problem, force=True)
                 return redirect(
                     f"/api/rootops/add-problem/?step=6&problem_id={problem.id}"
                 )

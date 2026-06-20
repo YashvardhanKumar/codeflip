@@ -178,7 +178,7 @@ export default function TestPanel({
                   }`}
                 >
                   Case {index + 1}
-                  {sampleTestcases.length > 1 && (
+                  {sampleTestcases.length > 1 && activeCase === index && (
                     <span
                       onClick={(e) => {
                         e.stopPropagation()

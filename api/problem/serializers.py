@@ -90,10 +90,12 @@ class CodeblockSerializer(serializers.ModelSerializer):
         read_only_fields = ["id"]
 
     def get_full_code(self, obj):
-        from problem.utils import IMPORT_BLOCKS
+        from problem.utils import IMPORT_BLOCKS, clean_js_ts_fs_imports
 
         imports = IMPORT_BLOCKS.get(obj.language, "")
-        return f"{imports}\n\n{obj.block}\n\n{obj.runner_code}"
+        cleaned_block = clean_js_ts_fs_imports(obj.block, obj.language)
+        cleaned_runner = clean_js_ts_fs_imports(obj.runner_code, obj.language)
+        return f"{imports}\n\n{cleaned_block}\n\n{cleaned_runner}"
 
 
 class TestcaseSerializer(serializers.ModelSerializer):
