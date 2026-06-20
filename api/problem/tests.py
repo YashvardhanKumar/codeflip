@@ -193,7 +193,7 @@ def test_custom_type_parsing_and_printing():
     assert "ListNode head = Parser.input(sc);" in java_assembled
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_signals_auto_regenerate_codeblocks():
     from .models import Problem, Method, Variable, Codeblock
     from .utils import generate_codeblocks_for_problem

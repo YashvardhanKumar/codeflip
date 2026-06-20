@@ -71,10 +71,12 @@ class VariableInline(admin.TabularInline):
 
 @admin.action(description="Generate Codeblocks from Variables")
 def generate_codeblocks_action(modeladmin, request, queryset):
+    from .tasks import generate_codeblocks_task
+
     for problem in queryset:
-        generate_codeblocks_for_problem(problem, force=True)
+        generate_codeblocks_task.delay(problem.id, force=True)
     modeladmin.message_user(
-        request, "Codeblocks successfully generated for selected problems."
+        request, "Codeblock generation task queued for selected problems."
     )
 
 
@@ -156,12 +158,16 @@ class ProblemAdmin(admin.ModelAdmin):
         # Check if variables were updated and generate codeblocks automatically
         for formset in formsets:
             if formset.model == Variable and formset.has_changed():
-                generate_codeblocks_for_problem(form.instance, force=True)
+                from .signals import queue_codeblock_generation
+
+                queue_codeblock_generation(form.instance.id)
                 break
         else:
             # Also generate if we are just creating the problem and variables are present
             if not change:
-                generate_codeblocks_for_problem(form.instance, force=True)
+                from .signals import queue_codeblock_generation
+
+                queue_codeblock_generation(form.instance.id)
 
 
 @admin.register(Codeblock)

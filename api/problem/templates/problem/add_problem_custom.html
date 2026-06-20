@@ -9,9 +9,56 @@
 
 {% block rootops_content %}
 <div class="form-container">
-    <h1><i class="fas fa-plus-circle"></i> Create New Problem</h1>
-    <form method="post">
-        {% csrf_token %}
+    {% if loading %}
+        <h2><i class="fas fa-spinner fa-spin"></i> Generating Code Blocks...</h2>
+        <p style="color: #aaa; margin-bottom: 20px;">We are generating templates and runner code for C++, Java, Python, JavaScript, and TypeScript in the background.</p>
+
+        <div style="background: rgba(0,0,0,0.2); border: 1px solid #2c3e50; border-radius: 8px; padding: 25px; text-align: center; margin: 40px 0;">
+            <div class="progress-bar-container" style="background: rgba(255,255,255,0.05); border-radius: 20px; height: 24px; position: relative; overflow: hidden; border: 1px solid #34495e; margin-bottom: 15px;">
+                <div id="progress-bar" style="background: linear-gradient(90deg, #3498db, #2ecc71); height: 100%; width: 0%; transition: width 0.3s ease;"></div>
+            </div>
+            <div style="font-weight: bold; font-size: 18px; margin-bottom: 10px;" id="progress-text">0% Completed (0/5 generated)</div>
+            <div style="color: #aaa;" id="status-message">Waiting for Celery worker...</div>
+        </div>
+
+        <script>
+            (function() {
+                const problemId = "{{ problem.id }}";
+                let pollInterval = setInterval(checkStatus, 500);
+
+                function checkStatus() {
+                    fetch(`/api/rootops/check-codeblocks/?problem_id=${problemId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            const count = data.count || 0;
+                            const total = data.total || 5;
+                            const percent = Math.round((count / total) * 100);
+
+                            document.getElementById('progress-bar').style.width = percent + '%';
+                            document.getElementById('progress-text').innerText = `${percent}% Completed (${count}/${total} generated)`;
+
+                            if (count > 0) {
+                                document.getElementById('status-message').innerText = 'Generating templates...';
+                            }
+
+                            if (data.ready) {
+                                clearInterval(pollInterval);
+                                document.getElementById('status-message').innerText = 'Done! Redirecting...';
+                                setTimeout(() => {
+                                    window.location.href = `/api/rootops/add-problem/?step=6&problem_id=${problemId}`;
+                                }, 800);
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Error polling status:', err);
+                        });
+                }
+            })();
+        </script>
+    {% else %}
+        <h1><i class="fas fa-plus-circle"></i> Create New Problem</h1>
+        <form method="post">
+            {% csrf_token %}
 
         <div class="step-indicator" style="margin-bottom: 20px; color: #aaa; font-weight: bold;">
             Step {{ step }} of 7
@@ -365,7 +412,8 @@
             <button type="submit" name="finish" class="btn-save" style="width: 100%; font-size: 1.1em; padding: 15px;"><i class="fas fa-check-circle"></i> Finish & Publish Problem</button>
         </div>
         {% endif %}
-    </form>
+        </form>
+    {% endif %}
 </div>
 
 <script>

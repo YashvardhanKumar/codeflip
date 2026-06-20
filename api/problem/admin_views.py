@@ -343,6 +343,7 @@ def generate_codeblocks_preview(request):
 def add_problem_custom(request):
     step = int(request.GET.get("step", 1))
     problem_id = request.GET.get("problem_id")
+    loading = request.GET.get("loading") == "1"
     problem = None
     if problem_id:
         from django.shortcuts import get_object_or_404
@@ -427,11 +428,11 @@ def add_problem_custom(request):
                     f.fields["method"].queryset = problem.methods.all()
             if var_formset.is_valid():
                 var_formset.save()
-                from .utils import generate_codeblocks_for_problem
+                from .tasks import generate_codeblocks_task
 
-                generate_codeblocks_for_problem(problem, force=True)
+                generate_codeblocks_task.delay(problem.id, force=True)
                 return redirect(
-                    f"/api/rootops/add-problem/?step=6&problem_id={problem.id}"
+                    f"/api/rootops/add-problem/?step=5&loading=1&problem_id={problem.id}"
                 )
         elif step == 6:
             if not problem:
@@ -523,6 +524,7 @@ def add_problem_custom(request):
             "manual_form": manual_form,
             "ai_form": ai_form,
             "languages": CodingLanguage.choices,
+            "loading": loading,
         },
     )
 
@@ -569,3 +571,27 @@ def add_ai_testcases(request):
     else:
         form = AITestCaseForm()
     return render(request, "problem/add_ai_testcases.html", {"form": form})
+
+
+@staff_member_required
+def check_codeblocks_status(request):
+    problem_id = request.GET.get("problem_id")
+    if not problem_id:
+        return JsonResponse({"ready": False, "count": 0})
+    from .models import Problem
+
+    try:
+        problem = Problem.objects.get(id=problem_id)
+        count = problem.codeblocks.count()
+        from user.models import CodingLanguage
+
+        total_languages = len(CodingLanguage.choices)
+        return JsonResponse(
+            {
+                "ready": count >= total_languages,
+                "count": count,
+                "total": total_languages,
+            }
+        )
+    except Problem.DoesNotExist:
+        return JsonResponse({"ready": False, "count": 0})

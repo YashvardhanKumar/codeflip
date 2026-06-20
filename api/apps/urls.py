@@ -18,6 +18,7 @@ from problem.admin_views import (
     moderator_login,
     generate_testcases_async,
     generate_codeblocks_preview,
+    check_codeblocks_status,
 )
 from ai.views import TaskStatusView
 from django.conf import settings
@@ -44,6 +45,11 @@ urlpatterns = [
                     "generate-codeblocks-preview/",
                     generate_codeblocks_preview,
                     name="generate_codeblocks_preview",
+                ),
+                path(
+                    "check-codeblocks/",
+                    check_codeblocks_status,
+                    name="check_codeblocks_status",
                 ),
                 path(
                     "task-status/<str:task_id>/",
