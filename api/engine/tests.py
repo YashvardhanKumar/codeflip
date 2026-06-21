@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 from rest_framework.test import APIClient
 from rest_framework import status
 from django.urls import reverse
@@ -52,3 +52,80 @@ class TestEngineAPI:
         response = api_client.post(url, {})  # Missing required fields
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_parse_batch_stdout(self):
+        from engine.services import parse_batch_stdout
+        from engine.constants import TC_SEPARATOR
+
+        stdout = f"res1\n{TC_SEPARATOR}\nres2\n{TC_SEPARATOR}\n"
+        results = parse_batch_stdout(stdout, 2)
+        assert results == ["res1", "res2"]
+
+        stdout_partial = f"res1\n{TC_SEPARATOR}"
+        results_partial = parse_batch_stdout(stdout_partial, 2)
+        assert results_partial == ["res1", ""]
+
+    def test_format_batch_stdin(self):
+        from engine.services import format_batch_stdin
+
+        class MockTestCase:
+            def __init__(self, input_val):
+                self.input = input_val
+
+        tcs = [MockTestCase("5\n6"), MockTestCase("7\n8")]
+        # For non-array language, format_stdin returns raw input lines
+        formatted = format_batch_stdin(tcs, language_id=71)
+        assert formatted == "2\n5\n6\n7\n8"
+
+    @patch("requests.post")
+    def test_run_batch_submission_success(self, mock_post):
+        from engine.services import run_batch_submission
+        from engine.constants import TC_SEPARATOR
+
+        # Mock Response
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "stdout": "YQ==\n___CODERACER_TC_SEP___\nYg==",  # base64 encoded "a" and "b" split by sep
+            "status": {"id": 3, "description": "Accepted"},
+            "time": "0.1",
+            "memory": 2048,
+        }
+        mock_post.return_value = mock_response
+
+        class MockTestCase:
+            def __init__(self, id, input_val, output_val):
+                self.id = id
+                self.input = input_val
+                self.output = output_val
+                self.display_testcase = True
+
+        tcs = [MockTestCase(1, "in1", "a"), MockTestCase(2, "in2", "b")]
+        payload = {"source_code": "some code", "language_id": 71}
+
+        # Mock output returned by Judge0 CE wait request has already split stdout
+        # But wait, our mock_response.json is base64 encoded.
+        # Wait! The stdout in response from Judge0 CE wait endpoint is base64 encoded as a WHOLE.
+        # So "a\n___CODERACER_TC_SEP___\nb" encoded in base64 is:
+        # base64("a\n___CODERACER_TC_SEP___\nb") = "YQpfX19DT0RFUkFDRVJfVENfU0VQX19fCmI="
+        import base64
+
+        full_stdout = (
+            f"___USER_PRINT_START___\nhello printed\n___USER_PRINT_END___\na\n{TC_SEPARATOR}\n"
+            f"___USER_PRINT_START___\nworld printed\n___USER_PRINT_END___\nb"
+        )
+        mock_response.json.return_value = {
+            "stdout": base64.b64encode(full_stdout.encode("utf-8")).decode("utf-8"),
+            "status": {"id": 3, "description": "Accepted"},
+            "time": "0.1",
+            "memory": 2048,
+        }
+
+        results = run_batch_submission(payload, tcs, language_id=71)
+
+        assert len(results) == 2
+        assert results[0]["is_accepted"] is True
+        assert results[0]["stdout"] == "a"
+        assert results[0]["compile_output"] == "hello printed"
+        assert results[1]["is_accepted"] is True
+        assert results[1]["stdout"] == "b"
+        assert results[1]["compile_output"] == "world printed"

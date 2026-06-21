@@ -13,3 +13,15 @@ DEFAULT_LIMITS = {
     "max_processes_and_or_threads": 60,
     "max_file_size": 1024,
 }
+
+TC_SEPARATOR = "___CODERACER_TC_SEP___"
+
+
+def get_scaled_limits(num_testcases):
+    """Scale resource limits proportionally to number of test cases."""
+    limits = DEFAULT_LIMITS.copy()
+    scale = min(num_testcases, 20)  # Cap at 20x
+    limits["cpu_time_limit"] = min(limits["cpu_time_limit"] * scale, 60)
+    limits["cpu_extra_time"] = min(limits["cpu_extra_time"] * scale, 10)
+    limits["wall_time_limit"] = min(limits["wall_time_limit"] * scale, 120)
+    return limits

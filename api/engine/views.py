@@ -10,9 +10,8 @@ from django.http import StreamingHttpResponse
 import json
 import requests
 from .constants import JUDGE0_URL, DEFAULT_LIMITS
-from .services import encode_base64, VALID_JUDGE0_FIELDS, run_testcase_internal
+from .services import encode_base64, VALID_JUDGE0_FIELDS, run_batch_submission
 from problem.models import Testcase, Solution, AnswerStatus, Problem
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from rest_framework.authentication import TokenAuthentication
 
 
@@ -102,38 +101,28 @@ class SubmitStreamView(APIView):
             )
 
         def generator():
-            results = []
-            total_passed = True
-            compilation_error = None
-
             from problem.views import JUDGE0_STATUS_MAP
 
-            with ThreadPoolExecutor(max_workers=10) as executor:
-                futures = {
-                    executor.submit(run_testcase_internal, base_judge0_payload, tc): i
-                    for i, tc in enumerate(testcases)
-                }
+            # Run all test cases in a single submission
+            results = run_batch_submission(
+                base_judge0_payload, list(testcases), validated.get("language_id")
+            )
+            results.sort(key=lambda x: x.get("index", 0))
 
-                for future in as_completed(futures):
-                    index = futures[future]
-                    try:
-                        case_res = future.result()
-                        case_res["index"] = index
-                        results.append(case_res)
+            compilation_error = None
+            total_passed = True
 
-                        if case_res.get("status", {}).get("id") == 6:
-                            compilation_error = case_res.get("compile_output")
+            for case_res in results:
+                if case_res.get("status", {}).get("id") == 6:
+                    compilation_error = case_res.get("compile_output")
+                if not case_res.get("is_accepted"):
+                    total_passed = False
+                yield json.dumps({"status": "case_result", "data": case_res}) + "\n"
 
-                        if not case_res.get("is_accepted"):
-                            total_passed = False
-
-                        yield json.dumps(
-                            {"status": "case_result", "data": case_res}
-                        ) + "\n"
-                    except Exception as e:
-                        yield json.dumps({"status": "error", "message": str(e)}) + "\n"
-
-            results.sort(key=lambda x: x["index"])
+            sol_id = 0
+            sol_status = (
+                "Accepted" if total_passed and not compilation_error else "Error"
+            )
 
             if is_submit:
                 final_status = AnswerStatus.ACCEPTED
@@ -147,7 +136,7 @@ class SubmitStreamView(APIView):
                             )
                             break
 
-                Solution.objects.create(
+                sol = Solution.objects.create(
                     user=request.user,
                     problem=problem,
                     code=raw_source_code,  # Save the original user code
@@ -155,15 +144,14 @@ class SubmitStreamView(APIView):
                     status=final_status,
                     testcase_results=results,
                 )
+                sol_id = sol.id
+                sol_status = final_status
 
             yield json.dumps(
                 {
                     "status": "complete",
-                    "total_status": (
-                        "Accepted"
-                        if total_passed and not compilation_error
-                        else "Error"
-                    ),
+                    "total_status": sol_status,
+                    "solution_id": sol_id,
                     "compile_output": compilation_error,
                     "results": results,
                 }

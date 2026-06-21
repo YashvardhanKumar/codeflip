@@ -6,16 +6,16 @@ import re
 
 
 def has_custom_print(input_output_code, ret_type, lang_name):
-    if not input_output_code or not ret_type:
+    if not input_output_code:
         return False
     # Clean comments to avoid false matches
     code_clean = re.sub(r"//.*", "", input_output_code)
     if lang_name == "PYTHON":
-        code_clean = re.sub(r"#.*", "", input_output_code)
+        code_clean = re.sub(r"#.*", "", code_clean)
     code_clean = re.sub(r"/\*.*?\*/", "", code_clean, flags=re.DOTALL)
 
     if lang_name == "PYTHON":
-        return bool(re.search(r"\bdef\s+print\s*\(", code_clean))
+        return bool(re.search(r"\bdef\s+printOutput\s*\(", code_clean))
     elif lang_name in ["JAVASCRIPT", "TYPESCRIPT"]:
         return bool(re.search(r"\bfunction\s+print\s*\(", code_clean))
     elif lang_name == "CPP":
@@ -316,15 +316,20 @@ def generate_code_for_language(
             ret_type = get_cpp_type(
                 method.type, method.template_type, method.array_dimensions
             )
-            runner_code = "int main() {\n"
+            runner_code = (
+                "int main() {\n"
+                "    int T;\n"
+                "    if (!(cin >> T)) return 0;\n"
+                "    for (int _tc = 0; _tc < T; _tc++) {\n"
+            )
             for v in inputs:
                 if v.type == VariableType.ARRAY:
                     t = get_cpp_type(
                         VariableType.ARRAY, v.template_type, v.array_dimensions
                     )
-                    runner_code += f"    {t} {v.name};\n"
+                    runner_code += f"        {t} {v.name};\n"
                     runner_code += generate_cpp_reader(
-                        v.name, v.template_type, v.array_dimensions, "    "
+                        v.name, v.template_type, v.array_dimensions, "        "
                     )
                 elif (
                     v.type not in dict(VariableType.choices)
@@ -332,89 +337,132 @@ def generate_code_for_language(
                 ):
                     t = get_cpp_type(v.type)
                     if input_output_function.strip():
-                        runner_code += f"    {t} {v.name} = input();\n"
+                        runner_code += f"        {t} {v.name} = input();\n"
                     else:
-                        runner_code += f"    {t} {v.name};\n    // TODO: Implement parsing logic for custom type {v.type}\n"
+                        runner_code += f"        {t} {v.name};\n        // TODO: Implement parsing logic for custom type {v.type}\n"
                 else:
                     t_cpp = get_cpp_type(v.type, v.template_type, v.array_dimensions)
-                    runner_code += f"    {t_cpp} {v.name};\n"
+                    runner_code += f"        {t_cpp} {v.name};\n"
                     if v.type == VariableType.STRING:
-                        runner_code += f"    getline(cin >> ws, {v.name});\n"
+                        runner_code += f"        getline(cin >> ws, {v.name});\n"
                     else:
-                        runner_code += f"    cin >> {v.name};\n"
+                        runner_code += f"        cin >> {v.name};\n"
 
-            runner_code += f"\n    {class_name} sol;\n"
+            runner_code += f"\n        {class_name} sol;\n"
             call = f"sol.{method.name}({', '.join([v.name for v in inputs])})"
+            runner_code += '        cout << "___USER_PRINT_START___" << endl;\n'
             if method.type != "void" and method.type != "VOID" and ret_type != "void":
-                runner_code += f"    {ret_type} result = {call};\n"
+                runner_code += f"        {ret_type} result = {call};\n"
+                runner_code += '        cout << "___USER_PRINT_END___" << endl;\n'
                 if has_custom_print(input_output_function, method.type, "CPP"):
-                    runner_code += f"    print(result);\n    cout << endl;\n"
+                    runner_code += f"        print(result);\n        cout << endl;\n"
                 else:
-                    runner_code += f"    _print_res(result);\n    cout << endl;\n"
+                    runner_code += (
+                        f"        _print_res(result);\n        cout << endl;\n"
+                    )
             else:
-                runner_code += f"    {call};\n"
-            runner_code += "    return 0;\n}\n"
+                runner_code += f"        {call};\n"
+                runner_code += '        cout << "___USER_PRINT_END___" << endl;\n'
+            runner_code += '        cout << "___CODERACER_TC_SEP___" << endl;\n'
+            runner_code += "    }\n    return 0;\n}\n"
         elif is_multi:
-            runner_code = "int main() {\n"
-            runner_code += "    int num_cmds; if (!(cin >> num_cmds)) return 0;\n"
-            runner_code += "    vector<string> commands(num_cmds);\n"
-            runner_code += (
-                "    for(int i=0; i<num_cmds; i++) getline(cin >> ws, commands[i]);\n"
+            runner_code = (
+                "int main() {\n"
+                "    int T;\n"
+                "    if (!(cin >> T)) return 0;\n"
+                "    for (int _tc = 0; _tc < T; _tc++) {\n"
+                "        int num_cmds; if (!(cin >> num_cmds)) return 0;\n"
+                "        vector<string> commands(num_cmds);\n"
+                "        for(int i=0; i<num_cmds; i++) getline(cin >> ws, commands[i]);\n"
+                "        int num_outer_args; cin >> num_outer_args;\n"
+                '        cout << "[";\n'
+                f"        {class_name}* obj = nullptr;\n"
+                "        for(int i=0; i<num_cmds; i++) {\n"
+                "            string cmd = commands[i];\n"
+                "            int arg_len; cin >> arg_len;\n"
+                '            if (i > 0) cout << ",";\n'
             )
-            runner_code += "    int num_outer_args; cin >> num_outer_args;\n"
-            runner_code += '    cout << "[";\n'
-            runner_code += f"    {class_name}* obj = nullptr;\n"
-            runner_code += "    for(int i=0; i<num_cmds; i++) {\n"
-            runner_code += "        string cmd = commands[i];\n"
-            runner_code += "        int arg_len; cin >> arg_len;\n"
-            runner_code += '        if (i > 0) cout << ",";\n'
 
             if constructor_method:
                 c_inputs = list(constructor_method.parameters.all().order_by("id"))
-                runner_code += f'        if (cmd == "{class_name}") {{\n'
+                runner_code += f'            if (cmd == "{class_name}") {{\n'
                 for v in c_inputs:
                     if v.type == VariableType.ARRAY:
-                        runner_code += f"            {get_cpp_type(v.type, v.template_type, v.array_dimensions)} {v.name};\n"
+                        runner_code += f"                {get_cpp_type(v.type, v.template_type, v.array_dimensions)} {v.name};\n"
                         runner_code += generate_cpp_reader(
-                            v.name, v.template_type, v.array_dimensions, "            "
+                            v.name,
+                            v.template_type,
+                            v.array_dimensions,
+                            "                ",
                         )
                     elif v.type == VariableType.STRING:
-                        runner_code += f"            {get_cpp_type(v.type)} {v.name}; getline(cin >> ws, {v.name});\n"
+                        runner_code += f"                {get_cpp_type(v.type)} {v.name}; getline(cin >> ws, {v.name});\n"
                     else:
-                        runner_code += f"            {get_cpp_type(v.type)} {v.name}; cin >> {v.name};\n"
+                        runner_code += f"                {get_cpp_type(v.type)} {v.name}; cin >> {v.name};\n"
                 c_args = ", ".join([v.name for v in c_inputs])
-                runner_code += f"            obj = new {class_name}({c_args});\n"
-                runner_code += '            cout << "null";\n        }\n'
+                runner_code += (
+                    '                cout << "___USER_PRINT_START___" << endl;\n'
+                )
+                runner_code += f"                obj = new {class_name}({c_args});\n"
+                runner_code += (
+                    '                cout << "___USER_PRINT_END___" << endl;\n'
+                )
+                runner_code += '                cout << "null";\n            }\n'
             else:
-                runner_code += f'        if (cmd == "{class_name}") {{\n            obj = new {class_name}();\n            cout << "null";\n        }}\n'
+                runner_code += f'            if (cmd == "{class_name}") {{\n'
+                runner_code += (
+                    '                cout << "___USER_PRINT_START___" << endl;\n'
+                )
+                runner_code += f"                obj = new {class_name}();\n"
+                runner_code += (
+                    '                cout << "___USER_PRINT_END___" << endl;\n'
+                )
+                runner_code += '                cout << "null";\n            }\n'
 
             for method in methods:
                 if method.is_constructor:
                     continue
                 inputs = list(method.parameters.all().order_by("id"))
-                runner_code += f'        else if (cmd == "{method.name}") {{\n'
+                runner_code += f'            else if (cmd == "{method.name}") {{\n'
                 for v in inputs:
                     if v.type == VariableType.ARRAY:
-                        runner_code += f"            {get_cpp_type(v.type, v.template_type, v.array_dimensions)} {v.name};\n"
+                        runner_code += f"                {get_cpp_type(v.type, v.template_type, v.array_dimensions)} {v.name};\n"
                         runner_code += generate_cpp_reader(
-                            v.name, v.template_type, v.array_dimensions, "            "
+                            v.name,
+                            v.template_type,
+                            v.array_dimensions,
+                            "                ",
                         )
                     elif v.type == VariableType.STRING:
-                        runner_code += f"            {get_cpp_type(v.type)} {v.name}; getline(cin >> ws, {v.name});\n"
+                        runner_code += f"                {get_cpp_type(v.type)} {v.name}; getline(cin >> ws, {v.name});\n"
                     else:
-                        runner_code += f"            {get_cpp_type(v.type)} {v.name}; cin >> {v.name};\n"
+                        runner_code += f"                {get_cpp_type(v.type)} {v.name}; cin >> {v.name};\n"
                 call = f"obj->{method.name}({', '.join([v.name for v in inputs])})"
+                runner_code += (
+                    '                cout << "___USER_PRINT_START___" << endl;\n'
+                )
                 if method.type != "void" and method.type != "VOID":
-                    runner_code += f"            auto res = {call};\n"
+                    runner_code += f"                auto res = {call};\n"
+                    runner_code += (
+                        '                cout << "___USER_PRINT_END___" << endl;\n'
+                    )
                     if has_custom_print(input_output_function, method.type, "CPP"):
-                        runner_code += "            print(res);\n"
+                        runner_code += "                print(res);\n"
                     else:
-                        runner_code += "            _print_res(res);\n"
+                        runner_code += "                _print_res(res);\n"
                 else:
-                    runner_code += f'            {call};\n            cout << "null";\n'
-                runner_code += "        }\n"
+                    runner_code += f"                {call};\n"
+                    runner_code += (
+                        '                cout << "___USER_PRINT_END___" << endl;\n'
+                    )
+                    runner_code += '                cout << "null";\n'
+                runner_code += "            }\n"
 
-            runner_code += '    }\n    cout << "]\\n";\n    return 0;\n}\n'
+            runner_code += "        }\n"
+            runner_code += '        cout << "]" << endl;\n'
+            runner_code += "        if (obj) { delete obj; obj = nullptr; }\n"
+            runner_code += '        cout << "___CODERACER_TC_SEP___" << endl;\n'
+            runner_code += "    }\n    return 0;\n}\n"
         else:
             runner_code = "int main() { return 0; }"
 
@@ -451,61 +499,87 @@ def generate_code_for_language(
         if not is_multi and methods:
             method = methods[0]
             inputs = list(method.parameters.all().order_by("id"))
-            runner_code = "def main():\n    input_data = sys.stdin.read().splitlines()\n    if not input_data: return\n"
-            for i, v in enumerate(inputs):
+            runner_code = (
+                "def main():\n"
+                "    input_data = sys.stdin.read().splitlines()\n"
+                "    if not input_data: return\n"
+                "    T = int(input_data[0].strip())\n"
+                "    idx = 1\n"
+                "    for _tc in range(T):\n"
+            )
+            for v in inputs:
                 if (
                     v.type not in dict(VariableType.choices)
                     and v.type != VariableType.ARRAY
                 ):
                     if input_output_function.strip():
-                        runner_code += f"    {v.name} = input(input_data[{i}])\n"
+                        runner_code += (
+                            f"        {v.name} = input(input_data[idx]); idx += 1\n"
+                        )
                     else:
-                        runner_code += f"    {v.name} = None # TODO: Implement parsing logic for custom type {v.type}\n"
+                        runner_code += f"        {v.name} = None; idx += 1 # TODO: Implement parsing logic for custom type {v.type}\n"
                 else:
-                    runner_code += (
-                        f"    {v.name} = json.loads(input_data[{i}].strip())\n"
-                    )
+                    runner_code += f"        {v.name} = json.loads(input_data[idx].strip()); idx += 1\n"
 
-            runner_code += "\n    sol = Solution()\n"
+            runner_code += "\n        sol = Solution()\n"
             call = f"sol.{method.name}({', '.join([v.name for v in inputs])})"
+            runner_code += '        print("___USER_PRINT_START___")\n'
             if method.type != "void" and method.type != "VOID" and method.type:
-                runner_code += f"    result = {call}\n"
+                runner_code += f"        result = {call}\n"
+                runner_code += '        print("___USER_PRINT_END___")\n'
                 if has_custom_print(input_output_function, method.type, "PYTHON"):
-                    runner_code += f"    print(result)\n"
+                    runner_code += f"        printOutput(result)\n"
                 else:
-                    runner_code += f"    print(json.dumps(result, separators=(',', ':'), cls=CustomEncoder))\n"
+                    runner_code += f"        print(json.dumps(result, separators=(',', ':'), cls=CustomEncoder))\n"
             else:
-                runner_code += f"    {call}\n"
+                runner_code += f"        {call}\n"
+                runner_code += '        print("___USER_PRINT_END___")\n'
+            runner_code += '        print("___CODERACER_TC_SEP___")\n'
             runner_code += "\nif __name__ == '__main__':\n    main()\n"
         elif is_multi:
-            runner_code = "def main():\n    input_data = sys.stdin.read().splitlines()\n    if len(input_data) < 2: return\n"
-            runner_code += "    commands = json.loads(input_data[0])\n"
-            runner_code += "    args_list = json.loads(input_data[1])\n"
-            runner_code += "    outputs = []\n"
-            runner_code += "    obj = None\n"
-            runner_code += "    for cmd, args in zip(commands, args_list):\n"
+            runner_code = (
+                "def main():\n"
+                "    input_data = sys.stdin.read().splitlines()\n"
+                "    if not input_data: return\n"
+                "    T = int(input_data[0].strip())\n"
+                "    idx = 1\n"
+                "    for _tc in range(T):\n"
+                "        commands = json.loads(input_data[idx].strip()); idx += 1\n"
+                "        args_list = json.loads(input_data[idx].strip()); idx += 1\n"
+                "        outputs = []\n"
+                "        obj = None\n"
+                "        for cmd, args in zip(commands, args_list):\n"
+            )
 
             if constructor_method:
-                runner_code += f"        if cmd == '{class_name}':\n"
-                runner_code += f"            obj = {class_name}(*args)\n"
-                runner_code += f"            outputs.append(None)\n"
+                runner_code += f"            if cmd == '{class_name}':\n"
+                runner_code += "                print('___USER_PRINT_START___')\n"
+                runner_code += f"                obj = {class_name}(*args)\n"
+                runner_code += "                print('___USER_PRINT_END___')\n"
+                runner_code += f"                outputs.append(None)\n"
             else:
-                runner_code += f"        if cmd == '{class_name}':\n"
-                runner_code += f"            obj = {class_name}()\n"
-                runner_code += f"            outputs.append(None)\n"
+                runner_code += f"            if cmd == '{class_name}':\n"
+                runner_code += "                print('___USER_PRINT_START___')\n"
+                runner_code += f"                obj = {class_name}()\n"
+                runner_code += "                print('___USER_PRINT_END___')\n"
+                runner_code += f"                outputs.append(None)\n"
 
             for method in methods:
                 if method.is_constructor:
                     continue
-                runner_code += f"        elif cmd == '{method.name}':\n"
+                runner_code += f"            elif cmd == '{method.name}':\n"
+                runner_code += "                print('___USER_PRINT_START___')\n"
                 if method.type != "void" and method.type != "VOID" and method.type:
-                    runner_code += f"            res = obj.{method.name}(*args)\n"
-                    runner_code += f"            outputs.append(res)\n"
+                    runner_code += f"                res = obj.{method.name}(*args)\n"
+                    runner_code += "                print('___USER_PRINT_END___')\n"
+                    runner_code += f"                outputs.append(res)\n"
                 else:
-                    runner_code += f"            obj.{method.name}(*args)\n"
-                    runner_code += f"            outputs.append(None)\n"
+                    runner_code += f"                obj.{method.name}(*args)\n"
+                    runner_code += "                print('___USER_PRINT_END___')\n"
+                    runner_code += f"                outputs.append(None)\n"
 
-            runner_code += "    print(json.dumps(outputs, separators=(',', ':'), cls=CustomEncoder))\n\n"
+            runner_code += "        print(json.dumps(outputs, separators=(',', ':'), cls=CustomEncoder))\n"
+            runner_code += '        print("___CODERACER_TC_SEP___")\n\n'
             runner_code += "if __name__ == '__main__':\n    main()\n"
         else:
             runner_code = (
@@ -577,70 +651,105 @@ def generate_code_for_language(
             runner_code = ""
             if lang_name == "TYPESCRIPT":
                 runner_code += "declare var require: any;\n"
-            runner_code += "\nconst input_data = fs.readFileSync(0, 'utf-8').trim().split('\\n');\n"
-            runner_code += f"if (input_data.length >= {len(inputs)}) {{\n"
+            runner_code += (
+                "\nconst input_data = fs.readFileSync(0, 'utf-8').trim().split('\\n');\n"
+                "if (input_data.length > 0) {\n"
+                "    const T = parseInt(input_data[0].trim());\n"
+                "    let idx = 1;\n"
+                "    for (let _tc = 0; _tc < T; _tc++) {\n"
+            )
             for i, v in enumerate(inputs):
                 if (
                     v.type not in dict(VariableType.choices)
                     and v.type != VariableType.ARRAY
                 ):
                     if input_output_function.strip():
-                        runner_code += f"    const {v.name} = input(input_data[{i}]);\n"
+                        runner_code += (
+                            f"        const {v.name} = input(input_data[idx++]);\n"
+                        )
                     else:
-                        runner_code += f"    const {v.name} = null; // TODO: Implement parsing logic for custom type {v.type}\n"
+                        runner_code += f"        const {v.name} = null; idx++; // TODO: Implement parsing logic for custom type {v.type}\n"
                 else:
-                    runner_code += (
-                        f"    const {v.name} = JSON.parse(input_data[{i}].trim());\n"
-                    )
+                    runner_code += f"        const {v.name} = JSON.parse(input_data[idx++].trim());\n"
 
-            runner_code += f"    const solution = new {class_name}();\n"
+            runner_code += f"        const solution = new {class_name}();\n"
             call = f"solution.{method.name}({', '.join([v.name for v in inputs])})"
+            runner_code += '        console.log("___USER_PRINT_START___");\n'
             if method.type != "void" and method.type != "VOID":
-                runner_code += f"    const result = {call};\n"
+                runner_code += f"        const result = {call};\n"
+                runner_code += '        console.log("___USER_PRINT_END___");\n'
                 if has_custom_print(input_output_function, method.type, lang_name):
-                    runner_code += f"    print(result);\n"
+                    runner_code += f"        print(result);\n"
                 else:
-                    runner_code += f"    console.log(JSON.stringify(result));\n"
+                    runner_code += f"        console.log(JSON.stringify(result));\n"
             else:
-                runner_code += f"    {call};\n"
-            runner_code += "}\n"
+                runner_code += f"        {call};\n"
+                runner_code += '        console.log("___USER_PRINT_END___");\n'
+            runner_code += '        console.log("___CODERACER_TC_SEP___");\n'
+            runner_code += "    }\n}\n"
         elif is_multi:
             runner_code = ""
             if lang_name == "TYPESCRIPT":
                 runner_code += "declare var require: any;\n"
-            runner_code += "\nconst input_data = fs.readFileSync(0, 'utf-8').trim().split('\\n');\n"
-            runner_code += "if (input_data.length >= 2) {\n"
-            runner_code += "    const commands = JSON.parse(input_data[0].trim());\n"
-            runner_code += "    const args_list = JSON.parse(input_data[1].trim());\n"
-            runner_code += "    const outputs = [];\n    let obj = null;\n"
-            runner_code += "    for(let i=0; i<commands.length; i++) {\n"
-            runner_code += "        const cmd = commands[i];\n"
-            runner_code += "        const args = args_list[i];\n"
+            runner_code += (
+                "\nconst input_data = fs.readFileSync(0, 'utf-8').trim().split('\\n');\n"
+                "if (input_data.length > 0) {\n"
+                "    const T = parseInt(input_data[0].trim());\n"
+                "    let idx = 1;\n"
+                "    for (let _tc = 0; _tc < T; _tc++) {\n"
+                "        const commands = JSON.parse(input_data[idx++].trim());\n"
+                "        const args_list = JSON.parse(input_data[idx++].trim());\n"
+                "        const outputs = [];\n"
+                "        let obj = null;\n"
+                "        for(let i=0; i<commands.length; i++) {\n"
+                "            const cmd = commands[i];\n"
+                "            const args = args_list[i];\n"
+            )
 
             if constructor_method:
-                runner_code += f"        if (cmd === '{class_name}') {{\n"
-                runner_code += f"            obj = new {class_name}(...args);\n"
-                runner_code += f"            outputs.push(null);\n"
-                runner_code += f"        }}\n"
+                runner_code += f"            if (cmd === '{class_name}') {{\n"
+                runner_code += (
+                    '                console.log("___USER_PRINT_START___");\n'
+                )
+                runner_code += f"                obj = new {class_name}(...args);\n"
+                runner_code += '                console.log("___USER_PRINT_END___");\n'
+                runner_code += f"                outputs.push(null);\n"
+                runner_code += f"            }}\n"
             else:
-                runner_code += f"        if (cmd === '{class_name}') {{\n"
-                runner_code += f"            obj = new {class_name}();\n"
-                runner_code += f"            outputs.push(null);\n"
-                runner_code += f"        }}\n"
+                runner_code += f"            if (cmd === '{class_name}') {{\n"
+                runner_code += (
+                    '                console.log("___USER_PRINT_START___");\n'
+                )
+                runner_code += f"                obj = new {class_name}();\n"
+                runner_code += '                console.log("___USER_PRINT_END___");\n'
+                runner_code += f"                outputs.push(null);\n"
+                runner_code += f"            }}\n"
 
             for method in methods:
                 if method.is_constructor:
                     continue
-                runner_code += f"        else if (cmd === '{method.name}') {{\n"
+                runner_code += f"            else if (cmd === '{method.name}') {{\n"
+                runner_code += (
+                    '                console.log("___USER_PRINT_START___");\n'
+                )
                 if method.type != "void" and method.type != "VOID" and method.type:
                     runner_code += (
-                        f"            outputs.push(obj.{method.name}(...args));\n"
+                        f"                const res = obj.{method.name}(...args);\n"
+                        '                console.log("___USER_PRINT_END___");\n'
+                        f"                outputs.push(res);\n"
                     )
                 else:
-                    runner_code += f"            obj.{method.name}(...args);\n"
-                    runner_code += f"            outputs.push(null);\n"
-                runner_code += f"        }}\n"
-            runner_code += "    }\n    console.log(JSON.stringify(outputs));\n}\n"
+                    runner_code += (
+                        f"                obj.{method.name}(...args);\n"
+                        '                console.log("___USER_PRINT_END___");\n'
+                        f"                outputs.push(null);\n"
+                    )
+                runner_code += f"            }}\n"
+
+            runner_code += "        }\n"
+            runner_code += "        console.log(JSON.stringify(outputs));\n"
+            runner_code += '        console.log("___CODERACER_TC_SEP___");\n'
+            runner_code += "    }\n}\n"
         else:
             runner_code = ""
             if lang_name == "TYPESCRIPT":
@@ -683,15 +792,36 @@ def generate_code_for_language(
             ret_type = get_java_type(
                 method.type, method.template_type, method.array_dimensions
             )
-            runner_code = 'public class Main {\n    static void _print_res(Object val) {\n        if (val == null) { System.out.print("null"); }\n        else if (val instanceof String) { System.out.print("\\"" + val + "\\""); }\n        else if (val.getClass().isArray()) {\n            System.out.print("[");\n            int len = java.lang.reflect.Array.getLength(val);\n            for(int i=0; i<len; i++) {\n                if(i>0) System.out.print(",");\n                _print_res(java.lang.reflect.Array.get(val, i));\n            }\n            System.out.print("]");\n        }\n        else { System.out.print(val); }\n    }\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n'
+            runner_code = (
+                "public class Main {\n"
+                "    static void _print_res(Object val) {\n"
+                '        if (val == null) { System.out.print("null"); }\n'
+                '        else if (val instanceof String) { System.out.print("\\"" + val + "\\""); }\n'
+                "        else if (val.getClass().isArray()) {\n"
+                '            System.out.print("[");\n'
+                "            int len = java.lang.reflect.Array.getLength(val);\n"
+                "            for(int i=0; i<len; i++) {\n"
+                '                if(i>0) System.out.print(",");\n'
+                "                _print_res(java.lang.reflect.Array.get(val, i));\n"
+                "            }\n"
+                '            System.out.print("]");\n'
+                "        }\n"
+                "        else { System.out.print(val); }\n"
+                "    }\n"
+                "    public static void main(String[] args) {\n"
+                "        Scanner sc = new Scanner(System.in);\n"
+                "        if (!sc.hasNextInt()) return;\n"
+                "        int T = sc.nextInt();\n"
+                "        for (int _tc = 0; _tc < T; _tc++) {\n"
+            )
             for v in inputs:
                 if v.type == VariableType.ARRAY:
-                    runner_code += f"        {get_java_type(v.type, v.template_type, v.array_dimensions)} {v.name};\n"
+                    runner_code += f"            {get_java_type(v.type, v.template_type, v.array_dimensions)} {v.name};\n"
                     runner_code += generate_java_reader(
                         v.name,
                         v.template_type,
                         v.array_dimensions,
-                        "        ",
+                        "            ",
                         is_root=True,
                     )
                 elif (
@@ -700,111 +830,163 @@ def generate_code_for_language(
                 ):
                     t = get_java_type(v.type)
                     if input_output_function.strip():
-                        runner_code += f"        {t} {v.name} = Parser.input(sc);\n"
+                        runner_code += f"            {t} {v.name} = Parser.input(sc);\n"
                     else:
-                        runner_code += f"        {t} {v.name} = null; // TODO: Implement parsing logic\n"
+                        runner_code += f"            {t} {v.name} = null; // TODO: Implement parsing logic\n"
                 else:
                     t_java = get_java_type(v.type, v.template_type, v.array_dimensions)
                     if v.type == VariableType.INTEGER:
-                        runner_code += f"        {t_java} {v.name} = sc.nextInt();\n"
+                        runner_code += (
+                            f"            {t_java} {v.name} = sc.nextInt();\n"
+                        )
                     elif v.type == VariableType.STRING:
-                        runner_code += f'        sc.skip("\\\\s*");\n'
-                        runner_code += f"        {t_java} {v.name} = sc.nextLine();\n"
+                        runner_code += f'            sc.skip("\\\\s*");\n'
+                        runner_code += (
+                            f"            {t_java} {v.name} = sc.nextLine();\n"
+                        )
                     else:
-                        runner_code += f"        {t_java} {v.name} = sc.next();\n"
+                        runner_code += f"            {t_java} {v.name} = sc.next();\n"
 
-            runner_code += f"\n        {class_name} sol = new {class_name}();\n"
+            runner_code += f"\n            {class_name} sol = new {class_name}();\n"
             call = f"sol.{method.name}({', '.join([v.name for v in inputs])})"
+            runner_code += '            System.out.println("___USER_PRINT_START___");\n'
             if method.type != "void" and method.type != "VOID" and ret_type != "void":
-                runner_code += f"        {ret_type} result = {call};\n"
+                runner_code += f"            {ret_type} result = {call};\n"
+                runner_code += (
+                    '            System.out.println("___USER_PRINT_END___");\n'
+                )
                 if has_custom_print(input_output_function, method.type, "JAVA"):
-                    runner_code += (
-                        "        Parser.print(result);\n        System.out.println();\n"
-                    )
+                    runner_code += "            Parser.print(result);\n            System.out.println();\n"
                 else:
-                    runner_code += (
-                        "        _print_res(result);\n        System.out.println();\n"
-                    )
+                    runner_code += "            _print_res(result);\n            System.out.println();\n"
             else:
-                runner_code += f"        {call};\n"
+                runner_code += f"            {call};\n"
+                runner_code += (
+                    '            System.out.println("___USER_PRINT_END___");\n'
+                )
+            runner_code += '            System.out.println("___CODERACER_TC_SEP___");\n'
+            runner_code += "        }\n"
             runner_code += "    }\n}\n"
         elif is_multi:
-            runner_code = 'public class Main {\n    static void _print_res(Object val) {\n        if (val == null) { System.out.print("null"); }\n        else if (val instanceof String) { System.out.print("\\"" + val + "\\""); }\n        else if (val.getClass().isArray()) {\n            System.out.print("[");\n            int len = java.lang.reflect.Array.getLength(val);\n            for(int i=0; i<len; i++) {\n                if(i>0) System.out.print(",");\n                _print_res(java.lang.reflect.Array.get(val, i));\n            }\n            System.out.print("]");\n        }\n        else { System.out.print(val); }\n    }\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n'
-            runner_code += "        if (!sc.hasNextInt()) return;\n"
-            runner_code += "        int num_cmds = sc.nextInt();\n"
-            runner_code += "        String[] commands = new String[num_cmds];\n"
-            runner_code += '        sc.skip("\\\\s*");\n'
-            runner_code += (
-                "        for(int i=0; i<num_cmds; i++) commands[i] = sc.nextLine();\n"
+            runner_code = (
+                "public class Main {\n"
+                "    static void _print_res(Object val) {\n"
+                '        if (val == null) { System.out.print("null"); }\n'
+                '        else if (val instanceof String) { System.out.print("\\"" + val + "\\""); }\n'
+                "        else if (val.getClass().isArray()) {\n"
+                '            System.out.print("[");\n'
+                "            int len = java.lang.reflect.Array.getLength(val);\n"
+                "            for(int i=0; i<len; i++) {\n"
+                '                if(i>0) System.out.print(",");\n'
+                "                _print_res(java.lang.reflect.Array.get(val, i));\n"
+                "            }\n"
+                '            System.out.print("]");\n'
+                "        }\n"
+                "        else { System.out.print(val); }\n"
+                "    }\n"
+                "    public static void main(String[] args) {\n"
+                "        Scanner sc = new Scanner(System.in);\n"
+                "        if (!sc.hasNextInt()) return;\n"
+                "        int T = sc.nextInt();\n"
+                "        for (int _tc = 0; _tc < T; _tc++) {\n"
+                "            if (!sc.hasNextInt()) break;\n"
+                "            int num_cmds = sc.nextInt();\n"
+                "            String[] commands = new String[num_cmds];\n"
+                '            sc.skip("\\\\s*");\n'
+                "            for(int i=0; i<num_cmds; i++) commands[i] = sc.nextLine();\n"
+                "            int num_outer_args = sc.nextInt();\n"
+                '            System.out.print("[");\n'
+                f"            {class_name} obj = null;\n"
+                "            for(int i=0; i<num_cmds; i++) {\n"
+                "                String cmd = commands[i];\n"
+                "                int arg_len = sc.nextInt();\n"
+                '                if (i > 0) System.out.print(",");\n'
             )
-            runner_code += "        int num_outer_args = sc.nextInt();\n"
-            runner_code += '        System.out.print("[");\n'
-            runner_code += f"        {class_name} obj = null;\n"
-            runner_code += "        for(int i=0; i<num_cmds; i++) {\n"
-            runner_code += "            String cmd = commands[i];\n"
-            runner_code += "            int arg_len = sc.nextInt();\n"
-            runner_code += '            if (i > 0) System.out.print(",");\n'
 
             if constructor_method:
                 c_inputs = list(constructor_method.parameters.all().order_by("id"))
-                runner_code += f'            if (cmd.equals("{class_name}")) {{\n'
+                runner_code += f'                if (cmd.equals("{class_name}")) {{\n'
                 for v in c_inputs:
                     if v.type == VariableType.ARRAY:
-                        runner_code += f"                {get_java_type(v.type, v.template_type, v.array_dimensions)} {v.name};\n"
+                        runner_code += f"                    {get_java_type(v.type, v.template_type, v.array_dimensions)} {v.name};\n"
                         runner_code += generate_java_reader(
                             v.name,
                             v.template_type,
                             v.array_dimensions,
-                            "                ",
+                            "                    ",
                             is_root=True,
                         )
                     elif v.type == VariableType.STRING:
-                        runner_code += f'                sc.skip("\\\\s*");\n                {get_java_type(v.type)} {v.name} = sc.nextLine();\n'
+                        runner_code += f'                    sc.skip("\\\\s*");\n                    {get_java_type(v.type)} {v.name} = sc.nextLine();\n'
                     elif v.type == VariableType.INTEGER:
-                        runner_code += f"                {get_java_type(v.type)} {v.name} = sc.nextInt();\n"
+                        runner_code += f"                    {get_java_type(v.type)} {v.name} = sc.nextInt();\n"
                     else:
-                        runner_code += f"                {get_java_type(v.type)} {v.name} = sc.next();\n"
+                        runner_code += f"                    {get_java_type(v.type)} {v.name} = sc.next();\n"
                 c_args = ", ".join([v.name for v in c_inputs])
-                runner_code += f"                obj = new {class_name}({c_args});\n"
+                runner_code += '                    System.out.println("___USER_PRINT_START___");\n'
                 runner_code += (
-                    '                System.out.print("null");\n            }\n'
+                    f"                    obj = new {class_name}({c_args});\n"
+                )
+                runner_code += (
+                    '                    System.out.println("___USER_PRINT_END___");\n'
+                )
+                runner_code += (
+                    '                    System.out.print("null");\n                }\n'
                 )
             else:
-                runner_code += f'            if (cmd.equals("{class_name}")) {{\n                obj = new {class_name}();\n                System.out.print("null");\n            }}\n'
+                runner_code += f'                if (cmd.equals("{class_name}")) {{\n'
+                runner_code += '                    System.out.println("___USER_PRINT_START___");\n'
+                runner_code += f"                    obj = new {class_name}();\n"
+                runner_code += (
+                    '                    System.out.println("___USER_PRINT_END___");\n'
+                )
+                runner_code += (
+                    '                    System.out.print("null");\n                }\n'
+                )
 
             for method in methods:
                 if method.is_constructor:
                     continue
                 inputs = list(method.parameters.all().order_by("id"))
-                runner_code += f'            else if (cmd.equals("{method.name}")) {{\n'
+                runner_code += (
+                    f'                else if (cmd.equals("{method.name}")) {{\n'
+                )
                 for v in inputs:
                     if v.type == VariableType.ARRAY:
-                        runner_code += f"                {get_java_type(v.type, v.template_type, v.array_dimensions)} {v.name};\n"
+                        runner_code += f"                    {get_java_type(v.type, v.template_type, v.array_dimensions)} {v.name};\n"
                         runner_code += generate_java_reader(
                             v.name,
                             v.template_type,
                             v.array_dimensions,
-                            "                ",
+                            "                    ",
                             is_root=True,
                         )
                     elif v.type == VariableType.STRING:
-                        runner_code += f'                sc.skip("\\\\s*");\n                {get_java_type(v.type)} {v.name} = sc.nextLine();\n'
+                        runner_code += f'                    sc.skip("\\\\s*");\n                    {get_java_type(v.type)} {v.name} = sc.nextLine();\n'
                     elif v.type == VariableType.INTEGER:
-                        runner_code += f"                {get_java_type(v.type)} {v.name} = sc.nextInt();\n"
+                        runner_code += f"                    {get_java_type(v.type)} {v.name} = sc.nextInt();\n"
                     else:
-                        runner_code += f"                {get_java_type(v.type)} {v.name} = sc.next();\n"
+                        runner_code += f"                    {get_java_type(v.type)} {v.name} = sc.next();\n"
                 call = f"obj.{method.name}({', '.join([v.name for v in inputs])})"
+                runner_code += '                    System.out.println("___USER_PRINT_START___");\n'
                 if method.type != "void" and method.type != "VOID":
-                    runner_code += f"                {get_java_type(method.type, method.template_type, method.array_dimensions)} res = {call};\n"
+                    runner_code += f"                    {get_java_type(method.type, method.template_type, method.array_dimensions)} res = {call};\n"
+                    runner_code += '                    System.out.println("___USER_PRINT_END___");\n'
                     if has_custom_print(input_output_function, method.type, "JAVA"):
-                        runner_code += "                Parser.print(res);\n"
+                        runner_code += "                    Parser.print(res);\n"
                     else:
-                        runner_code += "                _print_res(res);\n"
+                        runner_code += "                    _print_res(res);\n"
                 else:
-                    runner_code += f'                {call};\n                System.out.print("null");\n'
-                runner_code += "            }\n"
+                    runner_code += f"                    {call};\n"
+                    runner_code += '                    System.out.println("___USER_PRINT_END___");\n'
+                    runner_code += '                    System.out.print("null");\n'
+                runner_code += "                }\n"
 
-            runner_code += '        }\n        System.out.println("]");\n    }\n}\n'
+            runner_code += "            }\n"
+            runner_code += '            System.out.println("]");\n'
+            runner_code += '            System.out.println("___CODERACER_TC_SEP___");\n'
+            runner_code += "        }\n"
+            runner_code += "    }\n}\n"
         else:
             runner_code = (
                 "public class Main { public static void main(String[] args) {} }"

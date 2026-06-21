@@ -64,8 +64,11 @@ export default function SubmissionResult({
       0
     )
 
+    // Judge0 returns time in seconds per test case (batch-level),
+    // convert to ms and divide by case count for average per-case time
+    const caseCount = results.length || 1
     return {
-      time: totalTime.toFixed(3),
+      time: Math.round((totalTime / caseCount) * 1000),
       memory: (maxMemory / 1024).toFixed(2), // Assuming memory is in KB from Judge0
     }
   }, [solution])
@@ -75,10 +78,12 @@ export default function SubmissionResult({
 
     return [...history].reverse().map((s, index) => {
       const results = (s.testcase_results as any[]) || []
-      const time = results.reduce(
+      const totalTime = results.reduce(
         (acc, curr) => acc + (parseFloat(curr.time) || 0),
         0
       )
+      const caseCount = results.length || 1
+      const time = Math.round((totalTime / caseCount) * 1000)
       const memory =
         results.reduce(
           (acc, curr) => Math.max(acc, parseFloat(curr.memory) || 0),
@@ -87,7 +92,7 @@ export default function SubmissionResult({
 
       return {
         name: index + 1,
-        time: parseFloat(time.toFixed(3)),
+        time,
         memory: parseFloat(memory.toFixed(2)),
         status: s.status,
         id: s.id,
@@ -176,7 +181,9 @@ export default function SubmissionResult({
                   </p>
                   <p className="text-2xl font-bold text-white">
                     {stats?.time}{' '}
-                    <span className="text-sm font-normal text-gray-500">s</span>
+                    <span className="text-sm font-normal text-gray-500">
+                      ms
+                    </span>
                   </p>
                 </div>
               </div>
