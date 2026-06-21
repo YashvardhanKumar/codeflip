@@ -147,10 +147,10 @@ class ProblemListSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "created_at"]
 
     def get_total_solutions(self, obj):
-        return obj.solutions.count()
+        return getattr(obj, "total_solutions", 0)
 
     def get_total_testcases(self, obj):
-        return obj.testcases.count()
+        return getattr(obj, "total_testcases", 0)
 
 
 class VariableSerializer(serializers.ModelSerializer):

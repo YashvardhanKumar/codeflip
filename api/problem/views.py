@@ -63,17 +63,23 @@ JUDGE0_STATUS_MAP = {
 
 
 class ProblemViewSet(viewsets.ModelViewSet):
-    queryset = Problem.objects.prefetch_related("tags", "codeblocks", "testcases").all()
+    queryset = Problem.objects.all()
     permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ["created_at", "id", "total_solutions"]
     ordering = ["-created_at"]
 
     def get_queryset(self):
-        queryset = (
-            super()
-            .get_queryset()
-            .annotate(total_solutions=Count("solutions", distinct=True))
+        if self.action == "list":
+            queryset = Problem.objects.prefetch_related("tags")
+        else:
+            queryset = Problem.objects.prefetch_related(
+                "tags", "codeblocks", "testcases"
+            )
+
+        queryset = queryset.annotate(
+            total_solutions=Count("solutions", distinct=True),
+            total_testcases=Count("testcases", distinct=True),
         )
 
         search = self.request.query_params.get("search")
@@ -158,16 +164,23 @@ class ProblemViewSet(viewsets.ModelViewSet):
         total = solutions.count()
         successful = solutions.filter(status=AnswerStatus.ACCEPTED).count()
 
+        # Group and count statuses in a single query
+        status_counts = dict(
+            solutions.values_list("status").annotate(count=Count("status"))
+        )
         status_breakdown = {}
         for choice in AnswerStatus.choices:
-            count = solutions.filter(status=choice[0]).count()
-            status_breakdown[choice[1]] = count
+            status_breakdown[choice[1]] = status_counts.get(choice[0], 0)
 
+        # Group and count languages in a single query
+        language_counts = dict(
+            solutions.values_list("language").annotate(count=Count("language"))
+        )
         language_breakdown = {}
         from user.models import CodingLanguage
 
         for lang_code, lang_name in CodingLanguage.choices:
-            count = solutions.filter(language=lang_code).count()
+            count = language_counts.get(lang_code, 0)
             if count > 0:
                 language_breakdown[lang_name] = count
 

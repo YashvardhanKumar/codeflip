@@ -21,7 +21,7 @@ python manage.py migrate --noinput
 if [ -z "$1" ]; then
     WORKERS=${GUNICORN_WORKERS:-1}
     echo "Starting Gunicorn + Uvicorn worker (workers: $WORKERS)..."
-    exec gunicorn apps.asgi:application -k uvicorn.workers.UvicornWorker --workers $WORKERS --bind 0.0.0.0:8000
+    exec gunicorn apps.asgi:application -k uvicorn.workers.UvicornWorker --workers $WORKERS --timeout 120 --bind 0.0.0.0:8000
 else
     echo "Running custom command: $@"
     exec "$@"
