@@ -172,6 +172,21 @@ class Problem(models.Model):
     difficulty = models.CharField(
         max_length=10, choices=Difficulty.choices, default=Difficulty.EASY
     )
+    validator_type = models.CharField(
+        max_length=20,
+        choices=[
+            ("EXACT", "Exact Match"),
+            ("ANY_ORDER", "Any Order (JSON Array)"),
+            ("CUSTOM", "Custom Validator"),
+        ],
+        default="EXACT",
+        help_text="How to validate the solution output",
+    )
+    custom_validator = models.TextField(
+        blank=True,
+        default="",
+        help_text="Custom Python validator code. Must define 'validate(actual: str, expected: str, tc_input: str) -> bool'",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

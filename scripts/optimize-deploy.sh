@@ -5,6 +5,10 @@ set -e
 
 echo "🚀 Starting optimized deployment for low-resource environment..."
 
+# 0. Sync codebase with GitHub
+echo "📥 Syncing codebase with GitHub..."
+git pull
+
 # 1. Clean up storage before build
 echo "🧹 Cleaning up unused Docker data..."
 docker system prune -f
@@ -25,6 +29,10 @@ DOCKER_TARGET=production docker compose build --parallel=false
 echo "🆙 Starting services..."
 # Override bind mounts to harmless paths for production
 API_BIND_MOUNT=./empty_dir:/tmp/ignore_api WEB_BIND_MOUNT=./empty_dir:/tmp/ignore_web DOCKER_TARGET=production NODE_ENV=production docker compose up -d
+
+echo "⚙️ Regenerating codeblocks for all problems..."
+# Run non-interactively using -T
+docker compose exec -T api python manage.py shell -c "from problem.models import Problem; from problem.utils import generate_codeblocks_for_problem; [generate_codeblocks_for_problem(p, force=True) for p in Problem.objects.all()]" || echo "⚠️ Warning: Failed to regenerate codeblocks."
 
 echo "🔄 Restarting Nginx to refresh DNS and container IPs..."
 docker compose restart nginx

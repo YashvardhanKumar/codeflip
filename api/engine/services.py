@@ -150,12 +150,77 @@ def parse_batch_stdout(stdout, num_testcases):
     return results
 
 
+def validate_case_output(problem, actual: str, expected: str, tc_input: str) -> bool:
+    validator_type = getattr(problem, "validator_type", "EXACT")
+    if validator_type == "ANY_ORDER":
+        try:
+            import json
+
+            def sort_nested(obj):
+                if isinstance(obj, list):
+                    sorted_list = [sort_nested(item) for item in obj]
+                    try:
+                        return sorted(sorted_list)
+                    except TypeError:
+                        return sorted(
+                            sorted_list, key=lambda x: json.dumps(x, sort_keys=True)
+                        )
+                elif isinstance(obj, dict):
+                    return {k: sort_nested(v) for k, v in sorted(obj.items())}
+                return obj
+
+            actual_json = json.loads(actual)
+            expected_json = json.loads(expected)
+            return sort_nested(actual_json) == sort_nested(expected_json)
+        except Exception:
+            # Fallback to line-by-line any-order comparison
+            actual_lines = sorted(actual.strip().splitlines())
+            expected_lines = sorted(expected.strip().splitlines())
+            return actual_lines == expected_lines
+
+    elif validator_type == "CUSTOM":
+        custom_validator = getattr(problem, "custom_validator", "")
+        if not custom_validator:
+            return actual.strip() == expected.strip()
+        try:
+            loc = {}
+            exec(custom_validator, {}, loc)
+            if "validate" in loc:
+                return bool(loc["validate"](actual, expected, tc_input))
+            return actual.strip() == expected.strip()
+        except Exception as e:
+            print(f"Error in custom validator for problem {problem.id}: {e}")
+            return False
+
+    return actual.strip() == expected.strip()
+
+
 def run_batch_submission(base_payload, testcases, language_id=None):
     """
     Run ALL test cases in a single Judge0 submission.
     Returns a list of per-test-case result dicts.
     """
     from .constants import TC_SEPARATOR, get_scaled_limits
+
+    # Get problem object to check validator settings
+    problem = None
+    if testcases:
+        from problem.models import Problem
+
+        first_tc = testcases[0]
+        problem_id = None
+        if hasattr(first_tc, "problem_id") and first_tc.problem_id:
+            problem_id = first_tc.problem_id
+        elif isinstance(first_tc, dict) and first_tc.get("problem_id"):
+            problem_id = first_tc.get("problem_id")
+        elif hasattr(first_tc, "problem") and first_tc.problem:
+            problem_id = first_tc.problem.id
+
+        if problem_id:
+            try:
+                problem = Problem.objects.get(id=problem_id)
+            except Problem.DoesNotExist:
+                pass
 
     # Build batch stdin
     batch_stdin = format_batch_stdin(testcases, language_id)
@@ -258,17 +323,19 @@ def run_batch_submission(base_payload, testcases, language_id=None):
 
             expected = tc_output.strip()
 
+            is_accepted = False
             # Check if this test case got output (runtime error might cut execution short)
             if status_id not in (None, 3) and status_id > 4 and not actual:
                 # Runtime error occurred before this test case completed
                 is_accepted = False
                 case_status = status_obj
-            elif actual == expected:
-                is_accepted = True
-                case_status = {"id": 3, "description": "Accepted"}
             else:
-                is_accepted = False
-                case_status = {"id": 4, "description": "Wrong Answer"}
+                is_accepted = validate_case_output(problem, actual, expected, tc_input)
+                if is_accepted:
+                    case_status = {"id": 3, "description": "Accepted"}
+                else:
+                    is_accepted = False
+                    case_status = {"id": 4, "description": "Wrong Answer"}
 
             judge0_compile_output = res.get("compile_output") or ""
             compile_out = judge0_compile_output

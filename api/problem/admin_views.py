@@ -69,12 +69,26 @@ class CustomProblemForm(forms.ModelForm):
 
     class Meta:
         model = Problem
-        fields = ["name", "problem_description", "difficulty"]
+        fields = [
+            "name",
+            "problem_description",
+            "difficulty",
+            "validator_type",
+            "custom_validator",
+        ]
         widgets = {
             "name": forms.TextInput(
                 attrs={"class": "custom-input", "placeholder": "Problem Title"}
             ),
             "difficulty": forms.Select(attrs={"class": "custom-input"}),
+            "validator_type": forms.Select(attrs={"class": "custom-input"}),
+            "custom_validator": forms.Textarea(
+                attrs={
+                    "class": "custom-input",
+                    "placeholder": "def validate(actual, expected, tc_input):\n    # Return True if correct, False otherwise\n    return actual.strip() == expected.strip()",
+                    "rows": 6,
+                }
+            ),
         }
 
     class Media:

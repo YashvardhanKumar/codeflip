@@ -181,6 +181,8 @@ class ProblemDetailSerializer(serializers.ModelSerializer):
             "codeblocks",
             "testcases",
             "variables",
+            "validator_type",
+            "custom_validator",
             "created_at",
             "success_rate",
         ]

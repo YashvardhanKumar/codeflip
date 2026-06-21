@@ -129,3 +129,87 @@ class TestEngineAPI:
         assert results[1]["is_accepted"] is True
         assert results[1]["stdout"] == "b"
         assert results[1]["compile_output"] == "world printed"
+
+
+from django.test import TestCase
+
+
+class TestValidateCaseOutput(TestCase):
+    def setUp(self):
+        from problem.models import Problem
+
+        self.problem = Problem.objects.create(name="Test Problem")
+
+    def test_exact_match(self):
+        from engine.services import validate_case_output
+
+        self.problem.validator_type = "EXACT"
+        self.problem.save()
+        assert (
+            validate_case_output(self.problem, " [0, 1] ", "[0, 1]", "any-input")
+            is True
+        )
+        assert (
+            validate_case_output(self.problem, "[0, 2]", "[0, 1]", "any-input") is False
+        )
+
+    def test_any_order_match_json_array(self):
+        from engine.services import validate_case_output
+
+        self.problem.validator_type = "ANY_ORDER"
+        self.problem.save()
+        # Order of elements in list
+        assert (
+            validate_case_output(self.problem, "[2, 1]", "[1, 2]", "any-input") is True
+        )
+        # Nested list order of elements
+        assert (
+            validate_case_output(
+                self.problem, "[[3, 4], [1, 2]]", "[[1, 2], [3, 4]]", "any-input"
+            )
+            is True
+        )
+        # Dict representation
+        assert (
+            validate_case_output(
+                self.problem, '{"b": 2, "a": 1}', '{"a": 1, "b": 2}', "any-input"
+            )
+            is True
+        )
+        # Not a match
+        assert (
+            validate_case_output(self.problem, "[[1, 3]]", "[[1, 2]]", "any-input")
+            is False
+        )
+
+    def test_any_order_match_text_lines(self):
+        from engine.services import validate_case_output
+
+        self.problem.validator_type = "ANY_ORDER"
+        self.problem.save()
+        # Plain text lines
+        assert (
+            validate_case_output(
+                self.problem, "line1\nline2", "line2\nline1", "any-input"
+            )
+            is True
+        )
+        assert (
+            validate_case_output(
+                self.problem, "line1\nline2", "line1\nline3", "any-input"
+            )
+            is False
+        )
+
+    def test_custom_validator(self):
+        from engine.services import validate_case_output
+
+        self.problem.validator_type = "CUSTOM"
+        self.problem.custom_validator = (
+            "def validate(actual, expected, tc_input):\n"
+            "    # Accepts output if it's double the expected value\n"
+            "    return int(actual.strip()) == int(expected.strip()) * 2\n"
+        )
+        self.problem.save()
+        assert validate_case_output(self.problem, "10", "5", "any-input") is True
+        assert validate_case_output(self.problem, "9", "5", "any-input") is False

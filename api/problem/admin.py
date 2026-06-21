@@ -110,6 +110,15 @@ class ProblemAdmin(admin.ModelAdmin):
                 )
             },
         ),
+        (
+            "Validation",
+            {
+                "fields": (
+                    "validator_type",
+                    "custom_validator",
+                )
+            },
+        ),
         ("Metadata", {"fields": ("created_at",)}),
     )
 
