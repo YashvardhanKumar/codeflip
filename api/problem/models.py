@@ -34,6 +34,7 @@ class DataType(models.TextChoices):
 
 
 class VariableType(models.TextChoices):
+    VOID = "void"
     INTEGER = "INTEGER", "Integer"
     STRING = "STRING", "String"
     BOOLEAN = "BOOLEAN", "Boolean"

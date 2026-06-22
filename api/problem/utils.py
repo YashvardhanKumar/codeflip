@@ -375,12 +375,12 @@ def generate_code_for_language(
                 "        vector<string> commands(num_cmds);\n"
                 "        for(int i=0; i<num_cmds; i++) getline(cin >> ws, commands[i]);\n"
                 "        int num_outer_args; cin >> num_outer_args;\n"
-                '        cout << "[";\n'
+                "        vector<string> outputs;\n"
                 f"        {class_name}* obj = nullptr;\n"
+                '        cout << "___USER_PRINT_START___" << endl;\n'
                 "        for(int i=0; i<num_cmds; i++) {\n"
                 "            string cmd = commands[i];\n"
                 "            int arg_len; cin >> arg_len;\n"
-                '            if (i > 0) cout << ",";\n'
             )
 
             if constructor_method:
@@ -400,24 +400,12 @@ def generate_code_for_language(
                     else:
                         runner_code += f"                {get_cpp_type(v.type)} {v.name}; cin >> {v.name};\n"
                 c_args = ", ".join([v.name for v in c_inputs])
-                runner_code += (
-                    '                cout << "___USER_PRINT_START___" << endl;\n'
-                )
                 runner_code += f"                obj = new {class_name}({c_args});\n"
-                runner_code += (
-                    '                cout << "___USER_PRINT_END___" << endl;\n'
-                )
-                runner_code += '                cout << "null";\n            }\n'
+                runner_code += '                outputs.push_back("null");\n            }\n'
             else:
                 runner_code += f'            if (cmd == "{class_name}") {{\n'
-                runner_code += (
-                    '                cout << "___USER_PRINT_START___" << endl;\n'
-                )
                 runner_code += f"                obj = new {class_name}();\n"
-                runner_code += (
-                    '                cout << "___USER_PRINT_END___" << endl;\n'
-                )
-                runner_code += '                cout << "null";\n            }\n'
+                runner_code += '                outputs.push_back("null");\n            }\n'
 
             for method in methods:
                 if method.is_constructor:
@@ -438,27 +426,28 @@ def generate_code_for_language(
                     else:
                         runner_code += f"                {get_cpp_type(v.type)} {v.name}; cin >> {v.name};\n"
                 call = f"obj->{method.name}({', '.join([v.name for v in inputs])})"
-                runner_code += (
-                    '                cout << "___USER_PRINT_START___" << endl;\n'
-                )
                 if method.type != "void" and method.type != "VOID":
                     runner_code += f"                auto res = {call};\n"
-                    runner_code += (
-                        '                cout << "___USER_PRINT_END___" << endl;\n'
-                    )
+                    runner_code += "                stringstream ss;\n"
+                    runner_code += "                auto old_buf = cout.rdbuf(ss.rdbuf());\n"
                     if has_custom_print(input_output_function, method.type, "CPP"):
                         runner_code += "                print(res);\n"
                     else:
                         runner_code += "                _print_res(res);\n"
+                    runner_code += "                cout.rdbuf(old_buf);\n"
+                    runner_code += "                outputs.push_back(ss.str());\n"
                 else:
                     runner_code += f"                {call};\n"
-                    runner_code += (
-                        '                cout << "___USER_PRINT_END___" << endl;\n'
-                    )
-                    runner_code += '                cout << "null";\n'
+                    runner_code += '                outputs.push_back("null");\n'
                 runner_code += "            }\n"
 
             runner_code += "        }\n"
+            runner_code += '        cout << "___USER_PRINT_END___" << endl;\n'
+            runner_code += '        cout << "[";\n'
+            runner_code += '        for(size_t i=0; i<outputs.size(); i++) {\n'
+            runner_code += '            if (i > 0) cout << ",";\n'
+            runner_code += '            cout << outputs[i];\n'
+            runner_code += '        }\n'
             runner_code += '        cout << "]" << endl;\n'
             runner_code += "        if (obj) { delete obj; obj = nullptr; }\n"
             runner_code += '        cout << "___CODERACER_TC_SEP___" << endl;\n'
@@ -548,36 +537,31 @@ def generate_code_for_language(
                 "        args_list = json.loads(input_data[idx].strip()); idx += 1\n"
                 "        outputs = []\n"
                 "        obj = None\n"
+                "        print('___USER_PRINT_START___')\n"
                 "        for cmd, args in zip(commands, args_list):\n"
             )
 
             if constructor_method:
                 runner_code += f"            if cmd == '{class_name}':\n"
-                runner_code += "                print('___USER_PRINT_START___')\n"
                 runner_code += f"                obj = {class_name}(*args)\n"
-                runner_code += "                print('___USER_PRINT_END___')\n"
                 runner_code += f"                outputs.append(None)\n"
             else:
                 runner_code += f"            if cmd == '{class_name}':\n"
-                runner_code += "                print('___USER_PRINT_START___')\n"
                 runner_code += f"                obj = {class_name}()\n"
-                runner_code += "                print('___USER_PRINT_END___')\n"
                 runner_code += f"                outputs.append(None)\n"
 
             for method in methods:
                 if method.is_constructor:
                     continue
                 runner_code += f"            elif cmd == '{method.name}':\n"
-                runner_code += "                print('___USER_PRINT_START___')\n"
                 if method.type != "void" and method.type != "VOID" and method.type:
                     runner_code += f"                res = obj.{method.name}(*args)\n"
-                    runner_code += "                print('___USER_PRINT_END___')\n"
                     runner_code += f"                outputs.append(res)\n"
                 else:
                     runner_code += f"                obj.{method.name}(*args)\n"
-                    runner_code += "                print('___USER_PRINT_END___')\n"
                     runner_code += f"                outputs.append(None)\n"
 
+            runner_code += "        print('___USER_PRINT_END___')\n"
             runner_code += "        print(json.dumps(outputs, separators=(',', ':'), cls=CustomEncoder))\n"
             runner_code += '        print("___CODERACER_TC_SEP___")\n\n'
             runner_code += "if __name__ == '__main__':\n    main()\n"
@@ -701,6 +685,7 @@ def generate_code_for_language(
                 "        const args_list = JSON.parse(input_data[idx++].trim());\n"
                 "        const outputs = [];\n"
                 "        let obj = null;\n"
+                '        console.log("___USER_PRINT_START___");\n'
                 "        for(let i=0; i<commands.length; i++) {\n"
                 "            const cmd = commands[i];\n"
                 "            const args = args_list[i];\n"
@@ -708,20 +693,12 @@ def generate_code_for_language(
 
             if constructor_method:
                 runner_code += f"            if (cmd === '{class_name}') {{\n"
-                runner_code += (
-                    '                console.log("___USER_PRINT_START___");\n'
-                )
                 runner_code += f"                obj = new {class_name}(...args);\n"
-                runner_code += '                console.log("___USER_PRINT_END___");\n'
                 runner_code += f"                outputs.push(null);\n"
                 runner_code += f"            }}\n"
             else:
                 runner_code += f"            if (cmd === '{class_name}') {{\n"
-                runner_code += (
-                    '                console.log("___USER_PRINT_START___");\n'
-                )
                 runner_code += f"                obj = new {class_name}();\n"
-                runner_code += '                console.log("___USER_PRINT_END___");\n'
                 runner_code += f"                outputs.push(null);\n"
                 runner_code += f"            }}\n"
 
@@ -729,24 +706,20 @@ def generate_code_for_language(
                 if method.is_constructor:
                     continue
                 runner_code += f"            else if (cmd === '{method.name}') {{\n"
-                runner_code += (
-                    '                console.log("___USER_PRINT_START___");\n'
-                )
                 if method.type != "void" and method.type != "VOID" and method.type:
                     runner_code += (
                         f"                const res = obj.{method.name}(...args);\n"
-                        '                console.log("___USER_PRINT_END___");\n'
                         f"                outputs.push(res);\n"
                     )
                 else:
                     runner_code += (
                         f"                obj.{method.name}(...args);\n"
-                        '                console.log("___USER_PRINT_END___");\n'
                         f"                outputs.push(null);\n"
                     )
                 runner_code += f"            }}\n"
 
             runner_code += "        }\n"
+            runner_code += '        console.log("___USER_PRINT_END___");\n'
             runner_code += "        console.log(JSON.stringify(outputs));\n"
             runner_code += '        console.log("___CODERACER_TC_SEP___");\n'
             runner_code += "    }\n}\n"
@@ -895,12 +868,12 @@ def generate_code_for_language(
                 '            sc.skip("\\\\s*");\n'
                 "            for(int i=0; i<num_cmds; i++) commands[i] = sc.nextLine();\n"
                 "            int num_outer_args = sc.nextInt();\n"
-                '            System.out.print("[");\n'
+                "            List<String> outputs = new ArrayList<>();\n"
                 f"            {class_name} obj = null;\n"
+                '            System.out.println("___USER_PRINT_START___");\n'
                 "            for(int i=0; i<num_cmds; i++) {\n"
                 "                String cmd = commands[i];\n"
                 "                int arg_len = sc.nextInt();\n"
-                '                if (i > 0) System.out.print(",");\n'
             )
 
             if constructor_method:
@@ -923,26 +896,12 @@ def generate_code_for_language(
                     else:
                         runner_code += f"                    {get_java_type(v.type)} {v.name} = sc.next();\n"
                 c_args = ", ".join([v.name for v in c_inputs])
-                runner_code += '                    System.out.println("___USER_PRINT_START___");\n'
-                runner_code += (
-                    f"                    obj = new {class_name}({c_args});\n"
-                )
-                runner_code += (
-                    '                    System.out.println("___USER_PRINT_END___");\n'
-                )
-                runner_code += (
-                    '                    System.out.print("null");\n                }\n'
-                )
+                runner_code += f"                    obj = new {class_name}({c_args});\n"
+                runner_code += '                    outputs.add("null");\n                }\n'
             else:
                 runner_code += f'                if (cmd.equals("{class_name}")) {{\n'
-                runner_code += '                    System.out.println("___USER_PRINT_START___");\n'
                 runner_code += f"                    obj = new {class_name}();\n"
-                runner_code += (
-                    '                    System.out.println("___USER_PRINT_END___");\n'
-                )
-                runner_code += (
-                    '                    System.out.print("null");\n                }\n'
-                )
+                runner_code += '                    outputs.add("null");\n                }\n'
 
             for method in methods:
                 if method.is_constructor:
@@ -968,21 +927,31 @@ def generate_code_for_language(
                     else:
                         runner_code += f"                    {get_java_type(v.type)} {v.name} = sc.next();\n"
                 call = f"obj.{method.name}({', '.join([v.name for v in inputs])})"
-                runner_code += '                    System.out.println("___USER_PRINT_START___");\n'
                 if method.type != "void" and method.type != "VOID":
                     runner_code += f"                    {get_java_type(method.type, method.template_type, method.array_dimensions)} res = {call};\n"
-                    runner_code += '                    System.out.println("___USER_PRINT_END___");\n'
+                    runner_code += "                    java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();\n"
+                    runner_code += "                    java.io.PrintStream ps = new java.io.PrintStream(baos);\n"
+                    runner_code += "                    java.io.PrintStream old = System.out;\n"
+                    runner_code += "                    System.setOut(ps);\n"
                     if has_custom_print(input_output_function, method.type, "JAVA"):
                         runner_code += "                    Parser.print(res);\n"
                     else:
                         runner_code += "                    _print_res(res);\n"
+                    runner_code += "                    System.out.flush();\n"
+                    runner_code += "                    System.setOut(old);\n"
+                    runner_code += "                    outputs.add(baos.toString());\n"
                 else:
                     runner_code += f"                    {call};\n"
-                    runner_code += '                    System.out.println("___USER_PRINT_END___");\n'
-                    runner_code += '                    System.out.print("null");\n'
+                    runner_code += '                    outputs.add("null");\n'
                 runner_code += "                }\n"
 
             runner_code += "            }\n"
+            runner_code += '            System.out.println("___USER_PRINT_END___");\n'
+            runner_code += '            System.out.print("[");\n'
+            runner_code += '            for (int i = 0; i < outputs.size(); i++) {\n'
+            runner_code += '                if (i > 0) System.out.print(",");\n'
+            runner_code += '                System.out.print(outputs.get(i));\n'
+            runner_code += '            }\n'
             runner_code += '            System.out.println("]");\n'
             runner_code += '            System.out.println("___CODERACER_TC_SEP___");\n'
             runner_code += "        }\n"

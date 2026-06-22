@@ -321,14 +321,29 @@ def run_batch_submission(base_payload, testcases, language_id=None):
             user_prints = "\n".join(m.strip() for m in matches if m.strip())
             actual = re.sub(pattern, "", block_text, flags=re.DOTALL).strip()
 
+            if not matches and "___USER_PRINT_START___" in block_text:
+                parts = block_text.split("___USER_PRINT_START___", 1)
+                user_prints = parts[1].replace("___USER_PRINT_END___", "").strip()
+                actual = parts[0].strip()
+
+            actual = actual.replace("___USER_PRINT_START___", "").replace("___USER_PRINT_END___", "").strip()
+
             expected = tc_output.strip()
 
             is_accepted = False
             # Check if this test case got output (runtime error might cut execution short)
-            if status_id not in (None, 3) and status_id > 4 and not actual:
+            is_crash = (
+                not actual 
+                or "segmentation fault" in actual.lower() 
+                or "sigsegv" in actual.lower()
+                or "core dumped" in actual.lower()
+                or "run.sh:" in actual
+            )
+            if status_id not in (None, 3) and status_id > 4 and is_crash:
                 # Runtime error occurred before this test case completed
                 is_accepted = False
                 case_status = status_obj
+                actual = ""
             else:
                 is_accepted = validate_case_output(problem, actual, expected, tc_input)
                 if is_accepted:

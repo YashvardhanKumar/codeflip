@@ -4,7 +4,7 @@ import json
 
 class AIService:
     @staticmethod
-    def generate_with_gemini(prompt, model_name="gemini-2.0-flash"):
+    def generate_with_gemini(prompt, model_name="gemini-3.1-flash-lite"):
         try:
             from google import genai
         except ImportError:
