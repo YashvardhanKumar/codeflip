@@ -313,9 +313,9 @@ def test_multi_method_code_generation():
     assert "vector<string> outputs;" in cpp_cb.runner_code
     assert 'cout << "___USER_PRINT_START___"' in cpp_cb.runner_code
     assert 'cout << "___USER_PRINT_END___"' in cpp_cb.runner_code
-    assert 'outputs.push_back(ss.str());' in cpp_cb.runner_code
+    assert "outputs.push_back(ss.str());" in cpp_cb.runner_code
     assert 'outputs.push_back("null");' in cpp_cb.runner_code
-    assert 'delete obj' in cpp_cb.runner_code
+    assert "delete obj" in cpp_cb.runner_code
 
     # Verify Python block/runner
     py_cb = problem.codeblocks.get(language="PYTHON")
@@ -401,7 +401,7 @@ def test_generate_testcases_task_normalization(monkeypatch):
     tc = Testcase.objects.filter(problem=problem).first()
     assert tc is not None
     assert tc.input == '["BrowserHistory","visit"]\n[["homepage"],["url"]]'
-    assert tc.output == '[null,null]'
+    assert tc.output == "[null,null]"
 
     # Clean testcases
     Testcase.objects.all().delete()
@@ -418,14 +418,14 @@ def test_generate_testcases_task_normalization(monkeypatch):
     tc = Testcase.objects.filter(problem=problem).first()
     assert tc is not None
     assert tc.input == '["BrowserHistory","visit"]\n[["homepage"],["url"]]'
-    assert tc.output == '[null,null]'
+    assert tc.output == "[null,null]"
 
     # Clean testcases
     Testcase.objects.all().delete()
     TaskLog.objects.all().delete()
 
     # 3. Test is_multi fallback: string with single quotes and spaces
-    mock_response_3 = '[{"input": "[\'BrowserHistory\', \'visit\']\\n[[\'homepage\'], [\'url\']]", "output": "[null, null]"}]'
+    mock_response_3 = "[{\"input\": \"['BrowserHistory', 'visit']\\n[['homepage'], ['url']]\", \"output\": \"[null, null]\"}]"
     mock_generate.return_value = (mock_response_3, "gemini")
 
     # Set new request id
@@ -435,7 +435,7 @@ def test_generate_testcases_task_normalization(monkeypatch):
     tc = Testcase.objects.filter(problem=problem).first()
     assert tc is not None
     assert tc.input == '["BrowserHistory","visit"]\n[["homepage"],["url"]]'
-    assert tc.output == '[null,null]'
+    assert tc.output == "[null,null]"
 
     # Final cleanup for step 3
     Testcase.objects.all().delete()
@@ -448,7 +448,9 @@ def test_generate_testcases_task_normalization(monkeypatch):
 
     # Set new request id
     generate_testcases_task.request.id = "test-task-abc"
-    generate_testcases_task.run(problem.id, 1, solution_code="class Solution { void visit() {} }")
+    generate_testcases_task.run(
+        problem.id, 1, solution_code="class Solution { void visit() {} }"
+    )
 
     tc = Testcase.objects.filter(problem=problem).first()
     assert tc is not None
@@ -462,6 +464,3 @@ def test_generate_testcases_task_normalization(monkeypatch):
     # Final cleanup
     Testcase.objects.all().delete()
     TaskLog.objects.all().delete()
-
-
-

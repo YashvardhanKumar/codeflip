@@ -441,7 +441,7 @@ def add_problem_custom(request):
                         name="Solution",
                         type="void",
                         is_constructor=True,
-                        array_dimensions=0
+                        array_dimensions=0,
                     )
 
                 return redirect(
@@ -497,7 +497,9 @@ def add_problem_custom(request):
                     solution_code = ai_form.cleaned_data.get("solution_code", "")
                     from ai.tasks import generate_testcases_task
 
-                    task = generate_testcases_task.delay(problem.id, count, solution_code)
+                    task = generate_testcases_task.delay(
+                        problem.id, count, solution_code
+                    )
                     messages.success(
                         request,
                         f"AI generation started for {count} testcases. Task ID: {task.id}",

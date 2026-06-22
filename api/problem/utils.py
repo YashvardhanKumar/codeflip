@@ -401,11 +401,15 @@ def generate_code_for_language(
                         runner_code += f"                {get_cpp_type(v.type)} {v.name}; cin >> {v.name};\n"
                 c_args = ", ".join([v.name for v in c_inputs])
                 runner_code += f"                obj = new {class_name}({c_args});\n"
-                runner_code += '                outputs.push_back("null");\n            }\n'
+                runner_code += (
+                    '                outputs.push_back("null");\n            }\n'
+                )
             else:
                 runner_code += f'            if (cmd == "{class_name}") {{\n'
                 runner_code += f"                obj = new {class_name}();\n"
-                runner_code += '                outputs.push_back("null");\n            }\n'
+                runner_code += (
+                    '                outputs.push_back("null");\n            }\n'
+                )
 
             for method in methods:
                 if method.is_constructor:
@@ -429,7 +433,9 @@ def generate_code_for_language(
                 if method.type != "void" and method.type != "VOID":
                     runner_code += f"                auto res = {call};\n"
                     runner_code += "                stringstream ss;\n"
-                    runner_code += "                auto old_buf = cout.rdbuf(ss.rdbuf());\n"
+                    runner_code += (
+                        "                auto old_buf = cout.rdbuf(ss.rdbuf());\n"
+                    )
                     if has_custom_print(input_output_function, method.type, "CPP"):
                         runner_code += "                print(res);\n"
                     else:
@@ -444,10 +450,10 @@ def generate_code_for_language(
             runner_code += "        }\n"
             runner_code += '        cout << "___USER_PRINT_END___" << endl;\n'
             runner_code += '        cout << "[";\n'
-            runner_code += '        for(size_t i=0; i<outputs.size(); i++) {\n'
+            runner_code += "        for(size_t i=0; i<outputs.size(); i++) {\n"
             runner_code += '            if (i > 0) cout << ",";\n'
-            runner_code += '            cout << outputs[i];\n'
-            runner_code += '        }\n'
+            runner_code += "            cout << outputs[i];\n"
+            runner_code += "        }\n"
             runner_code += '        cout << "]" << endl;\n'
             runner_code += "        if (obj) { delete obj; obj = nullptr; }\n"
             runner_code += '        cout << "___CODERACER_TC_SEP___" << endl;\n'
@@ -896,12 +902,18 @@ def generate_code_for_language(
                     else:
                         runner_code += f"                    {get_java_type(v.type)} {v.name} = sc.next();\n"
                 c_args = ", ".join([v.name for v in c_inputs])
-                runner_code += f"                    obj = new {class_name}({c_args});\n"
-                runner_code += '                    outputs.add("null");\n                }\n'
+                runner_code += (
+                    f"                    obj = new {class_name}({c_args});\n"
+                )
+                runner_code += (
+                    '                    outputs.add("null");\n                }\n'
+                )
             else:
                 runner_code += f'                if (cmd.equals("{class_name}")) {{\n'
                 runner_code += f"                    obj = new {class_name}();\n"
-                runner_code += '                    outputs.add("null");\n                }\n'
+                runner_code += (
+                    '                    outputs.add("null");\n                }\n'
+                )
 
             for method in methods:
                 if method.is_constructor:
@@ -931,7 +943,9 @@ def generate_code_for_language(
                     runner_code += f"                    {get_java_type(method.type, method.template_type, method.array_dimensions)} res = {call};\n"
                     runner_code += "                    java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();\n"
                     runner_code += "                    java.io.PrintStream ps = new java.io.PrintStream(baos);\n"
-                    runner_code += "                    java.io.PrintStream old = System.out;\n"
+                    runner_code += (
+                        "                    java.io.PrintStream old = System.out;\n"
+                    )
                     runner_code += "                    System.setOut(ps);\n"
                     if has_custom_print(input_output_function, method.type, "JAVA"):
                         runner_code += "                    Parser.print(res);\n"
@@ -948,10 +962,10 @@ def generate_code_for_language(
             runner_code += "            }\n"
             runner_code += '            System.out.println("___USER_PRINT_END___");\n'
             runner_code += '            System.out.print("[");\n'
-            runner_code += '            for (int i = 0; i < outputs.size(); i++) {\n'
+            runner_code += "            for (int i = 0; i < outputs.size(); i++) {\n"
             runner_code += '                if (i > 0) System.out.print(",");\n'
-            runner_code += '                System.out.print(outputs.get(i));\n'
-            runner_code += '            }\n'
+            runner_code += "                System.out.print(outputs.get(i));\n"
+            runner_code += "            }\n"
             runner_code += '            System.out.println("]");\n'
             runner_code += '            System.out.println("___CODERACER_TC_SEP___");\n'
             runner_code += "        }\n"

@@ -58,12 +58,20 @@ def generate_testcases_task(self, problem_id, count, solution_code=None):
             methods_list = []
             if is_multi and not constructor_method:
                 # Add default constructor
-                methods_list.append(f"- Method: {class_name} | Return Type: void (Constructor - MUST be called first as the first command, takes no arguments)")
-            
+                methods_list.append(
+                    f"- Method: {class_name} | Return Type: void (Constructor - MUST be called first as the first command, takes no arguments)"
+                )
+
             for m in methods:
                 type_str = format_type(m)
-                suffix = " (Constructor - MUST be called first as the first command)" if m.is_constructor else ""
-                methods_list.append(f"- Method: {m.name} | Return Type: {type_str}{suffix}")
+                suffix = (
+                    " (Constructor - MUST be called first as the first command)"
+                    if m.is_constructor
+                    else ""
+                )
+                methods_list.append(
+                    f"- Method: {m.name} | Return Type: {type_str}{suffix}"
+                )
 
             methods_str = "\n".join(methods_list)
 
@@ -96,7 +104,11 @@ def generate_testcases_task(self, problem_id, count, solution_code=None):
             - Any array or list (including nested arrays/matrices) MUST be enclosed in square brackets '[]' (e.g., '[1,5,9,2,8]' or '[[1,2],[3,4]]').
             - There MUST NOT be any spaces after commas inside any arrays/lists (e.g., generate '[1,5,9,2,8]' instead of '[1, 5, 9, 2, 8]', and '[[1,2],[3,4]]' instead of '[[1, 2], [3, 4]]'). This applies to both the 'input' and 'output' fields."""
 
-            prompt_format = '[ {"input_methods": [...], "input_args": [...], "output": [...]}, ... ]' if is_multi else '[ {"input": "...", "output": "..."}, ... ]'
+            prompt_format = (
+                '[ {"input_methods": [...], "input_args": [...], "output": [...]}, ... ]'
+                if is_multi
+                else '[ {"input": "...", "output": "..."}, ... ]'
+            )
             solution_str = ""
             if solution_code:
                 solution_str = f"""
@@ -154,20 +166,38 @@ def generate_testcases_task(self, problem_id, count, solution_code=None):
 
                         if is_multi:
                             # 1. Try to get input_methods and input_args
-                            methods_val = data.get("input_methods") or data.get("methods") or data.get("calls")
-                            args_val = data.get("input_args") or data.get("arguments") or data.get("args")
+                            methods_val = (
+                                data.get("input_methods")
+                                or data.get("methods")
+                                or data.get("calls")
+                            )
+                            args_val = (
+                                data.get("input_args")
+                                or data.get("arguments")
+                                or data.get("args")
+                            )
 
                             # If they are not present, try to extract from "input"
                             if not methods_val or not args_val:
                                 raw_in = data.get("input", "")
                                 if isinstance(raw_in, list):
-                                    if len(raw_in) == 2 and isinstance(raw_in[0], list) and isinstance(raw_in[1], list):
+                                    if (
+                                        len(raw_in) == 2
+                                        and isinstance(raw_in[0], list)
+                                        and isinstance(raw_in[1], list)
+                                    ):
                                         methods_val = raw_in[0]
                                         args_val = raw_in[1]
-                                    elif len(raw_in) > 0 and all(isinstance(x, str) for x in raw_in):
+                                    elif len(raw_in) > 0 and all(
+                                        isinstance(x, str) for x in raw_in
+                                    ):
                                         methods_val = raw_in
                                 elif isinstance(raw_in, str):
-                                    lines = [line.strip() for line in raw_in.strip().splitlines() if line.strip()]
+                                    lines = [
+                                        line.strip()
+                                        for line in raw_in.strip().splitlines()
+                                        if line.strip()
+                                    ]
                                     if len(lines) == 2:
                                         try:
                                             methods_val = json.loads(lines[0])
@@ -177,7 +207,12 @@ def generate_testcases_task(self, problem_id, count, solution_code=None):
                                     elif len(lines) == 1:
                                         try:
                                             parsed_in = json.loads(lines[0])
-                                            if isinstance(parsed_in, list) and len(parsed_in) == 2 and isinstance(parsed_in[0], list) and isinstance(parsed_in[1], list):
+                                            if (
+                                                isinstance(parsed_in, list)
+                                                and len(parsed_in) == 2
+                                                and isinstance(parsed_in[0], list)
+                                                and isinstance(parsed_in[1], list)
+                                            ):
                                                 methods_val = parsed_in[0]
                                                 args_val = parsed_in[1]
                                         except Exception:
@@ -195,25 +230,37 @@ def generate_testcases_task(self, problem_id, count, solution_code=None):
                                 except Exception:
                                     pass
 
-                            if isinstance(methods_val, list) and isinstance(args_val, list):
-                                methods_str_val = json.dumps(methods_val, separators=(',', ':'))
-                                args_str_val = json.dumps(args_val, separators=(',', ':'))
+                            if isinstance(methods_val, list) and isinstance(
+                                args_val, list
+                            ):
+                                methods_str_val = json.dumps(
+                                    methods_val, separators=(",", ":")
+                                )
+                                args_str_val = json.dumps(
+                                    args_val, separators=(",", ":")
+                                )
                                 input_str = f"{methods_str_val}\n{args_str_val}"
                             else:
                                 raw_in = data.get("input", "")
                                 if isinstance(raw_in, list):
-                                    input_str = json.dumps(raw_in, separators=(',', ':'))
+                                    input_str = json.dumps(
+                                        raw_in, separators=(",", ":")
+                                    )
                                 else:
                                     input_str = str(raw_in).replace(" ", "")
 
                             output_val = data.get("output", "")
                             if isinstance(output_val, list):
-                                output_str = json.dumps(output_val, separators=(',', ':'))
+                                output_str = json.dumps(
+                                    output_val, separators=(",", ":")
+                                )
                             elif isinstance(output_val, str):
                                 try:
                                     parsed_out = json.loads(output_val)
                                     if isinstance(parsed_out, list):
-                                        output_str = json.dumps(parsed_out, separators=(',', ':'))
+                                        output_str = json.dumps(
+                                            parsed_out, separators=(",", ":")
+                                        )
                                     else:
                                         output_str = output_val.replace(" ", "")
                                 except Exception:
@@ -228,7 +275,9 @@ def generate_testcases_task(self, problem_id, count, solution_code=None):
                                 lines_normalized = []
                                 for item in raw_in:
                                     if isinstance(item, (list, dict)):
-                                        lines_normalized.append(json.dumps(item, separators=(',', ':')))
+                                        lines_normalized.append(
+                                            json.dumps(item, separators=(",", ":"))
+                                        )
                                     else:
                                         lines_normalized.append(str(item))
                                 input_str = "\n".join(lines_normalized)
@@ -244,7 +293,11 @@ def generate_testcases_task(self, problem_id, count, solution_code=None):
                                     try:
                                         parsed = json.loads(line)
                                         if isinstance(parsed, (list, dict)):
-                                            lines_normalized.append(json.dumps(parsed, separators=(',', ':')))
+                                            lines_normalized.append(
+                                                json.dumps(
+                                                    parsed, separators=(",", ":")
+                                                )
+                                            )
                                             continue
                                     except Exception:
                                         pass
@@ -255,12 +308,16 @@ def generate_testcases_task(self, problem_id, count, solution_code=None):
 
                             output_val = data.get("output", "")
                             if isinstance(output_val, (list, dict)):
-                                output_str = json.dumps(output_val, separators=(',', ':'))
+                                output_str = json.dumps(
+                                    output_val, separators=(",", ":")
+                                )
                             elif isinstance(output_val, str):
                                 try:
                                     parsed = json.loads(output_val)
                                     if isinstance(parsed, (list, dict)):
-                                        output_str = json.dumps(parsed, separators=(',', ':'))
+                                        output_str = json.dumps(
+                                            parsed, separators=(",", ":")
+                                        )
                                     else:
                                         output_str = output_val.replace(" ", "")
                                 except Exception:
@@ -269,9 +326,17 @@ def generate_testcases_task(self, problem_id, count, solution_code=None):
                                 output_str = str(output_val).replace(" ", "")
 
                         # Double check formatting quotes & spaces
-                        if input_str.startswith("['") or ",'" in input_str or "'," in input_str:
+                        if (
+                            input_str.startswith("['")
+                            or ",'" in input_str
+                            or "'," in input_str
+                        ):
                             input_str = input_str.replace("'", '"')
-                        if output_str.startswith("['") or ",'" in output_str or "'," in output_str:
+                        if (
+                            output_str.startswith("['")
+                            or ",'" in output_str
+                            or "'," in output_str
+                        ):
                             output_str = output_str.replace("'", '"')
 
                         all_testcases.append(

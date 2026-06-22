@@ -326,15 +326,19 @@ def run_batch_submission(base_payload, testcases, language_id=None):
                 user_prints = parts[1].replace("___USER_PRINT_END___", "").strip()
                 actual = parts[0].strip()
 
-            actual = actual.replace("___USER_PRINT_START___", "").replace("___USER_PRINT_END___", "").strip()
+            actual = (
+                actual.replace("___USER_PRINT_START___", "")
+                .replace("___USER_PRINT_END___", "")
+                .strip()
+            )
 
             expected = tc_output.strip()
 
             is_accepted = False
             # Check if this test case got output (runtime error might cut execution short)
             is_crash = (
-                not actual 
-                or "segmentation fault" in actual.lower() 
+                not actual
+                or "segmentation fault" in actual.lower()
                 or "sigsegv" in actual.lower()
                 or "core dumped" in actual.lower()
                 or "run.sh:" in actual
