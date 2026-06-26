@@ -164,6 +164,7 @@ export interface Problem {
   testcases: TestcaseList[]
   variables: Variable[]
   created_at: string
+  is_multi?: boolean
   success_rate: string
 }
 

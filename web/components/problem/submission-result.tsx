@@ -64,11 +64,10 @@ export default function SubmissionResult({
       0
     )
 
-    // Judge0 returns time in seconds per test case (batch-level),
-    // convert to ms and divide by case count for average per-case time
-    const caseCount = results.length || 1
+    // Judge0 returns time in seconds for the entire batch run
+    const totalTimeMs = totalTime * 1000
     return {
-      time: Math.round((totalTime / caseCount) * 1000),
+      time: totalTimeMs < 1 ? 0 : Math.round(totalTimeMs),
       memory: (maxMemory / 1024).toFixed(2), // Assuming memory is in KB from Judge0
     }
   }, [solution])
@@ -83,7 +82,7 @@ export default function SubmissionResult({
         0
       )
       const caseCount = results.length || 1
-      const time = Math.round((totalTime / caseCount) * 1000)
+      const time = Math.round(totalTime * 1000)
       const memory =
         results.reduce(
           (acc, curr) => Math.max(acc, parseFloat(curr.memory) || 0),

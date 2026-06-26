@@ -51,6 +51,7 @@ class SubmitStreamView(APIView):
                 class MockTestcase:
                     def __init__(self, id, input, output="", display_testcase=True):
                         self.id = id
+                        self.problem_id = problem_id
                         self.input = input
                         self.output = output
                         self.display_testcase = display_testcase

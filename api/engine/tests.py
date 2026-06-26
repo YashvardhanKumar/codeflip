@@ -110,8 +110,8 @@ class TestEngineAPI:
         import base64
 
         full_stdout = (
-            f"___USER_PRINT_START___\nhello printed\n___USER_PRINT_END___\na\n{TC_SEPARATOR}\n"
-            f"___USER_PRINT_START___\nworld printed\n___USER_PRINT_END___\nb"
+            f"_USER_PRINT_START_\nhello printed\n_USER_PRINT_END_\na\n{TC_SEPARATOR}\n"
+            f"_USER_PRINT_START_\nworld printed\n_USER_PRINT_END_\nb"
         )
         mock_response.json.return_value = {
             "stdout": base64.b64encode(full_stdout.encode("utf-8")).decode("utf-8"),

@@ -37,19 +37,38 @@ export default function TestPanel({
   sampleTestcases,
   setSampleTestcases,
 }: Props) {
+  const autoResize = (el: HTMLTextAreaElement | null) => {
+    if (el) {
+      el.style.height = 'auto'
+      el.style.height = el.scrollHeight + 'px'
+      if (!(el as any)._resizeObs) {
+        const ro = new ResizeObserver(() => {
+          el.style.height = 'auto'
+          el.style.height = el.scrollHeight + 'px'
+        })
+        ro.observe(el)
+        ;(el as any)._resizeObs = ro
+      }
+    }
+  }
+
   const handleInputChange = (lineIndex: number, newValue: string) => {
     setSampleTestcases((prev) => {
       const updated = [...prev]
       const currentCase = { ...updated[activeCase] }
       if (currentCase) {
         const lines = currentCase.input.replaceAll('\r\n', '\n').split('\n')
-        const line = lines[lineIndex]
-        const splitIdx = line.indexOf('=')
-        if (splitIdx !== -1) {
-          const key = line.substring(0, splitIdx).trim()
-          lines[lineIndex] = `${key} = ${newValue}`
-        } else {
+        if (problem.is_multi) {
           lines[lineIndex] = newValue
+        } else {
+          const line = lines[lineIndex]
+          const splitIdx = line.indexOf('=')
+          if (splitIdx !== -1) {
+            const key = line.substring(0, splitIdx).trim()
+            lines[lineIndex] = `${key} = ${newValue}`
+          } else {
+            lines[lineIndex] = newValue
+          }
         }
         currentCase.input = lines.join('\n')
         updated[activeCase] = currentCase
@@ -69,8 +88,8 @@ export default function TestPanel({
   }
 
   const handleAddTestcase = () => {
-    let newInput = ''
-    if (sampleTestcases.length > 0) {
+    let newInput = problem.is_multi ? '[]\n[]' : ''
+    if (sampleTestcases.length > 0 && !problem.is_multi) {
       const lines = sampleTestcases[0].input
         .replaceAll('\r\n', '\n')
         .split('\n')
@@ -207,48 +226,73 @@ export default function TestPanel({
               className="space-y-3 font-mono text-xs animate-in fade-in duration-200"
             >
               {sampleTestcases && sampleTestcases[activeCase]?.input ? (
-                sampleTestcases[activeCase].input
-                  .replaceAll('\r\n', '\n')
-                  .split('\n')
-                  .map((line, i) => {
-                    const splitIdx = line.indexOf('=')
-                    if (splitIdx !== -1) {
-                      const key = line.substring(0, splitIdx).trim()
-                      const value = line.substring(splitIdx + 1).trim()
-                      return (
-                        <div key={i}>
-                          <p className="text-gray-400 mb-1">{key} = </p>
-                          <textarea
-                            value={value}
-                            onChange={(e) =>
-                              handleInputChange(i, e.target.value)
-                            }
-                            rows={1}
-                            className="w-full bg-surface-border px-3 py-2 rounded text-white border border-gray-700 outline-none focus:border-primary focus:ring-1 focus:ring-primary font-mono text-xs resize-y"
-                          />
-                        </div>
-                      )
-                    } else {
-                      return (
-                        <div key={i}>
-                          <p className="text-gray-400 mb-1">
-                            {problem.variables && problem.variables[i]
-                              ? problem.variables[i].name
-                              : `Arg ${i + 1}`}{' '}
-                            ={' '}
-                          </p>
-                          <textarea
-                            value={line}
-                            onChange={(e) =>
-                              handleInputChange(i, e.target.value)
-                            }
-                            rows={1}
-                            className="w-full bg-surface-border px-3 py-2 rounded text-white border border-gray-700 outline-none focus:border-primary focus:ring-1 focus:ring-primary font-mono text-xs resize-y"
-                          />
-                        </div>
-                      )
-                    }
-                  })
+                problem.is_multi ? (
+                  sampleTestcases[activeCase].input
+                    .replaceAll('\r\n', '\n')
+                    .split('\n')
+                    .map((line, i) => (
+                      <div key={i}>
+                        <p className="text-gray-400 mb-1">
+                          {i === 0 ? 'Method calls' : 'Arguments'}
+                        </p>
+                        <textarea
+                          value={line}
+                          onChange={(e) => handleInputChange(i, e.target.value)}
+                          rows={1}
+                          className="w-full bg-surface-border px-3 py-2 rounded text-white border border-gray-700 outline-none focus:border-primary focus:ring-1 focus:ring-primary font-mono text-xs resize-none overflow-hidden whitespace-pre-wrap"
+                          onInput={(e) => autoResize(e.currentTarget)}
+                          ref={autoResize}
+                        />
+                      </div>
+                    ))
+                ) : (
+                  sampleTestcases[activeCase].input
+                    .replaceAll('\r\n', '\n')
+                    .split('\n')
+                    .map((line, i) => {
+                      const splitIdx = line.indexOf('=')
+                      if (splitIdx !== -1) {
+                        const key = line.substring(0, splitIdx).trim()
+                        const value = line.substring(splitIdx + 1).trim()
+                        return (
+                          <div key={i}>
+                            <p className="text-gray-400 mb-1">{key} = </p>
+                            <textarea
+                              value={value}
+                              onChange={(e) =>
+                                handleInputChange(i, e.target.value)
+                              }
+                              rows={1}
+                              className="w-full bg-surface-border px-3 py-2 rounded text-white border border-gray-700 outline-none focus:border-primary focus:ring-1 focus:ring-primary font-mono text-xs resize-none overflow-hidden whitespace-pre-wrap"
+                              onInput={(e) => autoResize(e.currentTarget)}
+                              ref={autoResize}
+                            />
+                          </div>
+                        )
+                      } else {
+                        return (
+                          <div key={i}>
+                            <p className="text-gray-400 mb-1">
+                              {problem.variables && problem.variables[i]
+                                ? problem.variables[i].name
+                                : `Arg ${i + 1}`}{' '}
+                              ={' '}
+                            </p>
+                            <textarea
+                              value={line}
+                              onChange={(e) =>
+                                handleInputChange(i, e.target.value)
+                              }
+                              rows={1}
+                              className="w-full bg-surface-border px-3 py-2 rounded text-white border border-gray-700 outline-none focus:border-primary focus:ring-1 focus:ring-primary font-mono text-xs resize-none overflow-hidden whitespace-pre-wrap"
+                              onInput={(e) => autoResize(e.currentTarget)}
+                              ref={autoResize}
+                            />
+                          </div>
+                        )
+                      }
+                    })
+                )
               ) : (
                 <div className="text-gray-500 italic p-2">Hidden test case</div>
               )}

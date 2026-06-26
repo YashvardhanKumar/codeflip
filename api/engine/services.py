@@ -144,7 +144,7 @@ def parse_batch_stdout(stdout, num_testcases):
     results = []
     for i in range(num_testcases):
         if i < len(blocks):
-            results.append(blocks[i].strip())
+            results.append(blocks[i].strip("\n\r"))
         else:
             results.append("")
     return results
@@ -193,6 +193,129 @@ def validate_case_output(problem, actual: str, expected: str, tc_input: str) -> 
             return False
 
     return actual.strip() == expected.strip()
+
+
+def _parse_token(t, template_type):
+    if t == "null":
+        return None
+    if template_type in ("BOOLEAN", "boolean"):
+        return t.lower() == "true"
+    if template_type in ("INTEGER", "Integer", "long", "LONG"):
+        try:
+            return int(t)
+        except ValueError:
+            return t
+    if template_type in ("FLOAT", "double", "DOUBLE"):
+        try:
+            return float(t)
+        except ValueError:
+            return t
+    return t
+
+
+def _split_by_blank_lines(lines, sep):
+    groups = []
+    cur = []
+    blanks = 0
+    for line in lines:
+        if not line:
+            blanks += 1
+            if blanks >= sep and cur:
+                groups.append(cur)
+                cur = []
+                blanks = 0
+        else:
+            if blanks > 0:
+                for _ in range(blanks):
+                    cur.append("")
+                blanks = 0
+            cur.append(line)
+    if cur:
+        groups.append(cur)
+    return groups
+
+
+def _parse_nd_output(lines, template_type, dimensions):
+    if template_type in ("STRING", "string"):
+        lines = [l for l in lines] if lines else []
+    else:
+        lines = [l.strip() for l in lines] if lines else []
+    if dimensions == 1:
+        if not lines:
+            return []
+        if template_type in ("STRING", "string"):
+            return [None if l == "null" else l for l in lines]
+        line = " ".join(lines).strip()
+        if not line:
+            return []
+        return [_parse_token(t, template_type) for t in line.split()]
+
+    sep = dimensions - 1
+    groups = _split_by_blank_lines(lines, sep)
+    return [_parse_nd_output(g, template_type, dimensions - 1) for g in groups]
+
+    result = []
+    for og in outer_groups:
+        merged = []
+        for g_content, _ in og:
+            if merged:
+                merged.append("")
+            merged.extend(g_content)
+        result.append(_parse_nd_output(merged, template_type, dimensions - 1))
+    return result
+
+
+def reconstruct_json_output(actual: str, problem) -> str:
+    if not problem:
+        return actual
+    if not actual or actual.strip() == "null":
+        return "null"
+
+    # Check if this is is_multi
+    methods = list(problem.methods.all())
+    is_multi = len(methods) > 1 or any(m.is_constructor for m in methods)
+    if is_multi:
+        return actual
+
+    method = problem.methods.filter(is_constructor=False).first()
+    if not method:
+        return actual
+
+    ret_type = method.type
+    template_type = method.template_type
+    dimensions = method.array_dimensions
+
+    if ret_type in ["void", "VOID"]:
+        return "null"
+
+    actual_lines = actual.splitlines()
+    if not actual_lines:
+        return "null"
+
+    if ret_type == "Array" or ret_type == "ARRAY":
+        result = _parse_nd_output(actual_lines, template_type, dimensions)
+        return json.dumps(result, separators=(",", ":"))
+    else:
+        # Scalar type
+        val = actual.strip()
+        if val == "null":
+            return "null"
+        if ret_type == "BOOLEAN" or ret_type == "boolean":
+            return "true" if val.lower() == "true" else "false"
+        if ret_type in ["INTEGER", "Integer", "long", "LONG"]:
+            try:
+                return str(int(val))
+            except ValueError:
+                return val
+        if ret_type in ["FLOAT", "double", "DOUBLE"]:
+            try:
+                return str(float(val))
+            except ValueError:
+                return val
+        if ret_type == "STRING" or ret_type == "string":
+            return val
+
+    return actual
 
 
 def run_batch_submission(base_payload, testcases, language_id=None):
@@ -314,22 +437,20 @@ def run_batch_submission(base_payload, testcases, language_id=None):
             block_text = actual_outputs[i]
 
             # Extract user prints and clean output
-            pattern = (
-                r"___USER_PRINT_START___[\r\n]*(.*?)[\r\n]*___USER_PRINT_END___[\r\n]*"
-            )
+            pattern = r"_USER_PRINT_START_[\r\n]*(.*?)[\r\n]*_USER_PRINT_END_[\r\n]*"
             matches = re.findall(pattern, block_text, re.DOTALL)
             user_prints = "\n".join(m.strip() for m in matches if m.strip())
-            actual = re.sub(pattern, "", block_text, flags=re.DOTALL).strip()
+            actual = re.sub(pattern, "", block_text, flags=re.DOTALL).strip("\n\r")
 
-            if not matches and "___USER_PRINT_START___" in block_text:
-                parts = block_text.split("___USER_PRINT_START___", 1)
-                user_prints = parts[1].replace("___USER_PRINT_END___", "").strip()
-                actual = parts[0].strip()
+            if not matches and "_USER_PRINT_START_" in block_text:
+                parts = block_text.split("_USER_PRINT_START_", 1)
+                user_prints = parts[1].replace("_USER_PRINT_END_", "").strip()
+                actual = parts[0].strip("\n\r")
 
             actual = (
-                actual.replace("___USER_PRINT_START___", "")
-                .replace("___USER_PRINT_END___", "")
-                .strip()
+                actual.replace("_USER_PRINT_START_", "")
+                .replace("_USER_PRINT_END_", "")
+                .strip("\n\r")
             )
 
             expected = tc_output.strip()
@@ -349,6 +470,7 @@ def run_batch_submission(base_payload, testcases, language_id=None):
                 case_status = status_obj
                 actual = ""
             else:
+                actual = reconstruct_json_output(actual, problem)
                 is_accepted = validate_case_output(problem, actual, expected, tc_input)
                 if is_accepted:
                     case_status = {"id": 3, "description": "Accepted"}

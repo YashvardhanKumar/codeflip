@@ -311,8 +311,8 @@ def test_multi_method_code_generation():
     # Verify C++ block/runner
     cpp_cb = problem.codeblocks.get(language="CPP")
     assert "vector<string> outputs;" in cpp_cb.runner_code
-    assert 'cout << "___USER_PRINT_START___"' in cpp_cb.runner_code
-    assert 'cout << "___USER_PRINT_END___"' in cpp_cb.runner_code
+    assert 'cout << "_USER_PRINT_START_"' in cpp_cb.runner_code
+    assert 'cout << "_USER_PRINT_END_"' in cpp_cb.runner_code
     assert "outputs.push_back(ss.str());" in cpp_cb.runner_code
     assert 'outputs.push_back("null");' in cpp_cb.runner_code
     assert "delete obj" in cpp_cb.runner_code
@@ -320,24 +320,24 @@ def test_multi_method_code_generation():
     # Verify Python block/runner
     py_cb = problem.codeblocks.get(language="PYTHON")
     assert "outputs = []" in py_cb.runner_code
-    assert "print('___USER_PRINT_START___')" in py_cb.runner_code
-    assert "print('___USER_PRINT_END___')" in py_cb.runner_code
+    assert "print('_USER_PRINT_START_')" in py_cb.runner_code
+    assert "print('_USER_PRINT_END_')" in py_cb.runner_code
     assert "outputs.append(res)" in py_cb.runner_code
     assert "outputs.append(None)" in py_cb.runner_code
 
     # Verify JS block/runner
     js_cb = problem.codeblocks.get(language="JAVASCRIPT")
     assert "const outputs = [];" in js_cb.runner_code
-    assert 'console.log("___USER_PRINT_START___");' in js_cb.runner_code
-    assert 'console.log("___USER_PRINT_END___");' in js_cb.runner_code
+    assert 'console.log("_USER_PRINT_START_");' in js_cb.runner_code
+    assert 'console.log("_USER_PRINT_END_");' in js_cb.runner_code
     assert "outputs.push(res);" in js_cb.runner_code
     assert "outputs.push(null);" in js_cb.runner_code
 
     # Verify Java block/runner
     java_cb = problem.codeblocks.get(language="JAVA")
     assert "List<String> outputs = new ArrayList<>();" in java_cb.runner_code
-    assert 'System.out.println("___USER_PRINT_START___");' in java_cb.runner_code
-    assert 'System.out.println("___USER_PRINT_END___");' in java_cb.runner_code
+    assert 'System.out.println("_USER_PRINT_START_");' in java_cb.runner_code
+    assert 'System.out.println("_USER_PRINT_END_");' in java_cb.runner_code
     assert "outputs.add(baos.toString());" in java_cb.runner_code
     assert 'outputs.add("null");' in java_cb.runner_code
 

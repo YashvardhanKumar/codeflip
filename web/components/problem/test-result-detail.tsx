@@ -32,17 +32,17 @@ export default function TestResultDetail({
                 return (
                   <div
                     key={i}
-                    className="bg-surface-border p-2 rounded text-white border border-gray-700"
+                    className="bg-surface-border p-2 rounded text-white border border-gray-700 w-full"
                   >
                     <p className="text-gray-400 mb-1">{key} = </p>
-                    <div>{value}</div>
+                    <div className="whitespace-pre-wrap break-all">{value}</div>
                   </div>
                 )
               } else {
                 return (
                   <div
                     key={i}
-                    className="bg-surface-border p-2 rounded text-white border border-gray-700"
+                    className="bg-surface-border p-2 rounded text-white border border-gray-700 w-full"
                   >
                     <p className="text-gray-400 mb-1">
                       {variables && variables[i]
@@ -50,7 +50,7 @@ export default function TestResultDetail({
                         : `Arg ${i + 1}`}{' '}
                       ={' '}
                     </p>
-                    <div>{line}</div>
+                    <div className="whitespace-pre-wrap break-all">{line}</div>
                   </div>
                 )
               }
@@ -64,8 +64,8 @@ export default function TestResultDetail({
 
       <div className="space-y-3 font-mono text-xs">
         <p className="text-gray-400 mb-1">Output</p>
-        <div className="bg-surface-border p-2 rounded text-white border border-gray-700">
-          <code className="whitespace-pre-wrap">
+        <div className="bg-surface-border p-2 rounded text-white border border-gray-700 w-full">
+          <code className="whitespace-pre-wrap break-all">
             {result?.stdout || '(no output)'}
           </code>
         </div>
@@ -73,8 +73,10 @@ export default function TestResultDetail({
 
       <div className="space-y-3 font-mono text-xs">
         <p className="text-gray-400 mb-1">Expected Output</p>
-        <div className="bg-surface-border p-2 rounded text-white border border-gray-700">
-          <code className="whitespace-pre-wrap">{result?.expected_output}</code>
+        <div className="bg-surface-border p-2 rounded text-white border border-gray-700 w-full">
+          <code className="whitespace-pre-wrap break-all">
+            {result?.expected_output}
+          </code>
         </div>
       </div>
 
