@@ -144,10 +144,178 @@ def parse_batch_stdout(stdout, num_testcases):
     results = []
     for i in range(num_testcases):
         if i < len(blocks):
-            results.append(blocks[i].strip())
+            results.append(blocks[i].strip("\n\r"))
         else:
             results.append("")
     return results
+
+
+def validate_case_output(problem, actual: str, expected: str, tc_input: str) -> bool:
+    validator_type = getattr(problem, "validator_type", "EXACT")
+    if validator_type == "ANY_ORDER":
+        try:
+            import json
+
+            def sort_nested(obj):
+                if isinstance(obj, list):
+                    sorted_list = [sort_nested(item) for item in obj]
+                    try:
+                        return sorted(sorted_list)
+                    except TypeError:
+                        return sorted(
+                            sorted_list, key=lambda x: json.dumps(x, sort_keys=True)
+                        )
+                elif isinstance(obj, dict):
+                    return {k: sort_nested(v) for k, v in sorted(obj.items())}
+                return obj
+
+            actual_json = json.loads(actual)
+            expected_json = json.loads(expected)
+            return sort_nested(actual_json) == sort_nested(expected_json)
+        except Exception:
+            # Fallback to line-by-line any-order comparison
+            actual_lines = sorted(actual.strip().splitlines())
+            expected_lines = sorted(expected.strip().splitlines())
+            return actual_lines == expected_lines
+
+    elif validator_type == "CUSTOM":
+        custom_validator = getattr(problem, "custom_validator", "")
+        if not custom_validator:
+            return actual.strip() == expected.strip()
+        try:
+            loc = {}
+            exec(custom_validator, {}, loc)
+            if "validate" in loc:
+                return bool(loc["validate"](actual, expected, tc_input))
+            return actual.strip() == expected.strip()
+        except Exception as e:
+            print(f"Error in custom validator for problem {problem.id}: {e}")
+            return False
+
+    return actual.strip() == expected.strip()
+
+
+def _parse_token(t, template_type):
+    if t == "null":
+        return None
+    if template_type in ("BOOLEAN", "boolean"):
+        return t.lower() == "true"
+    if template_type in ("INTEGER", "Integer", "long", "LONG"):
+        try:
+            return int(t)
+        except ValueError:
+            return t
+    if template_type in ("FLOAT", "double", "DOUBLE"):
+        try:
+            return float(t)
+        except ValueError:
+            return t
+    return t
+
+
+def _split_by_blank_lines(lines, sep):
+    groups = []
+    cur = []
+    blanks = 0
+    for line in lines:
+        if not line:
+            blanks += 1
+            if blanks >= sep and cur:
+                groups.append(cur)
+                cur = []
+                blanks = 0
+        else:
+            if blanks > 0:
+                for _ in range(blanks):
+                    cur.append("")
+                blanks = 0
+            cur.append(line)
+    if cur:
+        groups.append(cur)
+    return groups
+
+
+def _parse_nd_output(lines, template_type, dimensions):
+    if template_type in ("STRING", "string"):
+        lines = [l for l in lines] if lines else []
+    else:
+        lines = [l.strip() for l in lines] if lines else []
+    if dimensions == 1:
+        if not lines:
+            return []
+        if template_type in ("STRING", "string"):
+            return [None if l == "null" else l for l in lines]
+        line = " ".join(lines).strip()
+        if not line:
+            return []
+        return [_parse_token(t, template_type) for t in line.split()]
+
+    sep = dimensions - 1
+    groups = _split_by_blank_lines(lines, sep)
+    return [_parse_nd_output(g, template_type, dimensions - 1) for g in groups]
+
+    result = []
+    for og in outer_groups:
+        merged = []
+        for g_content, _ in og:
+            if merged:
+                merged.append("")
+            merged.extend(g_content)
+        result.append(_parse_nd_output(merged, template_type, dimensions - 1))
+    return result
+
+
+def reconstruct_json_output(actual: str, problem) -> str:
+    if not problem:
+        return actual
+    if not actual or actual.strip() == "null":
+        return "null"
+
+    # Check if this is is_multi
+    methods = list(problem.methods.all())
+    is_multi = len(methods) > 1 or any(m.is_constructor for m in methods)
+    if is_multi:
+        return actual
+
+    method = problem.methods.filter(is_constructor=False).first()
+    if not method:
+        return actual
+
+    ret_type = method.type
+    template_type = method.template_type
+    dimensions = method.array_dimensions
+
+    if ret_type in ["void", "VOID"]:
+        return "null"
+
+    actual_lines = actual.splitlines()
+    if not actual_lines:
+        return "null"
+
+    if ret_type == "Array" or ret_type == "ARRAY":
+        result = _parse_nd_output(actual_lines, template_type, dimensions)
+        return json.dumps(result, separators=(",", ":"))
+    else:
+        # Scalar type
+        val = actual.strip()
+        if val == "null":
+            return "null"
+        if ret_type == "BOOLEAN" or ret_type == "boolean":
+            return "true" if val.lower() == "true" else "false"
+        if ret_type in ["INTEGER", "Integer", "long", "LONG"]:
+            try:
+                return str(int(val))
+            except ValueError:
+                return val
+        if ret_type in ["FLOAT", "double", "DOUBLE"]:
+            try:
+                return str(float(val))
+            except ValueError:
+                return val
+        if ret_type == "STRING" or ret_type == "string":
+            return val
+
+    return actual
 
 
 def run_batch_submission(base_payload, testcases, language_id=None):
@@ -156,6 +324,26 @@ def run_batch_submission(base_payload, testcases, language_id=None):
     Returns a list of per-test-case result dicts.
     """
     from .constants import TC_SEPARATOR, get_scaled_limits
+
+    # Get problem object to check validator settings
+    problem = None
+    if testcases:
+        from problem.models import Problem
+
+        first_tc = testcases[0]
+        problem_id = None
+        if hasattr(first_tc, "problem_id") and first_tc.problem_id:
+            problem_id = first_tc.problem_id
+        elif isinstance(first_tc, dict) and first_tc.get("problem_id"):
+            problem_id = first_tc.get("problem_id")
+        elif hasattr(first_tc, "problem") and first_tc.problem:
+            problem_id = first_tc.problem.id
+
+        if problem_id:
+            try:
+                problem = Problem.objects.get(id=problem_id)
+            except Problem.DoesNotExist:
+                pass
 
     # Build batch stdin
     batch_stdin = format_batch_stdin(testcases, language_id)
@@ -249,26 +437,46 @@ def run_batch_submission(base_payload, testcases, language_id=None):
             block_text = actual_outputs[i]
 
             # Extract user prints and clean output
-            pattern = (
-                r"___USER_PRINT_START___[\r\n]*(.*?)[\r\n]*___USER_PRINT_END___[\r\n]*"
-            )
+            pattern = r"_USER_PRINT_START_[\r\n]*(.*?)[\r\n]*_USER_PRINT_END_[\r\n]*"
             matches = re.findall(pattern, block_text, re.DOTALL)
             user_prints = "\n".join(m.strip() for m in matches if m.strip())
-            actual = re.sub(pattern, "", block_text, flags=re.DOTALL).strip()
+            actual = re.sub(pattern, "", block_text, flags=re.DOTALL).strip("\n\r")
+
+            if not matches and "_USER_PRINT_START_" in block_text:
+                parts = block_text.split("_USER_PRINT_START_", 1)
+                user_prints = parts[1].replace("_USER_PRINT_END_", "").strip()
+                actual = parts[0].strip("\n\r")
+
+            actual = (
+                actual.replace("_USER_PRINT_START_", "")
+                .replace("_USER_PRINT_END_", "")
+                .strip("\n\r")
+            )
 
             expected = tc_output.strip()
 
+            is_accepted = False
             # Check if this test case got output (runtime error might cut execution short)
-            if status_id not in (None, 3) and status_id > 4 and not actual:
+            is_crash = (
+                not actual
+                or "segmentation fault" in actual.lower()
+                or "sigsegv" in actual.lower()
+                or "core dumped" in actual.lower()
+                or "run.sh:" in actual
+            )
+            if status_id not in (None, 3) and status_id > 4 and is_crash:
                 # Runtime error occurred before this test case completed
                 is_accepted = False
                 case_status = status_obj
-            elif actual == expected:
-                is_accepted = True
-                case_status = {"id": 3, "description": "Accepted"}
+                actual = ""
             else:
-                is_accepted = False
-                case_status = {"id": 4, "description": "Wrong Answer"}
+                actual = reconstruct_json_output(actual, problem)
+                is_accepted = validate_case_output(problem, actual, expected, tc_input)
+                if is_accepted:
+                    case_status = {"id": 3, "description": "Accepted"}
+                else:
+                    is_accepted = False
+                    case_status = {"id": 4, "description": "Wrong Answer"}
 
             judge0_compile_output = res.get("compile_output") or ""
             compile_out = judge0_compile_output

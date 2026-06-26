@@ -167,6 +167,7 @@ class ProblemDetailSerializer(serializers.ModelSerializer):
     codeblocks = CodeblockSerializer(many=True, read_only=True)
     testcases = TestcaseListSerializer(many=True, read_only=True)
     variables = VariableSerializer(many=True, read_only=True)
+    is_multi = serializers.SerializerMethodField()
     success_rate = serializers.SerializerMethodField()
 
     class Meta:
@@ -181,10 +182,17 @@ class ProblemDetailSerializer(serializers.ModelSerializer):
             "codeblocks",
             "testcases",
             "variables",
+            "validator_type",
+            "custom_validator",
             "created_at",
+            "is_multi",
             "success_rate",
         ]
         read_only_fields = ["id", "created_at"]
+
+    def get_is_multi(self, obj):
+        methods = list(obj.methods.all())
+        return len(methods) > 1 or any(m.is_constructor for m in methods)
 
     def get_success_rate(self, obj):
         total = obj.solutions.count()

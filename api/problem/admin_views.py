@@ -69,12 +69,26 @@ class CustomProblemForm(forms.ModelForm):
 
     class Meta:
         model = Problem
-        fields = ["name", "problem_description", "difficulty"]
+        fields = [
+            "name",
+            "problem_description",
+            "difficulty",
+            "validator_type",
+            "custom_validator",
+        ]
         widgets = {
             "name": forms.TextInput(
                 attrs={"class": "custom-input", "placeholder": "Problem Title"}
             ),
             "difficulty": forms.Select(attrs={"class": "custom-input"}),
+            "validator_type": forms.Select(attrs={"class": "custom-input"}),
+            "custom_validator": forms.Textarea(
+                attrs={
+                    "class": "custom-input",
+                    "placeholder": "def validate(actual, expected, tc_input):\n    # Return True if correct, False otherwise\n    return actual.strip() == expected.strip()",
+                    "rows": 6,
+                }
+            ),
         }
 
     class Media:
@@ -258,9 +272,10 @@ def generate_testcases_async(request):
 
     problem_id = request.POST.get("problem")
     count = int(request.POST.get("count", 100))
+    solution_code = request.POST.get("solution_code", "")
 
     # Start Celery task
-    task = generate_testcases_task.delay(problem_id, count)
+    task = generate_testcases_task.delay(problem_id, count, solution_code)
 
     return JsonResponse({"status": "pending", "task_id": task.id})
 
@@ -415,6 +430,20 @@ def add_problem_custom(request):
             method_formset = MethodFormSet(post_data, instance=problem)
             if method_formset.is_valid():
                 method_formset.save()
+
+                # Automatically create a constructor method if there are multiple methods
+                # and no constructor method has been defined yet.
+                non_constructor_methods = problem.methods.filter(is_constructor=False)
+                has_constructor = problem.methods.filter(is_constructor=True).exists()
+                if non_constructor_methods.count() > 1 and not has_constructor:
+                    Method.objects.create(
+                        problem=problem,
+                        name="Solution",
+                        type="void",
+                        is_constructor=True,
+                        array_dimensions=0,
+                    )
+
                 return redirect(
                     f"/api/rootops/add-problem/?step=5&problem_id={problem.id}"
                 )
@@ -465,9 +494,12 @@ def add_problem_custom(request):
                 ai_form = AITestCaseForm(post_data)
                 if ai_form.is_valid():
                     count = ai_form.cleaned_data["count"]
+                    solution_code = ai_form.cleaned_data.get("solution_code", "")
                     from ai.tasks import generate_testcases_task
 
-                    task = generate_testcases_task.delay(problem.id, count)
+                    task = generate_testcases_task.delay(
+                        problem.id, count, solution_code
+                    )
                     messages.success(
                         request,
                         f"AI generation started for {count} testcases. Task ID: {task.id}",
@@ -556,6 +588,17 @@ class AITestCaseForm(forms.Form):
     )
     count = forms.IntegerField(
         min_value=1, max_value=200, initial=100, label="Number of Test Cases"
+    )
+    solution_code = forms.CharField(
+        widget=forms.Textarea(
+            attrs={
+                "class": "custom-input",
+                "rows": 8,
+                "placeholder": "Paste reference solution here...",
+            }
+        ),
+        required=False,
+        label="Solution Code (Optional)",
     )
 
 
