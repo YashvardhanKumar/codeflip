@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Header from '@/components/header'
 import PageTransition from '@/components/page-transition'
@@ -47,6 +47,7 @@ export default function ContestDetailPage() {
     data: contest,
     error,
     isLoading,
+    mutate: mutateContest,
   } = useSWR<Contest>(`contests/${id}/`, apiFetcher, {
     refreshInterval: 15000,
   })
@@ -109,6 +110,29 @@ export default function ContestDetailPage() {
     }
   }
 
+  const nowTime = Date.now()
+  const startTime = contest?.start_time
+    ? new Date(contest.start_time).getTime()
+    : 0
+  const endTime = contest?.end_time ? new Date(contest.end_time).getTime() : 0
+  const isTimeStarted = startTime > 0 && nowTime >= startTime
+  const isTimeEnded = endTime > 0 && nowTime > endTime
+
+  const isLive =
+    contest?.status === 'ONGOING' || (isTimeStarted && !isTimeEnded)
+  const isPast = contest?.status === 'PAST' || isTimeEnded
+  const isUpcoming = contest?.status === 'UPCOMING' && !isTimeStarted
+
+  useEffect(() => {
+    if (
+      isLive &&
+      contest?.problems?.length &&
+      !contest.problems[0].problem_id
+    ) {
+      mutateContest()
+    }
+  }, [isLive, contest, mutateContest])
+
   if (error && !isLoading) {
     return (
       <div className="min-h-screen bg-background-dark text-white flex flex-col">
@@ -140,10 +164,6 @@ export default function ContestDetailPage() {
       </div>
     )
   }
-
-  const isLive = contest.status === 'ONGOING'
-  const isUpcoming = contest.status === 'UPCOMING'
-  const isPast = contest.status === 'PAST'
 
   return (
     <PageTransition>
@@ -222,11 +242,19 @@ export default function ContestDetailPage() {
 
               {/* Countdown & Action Button */}
               <div className="flex flex-col items-center sm:items-end gap-4 w-full md:w-auto bg-background-dark/80 p-5 rounded-xl border border-surface-border">
-                <ContestCountdown contest={contest} />
+                <ContestCountdown
+                  contest={contest}
+                  onCountdownComplete={() => {
+                    mutateContest()
+                    refreshLeaderboard()
+                  }}
+                />
 
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                   {isLive ? (
-                    contest.problems && contest.problems.length > 0 ? (
+                    contest.problems &&
+                    contest.problems.length > 0 &&
+                    contest.problems[0].problem_id ? (
                       <Link
                         href={`/contest/${contest.id}/problem/${contest.problems[0].problem_id}`}
                         className="w-full sm:w-auto"
@@ -237,9 +265,13 @@ export default function ContestDetailPage() {
                         </button>
                       </Link>
                     ) : (
-                      <span className="text-xs text-gray-400">
-                        Loading problems...
-                      </span>
+                      <button
+                        onClick={() => mutateContest()}
+                        className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-6 py-2.5 rounded-lg text-sm transition-all shadow-lg shadow-emerald-900/30 flex items-center justify-center gap-2"
+                      >
+                        <Flame className="size-4 animate-pulse" />
+                        Enter Contest
+                      </button>
                     )
                   ) : isUpcoming ? (
                     contest.is_registered ? (
@@ -595,7 +627,13 @@ export default function ContestDetailPage() {
   )
 }
 
-function ContestCountdown({ contest }: { contest: Contest }) {
+function ContestCountdown({
+  contest,
+  onCountdownComplete,
+}: {
+  contest: Contest
+  onCountdownComplete?: () => void
+}) {
   const [timeLeft, setTimeLeft] = useState<{
     days: number
     hours: number
@@ -604,23 +642,35 @@ function ContestCountdown({ contest }: { contest: Contest }) {
     isLive: boolean
   }>({ days: 0, hours: 0, minutes: 0, seconds: 0, isLive: false })
 
+  const completedRef = useRef(false)
+
+  useEffect(() => {
+    completedRef.current = false
+  }, [contest.id, contest.status])
+
   useEffect(() => {
     const updateCountdown = () => {
       const now = new Date().getTime()
-      const targetTime =
-        contest.status === 'ONGOING'
-          ? new Date(contest.end_time).getTime()
-          : new Date(contest.start_time).getTime()
+      const startTime = new Date(contest.start_time).getTime()
+      const endTime = new Date(contest.end_time).getTime()
+      const isCurrentlyLive =
+        contest.status === 'ONGOING' || (now >= startTime && now <= endTime)
 
+      const targetTime = isCurrentlyLive ? endTime : startTime
       const diff = targetTime - now
+
       if (diff <= 0) {
         setTimeLeft({
           days: 0,
           hours: 0,
           minutes: 0,
           seconds: 0,
-          isLive: contest.status === 'ONGOING',
+          isLive: isCurrentlyLive,
         })
+        if (!completedRef.current) {
+          completedRef.current = true
+          onCountdownComplete?.()
+        }
         return
       }
 
@@ -636,16 +686,20 @@ function ContestCountdown({ contest }: { contest: Contest }) {
         hours,
         minutes,
         seconds,
-        isLive: contest.status === 'ONGOING',
+        isLive: isCurrentlyLive,
       })
     }
 
     updateCountdown()
     const timer = setInterval(updateCountdown, 1000)
     return () => clearInterval(timer)
-  }, [contest])
+  }, [contest, onCountdownComplete])
 
-  const isLive = contest.status === 'ONGOING'
+  const now = new Date().getTime()
+  const startTime = new Date(contest.start_time).getTime()
+  const endTime = new Date(contest.end_time).getTime()
+  const isLive =
+    contest.status === 'ONGOING' || (now >= startTime && now <= endTime)
 
   return (
     <div className="text-center sm:text-right">

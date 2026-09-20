@@ -4,19 +4,44 @@ from django.contrib import messages
 from django.utils import timezone
 from datetime import datetime, timedelta
 import re
+from zoneinfo import ZoneInfo
 
 from .models import Contest, ContestProblem
 from problem.models import Problem
 
 
-def get_next_saturday(now=None):
-    now = now or timezone.now()
-    days_until_sat = (5 - now.weekday()) % 7
-    if days_until_sat == 0 and now.hour >= 20:
+def get_next_saturday(now=None, tz=None):
+    tz_obj = tz or ZoneInfo("UTC")
+    now_in_tz = (now or timezone.now()).astimezone(tz_obj)
+    days_until_sat = (5 - now_in_tz.weekday()) % 7
+    if days_until_sat == 0 and now_in_tz.hour >= 20:
         days_until_sat = 7
-    return (now + timedelta(days=days_until_sat)).replace(
+    target_dt = (now_in_tz + timedelta(days=days_until_sat)).replace(
         hour=20, minute=0, second=0, microsecond=0
     )
+    return target_dt.astimezone(ZoneInfo("UTC"))
+
+
+def parse_contest_start_time(start_time_str, user_tz_str=""):
+    tz_obj = None
+    if user_tz_str:
+        try:
+            tz_obj = ZoneInfo(user_tz_str)
+        except Exception:
+            tz_obj = None
+
+    if not start_time_str:
+        return get_next_saturday(tz=tz_obj)
+
+    try:
+        naive_dt = datetime.fromisoformat(start_time_str)
+        if tz_obj:
+            aware_dt = naive_dt.replace(tzinfo=tz_obj)
+            return aware_dt.astimezone(ZoneInfo("UTC"))
+        else:
+            return timezone.make_aware(naive_dt)
+    except (ValueError, TypeError):
+        return get_next_saturday(tz=tz_obj)
 
 
 @staff_member_required
@@ -29,18 +54,12 @@ def set_contest(request, contest_id=None):
         if action == "save_contest":
             title = request.POST.get("title", "").strip()
             start_time_str = request.POST.get("start_time", "").strip()
+            user_tz_str = request.POST.get("user_timezone", "").strip()
             duration_minutes = int(request.POST.get("duration_minutes", 90))
             description = request.POST.get("description", "").strip()
             is_published = request.POST.get("is_published") == "on"
 
-            try:
-                start_time = (
-                    timezone.make_aware(datetime.fromisoformat(start_time_str))
-                    if start_time_str
-                    else get_next_saturday()
-                )
-            except (ValueError, TypeError):
-                start_time = get_next_saturday()
+            start_time = parse_contest_start_time(start_time_str, user_tz_str)
 
             if contest:
                 contest.title, contest.start_time, contest.duration_minutes = (

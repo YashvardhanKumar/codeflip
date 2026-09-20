@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Header from '@/components/header'
 import PageTransition from '@/components/page-transition'
 import { Contest, ContestLeaderboardResponse } from '@/lib/models'
@@ -41,13 +41,22 @@ export default function ContestIndexPage() {
 
   const { data: contests, isLoading } = useSWR<Contest[]>(
     `contests/${queryString}`,
-    apiFetcher
+    apiFetcher,
+    { refreshInterval: 15000 }
   )
 
   // Find the primary featured contest (ongoing first, else next upcoming)
+  const now = Date.now()
   const featuredContest =
-    contests?.find((c) => c.status === 'ONGOING') ||
-    contests?.find((c) => c.status === 'UPCOMING') ||
+    contests?.find(
+      (c) =>
+        c.status === 'ONGOING' ||
+        (new Date(c.start_time).getTime() <= now &&
+          new Date(c.end_time).getTime() >= now)
+    ) ||
+    contests?.find(
+      (c) => c.status === 'UPCOMING' && new Date(c.start_time).getTime() > now
+    ) ||
     contests?.[0]
 
   // Get leaderboard for the latest past or ongoing contest
@@ -97,6 +106,7 @@ export default function ContestIndexPage() {
             <FeaturedContestBanner
               contest={featuredContest}
               onRegister={(e) => handleRegister(featuredContest.id, e)}
+              onCountdownComplete={() => mutate(`contests/${queryString}`)}
             />
           )}
 
@@ -331,9 +341,11 @@ export default function ContestIndexPage() {
 function FeaturedContestBanner({
   contest,
   onRegister,
+  onCountdownComplete,
 }: {
   contest: Contest
   onRegister: (e: React.MouseEvent) => void
+  onCountdownComplete?: () => void
 }) {
   const [timeLeft, setTimeLeft] = useState<{
     days: number
@@ -343,23 +355,35 @@ function FeaturedContestBanner({
     isLive: boolean
   }>({ days: 0, hours: 0, minutes: 0, seconds: 0, isLive: false })
 
+  const completedRef = useRef(false)
+
+  useEffect(() => {
+    completedRef.current = false
+  }, [contest.id, contest.status])
+
   useEffect(() => {
     const updateCountdown = () => {
       const now = new Date().getTime()
-      const targetTime =
-        contest.status === 'ONGOING'
-          ? new Date(contest.end_time).getTime()
-          : new Date(contest.start_time).getTime()
+      const startTime = new Date(contest.start_time).getTime()
+      const endTime = new Date(contest.end_time).getTime()
+      const isCurrentlyLive =
+        contest.status === 'ONGOING' || (now >= startTime && now <= endTime)
 
+      const targetTime = isCurrentlyLive ? endTime : startTime
       const diff = targetTime - now
+
       if (diff <= 0) {
         setTimeLeft({
           days: 0,
           hours: 0,
           minutes: 0,
           seconds: 0,
-          isLive: contest.status === 'ONGOING',
+          isLive: isCurrentlyLive,
         })
+        if (!completedRef.current) {
+          completedRef.current = true
+          onCountdownComplete?.()
+        }
         return
       }
 
@@ -375,16 +399,20 @@ function FeaturedContestBanner({
         hours,
         minutes,
         seconds,
-        isLive: contest.status === 'ONGOING',
+        isLive: isCurrentlyLive,
       })
     }
 
     updateCountdown()
     const timer = setInterval(updateCountdown, 1000)
     return () => clearInterval(timer)
-  }, [contest])
+  }, [contest, onCountdownComplete])
 
-  const isLive = contest.status === 'ONGOING'
+  const now = new Date().getTime()
+  const startTime = new Date(contest.start_time).getTime()
+  const endTime = new Date(contest.end_time).getTime()
+  const isLive =
+    contest.status === 'ONGOING' || (now >= startTime && now <= endTime)
 
   return (
     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950 border border-blue-800/40 p-6 sm:p-8 shadow-2xl">
@@ -519,9 +547,15 @@ function ContestCard({
   contest: Contest
   onRegister: (e: React.MouseEvent) => void
 }) {
-  const isLive = contest.status === 'ONGOING'
-  const isUpcoming = contest.status === 'UPCOMING'
-  const isPast = contest.status === 'PAST'
+  const now = Date.now()
+  const startTime = new Date(contest.start_time).getTime()
+  const endTime = new Date(contest.end_time).getTime()
+  const isTimeStarted = startTime > 0 && now >= startTime
+  const isTimeEnded = endTime > 0 && now > endTime
+
+  const isLive = contest.status === 'ONGOING' || (isTimeStarted && !isTimeEnded)
+  const isUpcoming = contest.status === 'UPCOMING' && !isTimeStarted
+  const isPast = contest.status === 'PAST' || isTimeEnded
 
   return (
     <Link href={`/contest/${contest.id}`}>

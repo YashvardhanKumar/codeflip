@@ -227,14 +227,16 @@
                     </div>
                 </div>
 
+                <input type="hidden" name="user_timezone" id="user_timezone" value="">
                 <div class="form-group">
                     <label for="start_time">
-                        Start Date & Time (UTC)
-                        <button type="button" class="quick-fill-btn" onclick="document.getElementById('start_time').value = '{{ next_sat_iso }}'">
+                        Start Date & Time (<span id="user_tz_label" style="color: #38bdf8;">Local Time</span>)
+                        <button type="button" class="quick-fill-btn" onclick="fillNextSaturday()">
                             <i class="fas fa-calendar-check"></i> Next Saturday 8:00 PM
                         </button>
                     </label>
                     <input type="datetime-local" name="start_time" id="start_time" class="custom-input" required
+                           data-initial-utc="{% if contest %}{{ contest.start_time.isoformat }}{% endif %}"
                            value="{% if contest %}{{ contest.start_time|date:'Y-m-d\TH:i' }}{% else %}{{ next_sat_iso }}{% endif %}">
                 </div>
 
@@ -432,7 +434,7 @@
                                     {{ c.is_weekly|yesno:'WEEKLY,CUSTOM' }}
                                 </span>
                             </td>
-                            <td style="color: #94a3b8;">{{ c.start_time|date:"M d, Y H:i" }}</td>
+                            <td class="contest-time-cell" data-utc="{{ c.start_time.isoformat }}" style="color: #94a3b8;">{{ c.start_time|date:"M d, Y H:i" }}</td>
                             <td>{{ c.duration_minutes }} mins</td>
                             <td>
                                 {% if c.status == "UPCOMING" %}
@@ -470,6 +472,62 @@
 </div>
 
 <script>
+function initTimezoneHandling() {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const tzInput = document.getElementById('user_timezone');
+    if (tzInput) tzInput.value = tz;
+
+    const tzLabel = document.getElementById('user_tz_label');
+    if (tzLabel) tzLabel.innerText = tz;
+
+    const startInput = document.getElementById('start_time');
+    const initUtc = startInput?.getAttribute('data-initial-utc');
+    if (startInput && initUtc) {
+        const d = new Date(initUtc);
+        if (!isNaN(d.getTime())) {
+            const pad = (n) => String(n).padStart(2, '0');
+            startInput.value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        }
+    }
+
+    // Format all contest times in table to local timezone
+    document.querySelectorAll('.contest-time-cell').forEach(cell => {
+        const utcStr = cell.getAttribute('data-utc');
+        if (utcStr) {
+            const d = new Date(utcStr);
+            if (!isNaN(d.getTime())) {
+                cell.innerText = d.toLocaleString(undefined, {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                });
+            }
+        }
+    });
+}
+
+function fillNextSaturday() {
+    const now = new Date();
+    const day = now.getDay();
+    let daysUntilSat = (6 - day) % 7;
+    if (daysUntilSat === 0 && now.getHours() >= 20) {
+        daysUntilSat = 7;
+    }
+    const target = new Date(now.getTime() + daysUntilSat * 24 * 60 * 60 * 1000);
+    target.setHours(20, 0, 0, 0);
+
+    const pad = (n) => String(n).padStart(2, '0');
+    const localIso = `${target.getFullYear()}-${pad(target.getMonth() + 1)}-${pad(target.getDate())}T20:00`;
+    const startInput = document.getElementById('start_time');
+    if (startInput) startInput.value = localIso;
+}
+
+document.addEventListener('DOMContentLoaded', initTimezoneHandling);
+initTimezoneHandling();
+
 function autoFillPoints() {
     const sel = document.getElementById('problem_id');
     const opt = sel.options[sel.selectedIndex];
