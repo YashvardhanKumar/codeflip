@@ -23,45 +23,52 @@ function stripHtml(html?: string): string {
 }
 
 async function getProblem(id: string): Promise<ProblemData | null> {
-  try {
-    const envBase = process.env.NEXT_PUBLIC_BASE_URL
-    const baseUrl =
-      envBase && !envBase.includes('localhost')
-        ? envBase
-        : 'https://www.codeflip.co.in'
+  const envBase = process.env.NEXT_PUBLIC_BASE_URL
+  const publicBase =
+    envBase && !envBase.includes('localhost')
+      ? envBase
+      : 'https://www.codeflip.co.in'
 
-    let res = await fetch(`${baseUrl}/api/problems/${id}/`, {
-      next: { revalidate: 3600 },
-    })
+  const baseUrls = ['http://api:8000', publicBase, 'http://localhost:8000']
 
-    // If 404 and id is a kebab-case slug, fallback to searching for problem by name
-    if (!res.ok && !/^\d+$/.test(id)) {
-      const searchTerm = id.replace(/-/g, ' ')
-      const searchRes = await fetch(
-        `${baseUrl}/api/problems/?search=${encodeURIComponent(searchTerm)}`,
-        { next: { revalidate: 3600 } }
-      )
-      if (searchRes.ok) {
-        const data = await searchRes.json()
-        const list = Array.isArray(data) ? data : data?.results || []
-        const match = list.find(
-          (p: any) =>
-            slugify(p.name) === id.toLowerCase() ||
-            p.name.toLowerCase() === searchTerm.toLowerCase()
+  for (const baseUrl of baseUrls) {
+    try {
+      let res = await fetch(`${baseUrl}/api/problems/${id}/`, {
+        next: { revalidate: 3600 },
+      })
+
+      // If 404 and id is a kebab-case slug, fallback to searching for problem by name
+      if (!res.ok && !/^\d+$/.test(id)) {
+        const searchTerm = id.replace(/-/g, ' ')
+        const searchRes = await fetch(
+          `${baseUrl}/api/problems/?search=${encodeURIComponent(searchTerm)}`,
+          { next: { revalidate: 3600 } }
         )
-        if (match) {
-          res = await fetch(`${baseUrl}/api/problems/${match.id}/`, {
-            next: { revalidate: 3600 },
-          })
+        if (searchRes.ok) {
+          const data = await searchRes.json()
+          const list = Array.isArray(data) ? data : data?.results || []
+          const match = list.find(
+            (p: any) =>
+              slugify(p.name) === id.toLowerCase() ||
+              p.name.toLowerCase() === searchTerm.toLowerCase()
+          )
+          if (match) {
+            res = await fetch(`${baseUrl}/api/problems/${match.id}/`, {
+              next: { revalidate: 3600 },
+            })
+          }
         }
       }
-    }
 
-    if (!res.ok) return null
-    return (await res.json()) as ProblemData
-  } catch {
-    return null
+      if (res.ok) {
+        return (await res.json()) as ProblemData
+      }
+    } catch {
+      // Try next base URL
+    }
   }
+
+  return null
 }
 
 export async function generateMetadata({
