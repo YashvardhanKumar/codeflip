@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,10 +15,17 @@ import { Loader2, ArrowLeft, ShieldCheck, Zap, Code2 } from 'lucide-react'
 import Logo from '@/components/logo'
 
 function LoginContent() {
-  const { login } = useAuth()
+  const { user, loading: authLoading, login } = useAuth()
+  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({ username: '', password: '' })
   const searchParams = useSearchParams()
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.replace('/problems')
+    }
+  }, [user, authLoading, router])
 
   useEffect(() => {
     const error = searchParams.get('error')

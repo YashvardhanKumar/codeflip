@@ -5,8 +5,16 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: '/private/',
+      disallow: [
+        '/private/',
+        '/auth-callback',
+        '/test-route',
+        '/profile',
+        '/api/',
+        '/*/write-solution',
+      ],
     },
-    sitemap: 'https://www.codeflip.co.in/sitemap.xml', // Replace with your actual sitemap URL
+    sitemap: 'https://www.codeflip.co.in/sitemap.xml',
+    host: 'https://www.codeflip.co.in',
   }
 }

@@ -157,6 +157,7 @@ export interface Variable {
 export interface Problem {
   id: number
   name: string
+  slug?: string
   problem_description?: string
   difficulty?: Difficulty
   tags: Tag[]
@@ -180,6 +181,7 @@ export interface Problem {
 export interface ProblemList {
   id: number
   name: string
+  slug?: string
   problem_description?: string
   difficulty?: Difficulty
   tags: Tag[]

@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,7 +14,8 @@ import { Loader2, ArrowLeft, Users, Trophy, Target } from 'lucide-react'
 import Logo from '@/components/logo'
 
 export default function SignupPage() {
-  const { login } = useAuth()
+  const { user, loading: authLoading, login } = useAuth()
+  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     username: '',
@@ -22,6 +24,12 @@ export default function SignupPage() {
     password: '',
     password2: '',
   })
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.replace('/problems')
+    }
+  }, [user, authLoading, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

@@ -8,17 +8,19 @@ import {
   ResizablePanelGroup,
 } from '@/components/ui/resizable'
 import useSWR from 'swr'
-import { useParams } from 'next/navigation'
-import { useState, useRef } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import { useState, useRef, useEffect } from 'react'
 import { ImperativePanelHandle } from 'react-resizable-panels'
 import { DescriptionSkeleton, EditorSkeleton } from '@/components/loader'
 import PageTransition from '@/components/page-transition'
 import { useAuth } from '@/components/auth-provider'
-import { apiFetcher } from '@/lib/utils'
+import { apiFetcher, slugify } from '@/lib/utils'
 import { Problem } from '@/lib/models'
 
 export default function ProblemDetailPage() {
   const { id } = useParams()
+  const router = useRouter()
+  const paramStr = String(id || '')
   const { user, loading: authLoading } = useAuth()
   const [maximizedSide, setMaximizedSide] = useState<'left' | 'right' | null>(
     null
@@ -26,11 +28,52 @@ export default function ProblemDetailPage() {
   const leftPanelRef = useRef<ImperativePanelHandle>(null)
   const rightPanelRef = useRef<ImperativePanelHandle>(null)
 
+  const fetchProblem = async (url: string) => {
+    try {
+      return await apiFetcher<Problem>(url)
+    } catch (err: any) {
+      if (paramStr && !/^\d+$/.test(paramStr)) {
+        const searchTerm = paramStr.replace(/-/g, ' ')
+        try {
+          const searchRes: any = await apiFetcher(
+            `problems/?search=${encodeURIComponent(searchTerm)}`
+          )
+          const list = Array.isArray(searchRes)
+            ? searchRes
+            : searchRes?.results || []
+          const match = list.find(
+            (p: any) =>
+              slugify(p.name) === paramStr.toLowerCase() ||
+              p.name.toLowerCase() === searchTerm.toLowerCase()
+          )
+          if (match) {
+            return await apiFetcher<Problem>(`problems/${match.id}/`)
+          }
+        } catch {}
+      }
+      throw err
+    }
+  }
+
   const {
     data,
     error,
     isLoading: problemLoading,
-  } = useSWR<Problem>('problems/' + id + '/', apiFetcher)
+  } = useSWR<Problem>('problems/' + id + '/', fetchProblem)
+
+  // Redirect from numeric ID to kebab-case slug for SEO
+  useEffect(() => {
+    if (data?.name && /^\d+$/.test(paramStr)) {
+      const slug = slugify(data.name)
+      if (slug) {
+        if (typeof router?.replace === 'function') {
+          router.replace(`/problems/${slug}`)
+        } else if (typeof router?.push === 'function') {
+          router.push(`/problems/${slug}`)
+        }
+      }
+    }
+  }, [data, paramStr, router])
 
   const isLoading = problemLoading || authLoading
 

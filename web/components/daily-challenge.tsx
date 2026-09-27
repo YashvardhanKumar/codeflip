@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import useSWR from 'swr'
 import { PaginatedResponse, Problem } from '@/lib/models'
-import { apiFetcher } from '@/lib/utils'
+import { apiFetcher, slugify } from '@/lib/utils'
 import { Skeleton } from './ui/skeleton'
 
 export default function DailyChallenge() {
@@ -62,7 +62,7 @@ export default function DailyChallenge() {
       transition={{ duration: 0.4 }}
     >
       <Link
-        href={`/problems/${problem.id}`}
+        href={`/problems/${problem.slug || slugify(problem.name) || problem.id}`}
         className="relative block h-full overflow-hidden rounded-xl border border-slate-200 dark:border-surface-border bg-white dark:bg-surface-dark shadow-sm dark:shadow-lg group cursor-pointer hover:border-primary/50 transition-all hover:shadow-xl hover:shadow-primary/5"
       >
         <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">

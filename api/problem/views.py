@@ -65,9 +65,42 @@ JUDGE0_STATUS_MAP = {
 class ProblemViewSet(viewsets.ModelViewSet):
     queryset = Problem.objects.all()
     permission_classes = [IsAuthenticatedOrReadOnly]
+    lookup_field = "pk"
+    lookup_url_kwarg = "pk"
+    lookup_value_regex = r"[^/.]+"
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ["created_at", "id", "total_solutions"]
     ordering = ["-created_at"]
+
+    def get_object(self):
+        from django.shortcuts import get_object_or_404
+        from django.utils.text import slugify
+        from django.http import Http404
+
+        queryset = self.filter_queryset(self.get_queryset())
+        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
+        lookup_value = str(self.kwargs.get(lookup_url_kwarg, "")).strip()
+
+        # 1. Lookup by numeric ID
+        if lookup_value.isdigit():
+            obj = get_object_or_404(queryset, pk=int(lookup_value))
+            self.check_object_permissions(self.request, obj)
+            return obj
+
+        # 2. Direct name match with hyphen replacement (e.g. "two-sum" -> "two sum")
+        normalized_name = lookup_value.replace("-", " ")
+        candidate = queryset.filter(name__iexact=normalized_name).first()
+        if candidate:
+            self.check_object_permissions(self.request, candidate)
+            return candidate
+
+        # 3. Fallback: match by slugify across problems
+        for prob in queryset:
+            if slugify(prob.name) == lookup_value.lower():
+                self.check_object_permissions(self.request, prob)
+                return prob
+
+        raise Http404(f"No problem found matching '{lookup_value}'")
 
     def get_queryset(self):
         if self.action == "list":

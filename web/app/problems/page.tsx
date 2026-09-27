@@ -6,7 +6,7 @@ import DailyChallenge from '@/components/daily-challenge'
 import ProblemTable from '@/components/problem-table'
 import PageTransition from '@/components/page-transition'
 import { Difficulty, PaginatedResponse, Problem } from '@/lib/models'
-import { apiFetcher } from '@/lib/utils'
+import { apiFetcher, slugify } from '@/lib/utils'
 import { useMemo, useState } from 'react'
 import useSWR from 'swr'
 import { useRouter } from 'next/navigation'
@@ -106,7 +106,9 @@ export default function ProblemsPage() {
 
     try {
       const problem = await apiFetcher<Problem>(randomQuery)
-      router.push(`/problems/${problem.id}`)
+      router.push(
+        `/problems/${problem.slug || slugify(problem.name) || problem.id}`
+      )
     } catch {
       setPickError('No problem matches the current filters.')
     }

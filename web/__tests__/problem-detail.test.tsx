@@ -9,6 +9,8 @@ import { describe, it, expect, jest } from 'bun:test'
 jest.mock('next/navigation', () => ({
   useRouter: () => ({
     push: jest.fn(),
+    replace: jest.fn(),
+    prefetch: jest.fn(),
   }),
   useParams: jest.fn(),
   usePathname: () => '/problems/1',

@@ -1,52 +1,91 @@
 import { MetadataRoute } from 'next'
-import fs from 'fs'
-import path from 'path'
+import { slugify } from '@/lib/utils'
 
-function getStaticRoutes(dir: string, baseRoute: string = ''): string[] {
-  let routes: string[] = []
-
-  try {
-    const files = fs.readdirSync(dir)
-
-    for (const file of files) {
-      const fullPath = path.join(dir, file)
-      const stat = fs.statSync(fullPath)
-
-      if (stat.isDirectory()) {
-        // Skip dynamic routes, route groups, and hidden folders
-        if (
-          !file.startsWith('[') &&
-          !file.startsWith('(') &&
-          !file.startsWith('_') &&
-          file !== 'api'
-        ) {
-          routes = [
-            ...routes,
-            ...getStaticRoutes(fullPath, `${baseRoute}/${file}`),
-          ]
-        }
-      } else if (file === 'page.tsx' || file === 'page.ts') {
-        routes.push(baseRoute === '' ? '/' : baseRoute)
-      }
-    }
-  } catch (error) {
-    console.error('Error scanning for static routes:', error)
-  }
-
-  return routes
+interface ProblemItem {
+  id: number
+  name?: string
+  slug?: string
+  created_at?: string
 }
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://www.codeflip.co.in' // Replace with your actual domain
+interface ProblemsApiResponse {
+  count?: number
+  results?: ProblemItem[]
+}
 
-  // Path to the 'app' directory
-  const appDir = path.join(process.cwd(), 'app')
-  const staticPaths = getStaticRoutes(appDir)
+const baseUrl = 'https://www.codeflip.co.in'
+const envBase = process.env.NEXT_PUBLIC_BASE_URL
+const apiBase = envBase && !envBase.includes('localhost') ? envBase : baseUrl
 
-  return staticPaths.map((route) => ({
-    url: `${baseUrl}${route === '/' ? '' : route}`,
-    lastModified: new Date(),
-    changeFrequency: route === '/' ? 'weekly' : 'monthly',
-    priority: route === '/' ? 1 : 0.8,
-  }))
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const staticRoutes: MetadataRoute.Sitemap = [
+    {
+      url: baseUrl,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 1.0,
+    },
+    {
+      url: `${baseUrl}/problems`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/contest`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/discuss`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/signup`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    },
+    {
+      url: `${baseUrl}/login`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.4,
+    },
+  ]
+
+  let problemRoutes: MetadataRoute.Sitemap = []
+
+  try {
+    const res = await fetch(`${apiBase}/api/problems/?page_size=500`, {
+      next: { revalidate: 3600 },
+    })
+
+    if (res.ok) {
+      const data = (await res.json()) as ProblemsApiResponse | ProblemItem[]
+      const problems: ProblemItem[] = Array.isArray(data)
+        ? data
+        : data.results || []
+
+      problemRoutes = problems.map((problem) => {
+        const problemSlug =
+          problem.slug || slugify(problem.name) || String(problem.id)
+        return {
+          url: `${baseUrl}/problems/${problemSlug}`,
+          lastModified: problem.created_at
+            ? new Date(problem.created_at)
+            : new Date(),
+          changeFrequency: 'weekly',
+          priority: 0.8,
+        }
+      })
+    }
+  } catch (error) {
+    console.error('Error fetching dynamic problems for sitemap:', error)
+  }
+
+  return [...staticRoutes, ...problemRoutes]
 }

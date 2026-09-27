@@ -3,6 +3,7 @@ import Pagination from './pagination'
 import { Skeleton } from './ui/skeleton'
 import { PaginatedResponse, Problem } from '@/lib/models'
 import { motion } from 'framer-motion'
+import { slugify } from '@/lib/utils'
 
 interface ProblemTableProps {
   data?: PaginatedResponse<Problem>
@@ -130,7 +131,7 @@ function ProblemRow({ problem, index }: { problem: Problem; index: number }) {
     >
       <td className="px-6 py-4">
         <Link
-          href={`/problems/${problem.id}`}
+          href={`/problems/${problem.slug || slugify(problem.name) || problem.id}`}
           className="font-medium text-slate-900 dark:text-white group-hover:text-primary transition-all block group-hover:translate-x-1"
         >
           {problem.id}. {problem.name}

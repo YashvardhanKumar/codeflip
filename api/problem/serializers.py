@@ -131,12 +131,14 @@ class ProblemListSerializer(serializers.ModelSerializer):
     tags = TagsSerializer(many=True, read_only=True)
     total_solutions = serializers.SerializerMethodField()
     total_testcases = serializers.SerializerMethodField()
+    slug = serializers.SerializerMethodField()
 
     class Meta:
         model = Problem
         fields = [
             "id",
             "name",
+            "slug",
             "problem_description",
             "difficulty",
             "tags",
@@ -145,6 +147,11 @@ class ProblemListSerializer(serializers.ModelSerializer):
             "total_testcases",
         ]
         read_only_fields = ["id", "created_at"]
+
+    def get_slug(self, obj):
+        from django.utils.text import slugify
+
+        return slugify(obj.name) or str(obj.id)
 
     def get_total_solutions(self, obj):
         return getattr(obj, "total_solutions", 0)
@@ -175,12 +182,14 @@ class ProblemDetailSerializer(serializers.ModelSerializer):
     has_disliked = serializers.SerializerMethodField()
     is_favorited = serializers.SerializerMethodField()
     active_users = serializers.SerializerMethodField()
+    slug = serializers.SerializerMethodField()
 
     class Meta:
         model = Problem
         fields = [
             "id",
             "name",
+            "slug",
             "problem_description",
             "difficulty",
             "tags",
@@ -202,6 +211,11 @@ class ProblemDetailSerializer(serializers.ModelSerializer):
             "success_rate",
         ]
         read_only_fields = ["id", "views", "created_at"]
+
+    def get_slug(self, obj):
+        from django.utils.text import slugify
+
+        return slugify(obj.name) or str(obj.id)
 
     def get_likes_count(self, obj):
         return obj.upvotes.count()

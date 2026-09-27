@@ -91,4 +91,14 @@ export function apiFetch(url: string, init: RequestInit = {}) {
   })
 }
 
+export function slugify(str?: string): string {
+  if (!str) return ''
+  return str
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
 export default apiClient

@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import { Discuss, Problem, Tag } from '@/lib/models'
 import useSWR from 'swr'
-import { apiFetcher, formatInUserTimezone } from '@/lib/utils'
+import { apiFetcher, formatInUserTimezone, slugify } from '@/lib/utils'
 import {
   Search,
   Filter,
@@ -118,7 +118,9 @@ export default function SolutionsTab({ problem, onViewSolution }: Props) {
             </Badge>
           )}
         </Button>
-        <Link href={`/problems/${problem.id}/write-solution`}>
+        <Link
+          href={`/problems/${problem.slug || slugify(problem.name) || problem.id}/write-solution`}
+        >
           <Button
             size="sm"
             className="h-9 bg-primary hover:bg-primary/90 text-xs gap-2 font-bold"
