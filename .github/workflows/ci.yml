@@ -70,17 +70,20 @@ jobs:
           bun install
 
       - name: Run pre-commit hooks
+        if: github.event_name != 'release'
         run: |
           export DJANGO_SETTINGS_MODULE=apps.settings
           export PYTHONPATH=$PYTHONPATH:$(pwd)/api
           uv run --project api pre-commit run --all-files --config .pre-commit-config.yaml
 
       - name: Run Frontend Lint
+        if: github.event_name != 'release'
         run: |
           cd web
           bun run lint
 
       - name: Run Frontend Type Check
+        if: github.event_name != 'release'
         run: |
           cd web
           bun x tsc
