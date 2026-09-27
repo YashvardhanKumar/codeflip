@@ -26,6 +26,7 @@ services:
 
   api:
     container_name: coderacer-api
+    image: ${API_IMAGE:-coderacer-api}
     build:
       context: ./api
       target: ${DOCKER_TARGET:-development}
@@ -57,7 +58,7 @@ services:
 
   worker:
     container_name: coderacer-worker
-    restart: always
+    image: ${API_IMAGE:-coderacer-api}
     build:
       context: ./api
       target: ${DOCKER_TARGET:-development}
@@ -85,6 +86,7 @@ services:
 
   web:
     container_name: coderacer-web
+    image: ${WEB_IMAGE:-coderacer-web}
     build:
       context: ./web
       target: ${DOCKER_TARGET:-development}

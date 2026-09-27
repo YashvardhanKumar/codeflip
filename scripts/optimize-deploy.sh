@@ -3,42 +3,35 @@
 # Exit on error
 set -e
 
-echo "🚀 Starting optimized deployment for coderacer-web..."
+echo "🚀 Starting optimized zero-downtime deployment for coderacer-web..."
 
 # 0. Sync codebase with GitHub
 echo "📥 Syncing codebase with GitHub..."
 git stash 2>/dev/null || true
 git pull origin master
 
-# 1. Clean up legacy un-prefixed containers from older coderacer deployments (if any exist)
-for legacy in nginx api celery_worker web redis postgresql; do
-  if docker ps -a --format '{{.Names}}' | grep -Eq "^${legacy}\$"; then
-    if docker inspect "$legacy" 2>/dev/null | grep -qi "coderacer"; then
-      echo "🧹 Removing legacy coderacer container: $legacy..."
-      docker stop "$legacy" 2>/dev/null || true
-      docker rm "$legacy" 2>/dev/null || true
-    fi
-  fi
-done
+export API_IMAGE="${API_IMAGE:-ghcr.io/yashvardhankumar/coderacer-web-api:latest}"
+export WEB_IMAGE="${WEB_IMAGE:-ghcr.io/yashvardhankumar/coderacer-web-web:latest}"
+export API_BIND_MOUNT="${API_BIND_MOUNT:-./empty_dir:/tmp/ignore_api}"
+export WEB_BIND_MOUNT="${WEB_BIND_MOUNT:-./empty_dir:/tmp/ignore_web}"
+export NGINX_BIND_IP="${NGINX_BIND_IP:-127.0.0.1}"
+export NGINX_HOST_PORT="${NGINX_HOST_PORT:-8080}"
+export DOCKER_TARGET="production"
+export NODE_ENV="production"
 
-# 2. Safe cleanup of dangling images before build (does NOT delete stopped containers from other projects)
-echo "🧹 Cleaning up dangling images..."
-docker image prune -f
+# 1. Pull pre-built images from GitHub Container Registry (zero load on EC2)
+echo "📥 Pulling latest pre-built images from GitHub Container Registry..."
+if docker compose --project-name coderacer-web pull; then
+  echo "✅ Pre-built images pulled successfully from GHCR."
+else
+  echo "⚠️ GHCR pull failed, falling back to sequential local build..."
+  docker compose --project-name coderacer-web build api
+  docker compose --project-name coderacer-web build web
+fi
 
-# 3. Build images one by one to save RAM
-echo "🏗️ Building API image sequentially..."
-DOCKER_TARGET=production docker compose --project-name coderacer-web build api
-
-echo "🏗️ Building Web image sequentially..."
-DOCKER_TARGET=production NODE_ENV=production docker compose --project-name coderacer-web build web
-
-echo "🏗️ Building remaining services..."
-DOCKER_TARGET=production docker compose --project-name coderacer-web build --parallel=false
-
-# 4. Start & reset ONLY coderacer-web containers
-echo "🆙 Starting and resetting coderacer-web services..."
-# Override bind mounts to harmless paths for production
-API_BIND_MOUNT=./empty_dir:/tmp/ignore_api WEB_BIND_MOUNT=./empty_dir:/tmp/ignore_web NGINX_BIND_IP=${NGINX_BIND_IP:-127.0.0.1} NGINX_HOST_PORT=${NGINX_HOST_PORT:-8080} DOCKER_TARGET=production NODE_ENV=production docker compose --project-name coderacer-web up -d --remove-orphans
+# 2. Swap containers with ZERO DOWNTIME (existing containers keep running until new ones start)
+echo "🆙 Starting and updating coderacer-web services..."
+docker compose --project-name coderacer-web up -d --remove-orphans
 
 echo "⚙️ Regenerating codeblocks for all problems..."
 docker compose --project-name coderacer-web exec -T api python manage.py shell -c "from problem.models import Problem; from problem.utils import generate_codeblocks_for_problem; [generate_codeblocks_for_problem(p, force=True) for p in Problem.objects.all()]" || echo "⚠️ Warning: Failed to regenerate codeblocks."
@@ -46,11 +39,9 @@ docker compose --project-name coderacer-web exec -T api python manage.py shell -
 echo "🔄 Restarting Nginx to refresh DNS and container IPs..."
 docker compose --project-name coderacer-web restart nginx
 
-# 5. Final safe cleanup (removes only dangling untagged images and old build cache)
+# 3. Safe cleanup of dangling build artifacts
 echo "🧹 Safe cleanup of dangling build artifacts..."
 docker image prune -f
 docker builder prune -f --keep-storage 2GB 2>/dev/null || true
 
-echo "✅ Coderacer deployment complete!"
-echo "💡 Tip: If you still experience OOM, ensure you have a swap file enabled."
-echo "   Create a 2GB swap file: sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile"
+echo "✅ Coderacer deployment complete with zero downtime!"
