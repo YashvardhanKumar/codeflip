@@ -17,7 +17,7 @@ services:
       - static_data:/staticfiles:ro
       - media_data:/mediafiles:ro
     ports:
-      - "127.0.0.1:${NGINX_HOST_PORT:-8080}:80"
+      - "${NGINX_BIND_IP:-0.0.0.0}:${NGINX_HOST_PORT:-80}:80"
     depends_on:
       - api
       - web
@@ -120,8 +120,9 @@ services:
     image: postgres:16-alpine
     container_name: coderacer-postgres
     restart: always
-    ports:
-      - "127.0.0.1:5432:5432"
+    # Port 5432 is accessed internally by api and worker via app-network.
+    # We do not expose 5432 to the host by default to prevent port conflicts with other projects on the EC2 machine or host.
+    # If host access is needed (e.g. for GUI DB clients), use docker-compose.override.yaml.
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-admin}"]
       interval: 5s

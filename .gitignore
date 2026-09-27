@@ -103,6 +103,8 @@ lerna-debug.log*
 
 # Docker
 .dockerignore
+docker-compose.override.yml
+docker-compose.override.yaml
 
 # IDE specific
 .vscode/settings.json

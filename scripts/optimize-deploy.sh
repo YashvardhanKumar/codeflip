@@ -38,7 +38,7 @@ DOCKER_TARGET=production docker compose --project-name coderacer-web build --par
 # 4. Start & reset ONLY coderacer-web containers
 echo "🆙 Starting and resetting coderacer-web services..."
 # Override bind mounts to harmless paths for production
-API_BIND_MOUNT=./empty_dir:/tmp/ignore_api WEB_BIND_MOUNT=./empty_dir:/tmp/ignore_web DOCKER_TARGET=production NODE_ENV=production docker compose --project-name coderacer-web up -d --remove-orphans
+API_BIND_MOUNT=./empty_dir:/tmp/ignore_api WEB_BIND_MOUNT=./empty_dir:/tmp/ignore_web NGINX_BIND_IP=${NGINX_BIND_IP:-127.0.0.1} NGINX_HOST_PORT=${NGINX_HOST_PORT:-8080} DOCKER_TARGET=production NODE_ENV=production docker compose --project-name coderacer-web up -d --remove-orphans
 
 echo "⚙️ Regenerating codeblocks for all problems..."
 docker compose --project-name coderacer-web exec -T api python manage.py shell -c "from problem.models import Problem; from problem.utils import generate_codeblocks_for_problem; [generate_codeblocks_for_problem(p, force=True) for p in Problem.objects.all()]" || echo "⚠️ Warning: Failed to regenerate codeblocks."
