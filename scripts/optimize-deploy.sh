@@ -7,7 +7,8 @@ echo "🚀 Starting optimized deployment for coderacer-web..."
 
 # 0. Sync codebase with GitHub
 echo "📥 Syncing codebase with GitHub..."
-git pull
+git stash 2>/dev/null || true
+git pull origin master
 
 # 1. Clean up legacy un-prefixed containers from older coderacer deployments (if any exist)
 for legacy in nginx api celery_worker web redis postgresql; do

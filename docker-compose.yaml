@@ -17,7 +17,7 @@ services:
       - static_data:/staticfiles:ro
       - media_data:/mediafiles:ro
     ports:
-      - "${NGINX_HOST_PORT:-80}:80"
+      - "127.0.0.1:${NGINX_HOST_PORT:-8080}:80"
     depends_on:
       - api
       - web
@@ -78,7 +78,7 @@ services:
       - cdb
       - redis
     volumes:
-      - ./api:/home/codeflip/api/
+      - ${API_BIND_MOUNT:-./empty_dir:/tmp/ignore_api}
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - app-network
@@ -120,10 +120,8 @@ services:
     image: postgres:16-alpine
     container_name: coderacer-postgres
     restart: always
-    # Port 5432 is accessed internally by api and worker via app-network.
-    # We do not expose 5432 to the host by default to prevent port conflicts with other projects on the EC2 machine.
-    # ports:
-    #   - "5432:5432"
+    ports:
+      - "127.0.0.1:5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-admin}"]
       interval: 5s

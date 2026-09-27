@@ -164,6 +164,7 @@ jobs:
           command_timeout: 20m
           script: |
             cd coderacer-web
+            git stash 2>/dev/null || true
             git pull origin master
             chmod +x scripts/optimize-deploy.sh
             ./scripts/optimize-deploy.sh
